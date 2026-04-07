@@ -1,0 +1,165 @@
+@import "tailwindcss";
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --purple: #7c3aed;
+    --purple-dark: #6d28d9;
+}
+
+.auth-root {
+    display: flex;
+    min-height: 100vh;
+    font-family: 'Sora', sans-serif;
+}
+
+/* ── Left panel ── */
+.auth-left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 48px 56px;
+    background: #fff;
+    min-width: 0;
+}
+
+.auth-logo {
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--purple);
+    letter-spacing: -0.5px;
+    margin-bottom: 40px;
+}
+
+.auth-title {
+    font-size: 30px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 6px;
+}
+
+.auth-sub {
+    font-size: 15px;
+    color: #64748b;
+    margin: 0 0 28px;
+}
+
+.auth-forgot-link {
+    font-size: 14px;
+    color: var(--purple);
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.auth-footer {
+    margin-top: 32px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: #94a3b8;
+}
+
+/* ── Right panel ── */
+.auth-right {
+    width: 48%;
+    background: linear-gradient(135deg, rgba(15, 10, 30, 0.80) 0%, rgba(30, 15, 60, 0.70) 100%),
+        url('https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&q=80') center/cover no-repeat;
+    display: flex;
+    align-items: flex-end;
+    padding: 56px 52px;
+    position: relative;
+    overflow: hidden;
+}
+
+.auth-overlay {
+    color: #fff;
+    max-width: 420px;
+}
+
+.auth-sparkle {
+    font-size: 22px;
+    letter-spacing: 4px;
+    margin-bottom: 18px;
+    opacity: 0.9;
+}
+
+.auth-hero-title {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1.25;
+    margin: 0 0 14px;
+}
+
+.auth-hero-desc {
+    font-size: 15px;
+    opacity: 0.8;
+    line-height: 1.7;
+    margin: 0 0 28px;
+}
+
+.auth-avatar-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.auth-avatar-stack {
+    display: flex;
+}
+
+.auth-avatar-dot {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 2.5px solid rgba(255, 255, 255, 0.8);
+    margin-left: -10px;
+    display: inline-block;
+}
+
+.auth-join-text {
+    font-size: 14px;
+    opacity: 0.85;
+    margin: 0;
+}
+
+.auth-curl {
+    position: absolute;
+    bottom: 48px;
+    left: 32px;
+    width: 100px;
+    height: 90px;
+    border: 2.5px solid rgba(167, 139, 250, 0.8);
+    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+    border-right: none;
+    border-top: none;
+    transform: rotate(-10deg);
+}
+
+/* ── Animations ── */
+@keyframes sparkle {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.6;
+        transform: scale(1.2);
+    }
+}
+
+.yu-sparkle {
+    animation: sparkle 2.5s ease-in-out infinite;
+}
