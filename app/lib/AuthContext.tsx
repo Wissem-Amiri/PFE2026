@@ -5,13 +5,20 @@ import { createContext, useEffect, useState, useContext } from "react";
 import { supabase } from "./supabase";
 import { useRouter, usePathname } from "next/navigation";
 import { Spin } from "antd";
+import { getProfile } from "./profileService";
+import type { Utilisateur } from "./database.types";
 
 type AuthContextType = {
   user: User | null | undefined
   session: Session | null | undefined
+  profile: Utilisateur | null | undefined
   isLoading: boolean
   signIn: (email: string, password: string) => Promise<{ error: any; data: any }>
-  signUp: (email: string, password: string) => Promise<{ error: any; data: any }>
+  signInWithOAuth: (provider: any, options?: any) => Promise<{ error: any; data: any }>
+  signUp: (email: string, password: string, options?: any) => Promise<{ error: any; data: any }>
+  verifyOtp: (params: any) => Promise<{ error: any; data: any }>
+  resend: (params: any) => Promise<{ error: any; data: any }>
+  resetPassword: (email: string) => Promise<{ error: any; data: any }>
   signout: () => Promise<void>
 }
 
@@ -20,6 +27,7 @@ const AuthContext = createContext<AuthContextType | null>(null)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>()
   const [user, setUser] = useState<User | null>()
+  const [profile, setProfile] = useState<Utilisateur | null>()
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
 
@@ -27,9 +35,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const checkSession = async () => {
       setIsLoading(true)
       const { data, error } = await supabase.auth.getSession()
-      if (!error) {
+      if (!error && data.session) {
         setSession(data.session)
-        setUser(data.session?.user || null)
+        setUser(data.session.user)
+        // Fetch profile from utilisateur table
+        const { data: profileData } = await getProfile(data.session.user.id)
+        setProfile(profileData)
+      } else {
+        setSession(null)
+        setUser(null)
+        setProfile(null)
       }
       setIsLoading(false)
     }
@@ -45,8 +60,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  const signup = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signUp({ email, password })
+  const signUp = async (email: string, password: string, options?: any) => {
+    const mergedOptions = {
+      ...options,
+      emailRedirectTo: `${window.location.origin}/auth/verify-email`,
+    }
+    const { data, error } = await supabase.auth.signUp({ email, password, options: mergedOptions })
     return { data, error }
   }
 
@@ -55,14 +74,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { data, error }
   }
 
+  const signInWithOAuth = async (provider: any, options?: any) => {
+    const { data, error } = await supabase.auth.signInWithOAuth({ provider, options })
+    return { data, error }
+  }
+
+  const verifyOtp = async (params: any) => {
+    const { data, error } = await supabase.auth.verifyOtp(params)
+    return { data, error }
+  }
+
+  const resend = async (params: any) => {
+    const { data, error } = await supabase.auth.resend(params)
+    return { data, error }
+  }
+
+  const resetPassword = async (email: string) => {
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/new-pass`,
+    })
+    return { data, error }
+  }
+
   const signout = async () => {
     await supabase.auth.signOut()
     setSession(null)
     setUser(null)
+    setProfile(null)
     router.push('/login')
   }
 
-  const value = { user, session, isLoading, signIn, signUp: signup, signout }
+  const value = { user, session, profile, isLoading, signIn, signInWithOAuth, signUp, verifyOtp, resend, resetPassword, signout }
   return (
     <AuthContext.Provider value={value}> {children} </AuthContext.Provider>
   )
@@ -74,19 +116,53 @@ export function useAuth() {
   return context
 }
 
+/** Returns the correct dashboard path based on role */
+export function getDashboardByRole(role: string | null | undefined): string {
+  if (role === 'admin') return '/dashboard/admin'
+  if (role === 'employee') return '/dashboard/employee'
+  return '/dashboard/postulant'
+}
+
 export function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth()
+  const { user, profile, isLoading } = useAuth()
   const pathname = usePathname()
   const router = useRouter()
 
   useEffect(() => {
-    // Whitelist all auth-related pages so they are accessible
+    if (isLoading) return
+
     const isAuthPage = pathname === '/login' || pathname.startsWith('/auth/')
+    const isNewPassPage = pathname.startsWith('/auth/new-pass')
+    const isVerifyEmailPage = pathname.startsWith('/auth/verify-email')
+    const isHomePage = pathname === '/'
+    const isDashboard = pathname.startsWith('/dashboard/')
+
+    // If authenticated and on an auth page (except new-pass & verify-email) → go to correct dashboard
+    if (user && isAuthPage && !isNewPassPage && !isVerifyEmailPage) {
     
-    if (user && isAuthPage) {
-      router.push("/")
+      router.push(getDashboardByRole(profile?.role || user.user_metadata?.role))
+      return
     }
-  }, [user, pathname, router])
+
+    // If not authenticated, not on auth page, not home → go to login
+    if (!user && !isAuthPage && !isHomePage) {
+      router.push('/login')
+      return
+    }
+
+    // ── Role-based dashboard protection ──
+    // Wait until profile is loaded before checking
+    if (user && isDashboard && profile !== undefined) {
+  
+      const correctDashboard = getDashboardByRole(profile?.role || user.user_metadata?.role)
+
+      // Redirect only if the user is NOT on their allowed dashboard path
+      if (!pathname.startsWith(correctDashboard)) {
+        router.push(correctDashboard)
+        return
+      }
+    }
+  }, [user, profile, isLoading, pathname, router])
 
   if (isLoading) {
     return (

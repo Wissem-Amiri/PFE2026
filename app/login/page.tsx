@@ -1,9 +1,10 @@
 'use client'
-
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/lib/AuthContext'
+import { getDashboardByRole } from '@/lib/AuthContext'
+import { getProfile } from '@/lib/profileService'
 import { Form, Input, Button, Checkbox, Alert } from 'antd'
 import { MailOutlined, LockOutlined } from '@ant-design/icons'
 import { useForm, Controller } from 'react-hook-form'
@@ -19,23 +20,12 @@ const loginSchema = yup.object().shape({
 
 type LoginFormInputs = yup.InferType<typeof loginSchema>
 
-const PURPLE = '#7c3aed'
 
 export default function LoginPage() {
     const router = useRouter()
     const [loading, setLoading] = useState(false)
     const [errorMsg, setErrorMsg] = useState('')
-
-    useEffect(() => {
-        const checkSession = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) {
-                const role = session.user?.user_metadata?.role;
-                router.push(role === 'admin' ? '/dashboard/admin' : '/dashboard/employee');
-            }
-        };
-        checkSession();
-    }, [router]);
+    const { signIn, signInWithOAuth } = useAuth()
 
     const { control, handleSubmit, formState: { errors } } = useForm<LoginFormInputs>({
         resolver: yupResolver(loginSchema),
@@ -45,35 +35,32 @@ export default function LoginPage() {
     const handleLogin = async (values: LoginFormInputs) => {
         setLoading(true)
         setErrorMsg('')
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email: values.email,
-            password: values.password,
-        })
+        const { data, error } = await signIn(values.email, values.password)
         if (error) { setErrorMsg(error.message); setLoading(false); return }
-        const role = data.user?.user_metadata?.role
-        router.push(role === 'admin' ? '/dashboard/admin' : '/dashboard/employee')
+
+        // Read role from utilisateur table (source of truth)
+        const { data: profile } = await getProfile(data.user?.id)
+        const fallbackRole = data.user?.user_metadata?.role
+        router.push(getDashboardByRole(profile?.role || fallbackRole))
     }
 
     const handleGoogleLogin = async () => {
-        await supabase.auth.signInWithOAuth({
-            provider: 'google',
-            options: { redirectTo: `${window.location.origin}/auth/callback` },
-        })
+        await signInWithOAuth('google', { redirectTo: `${window.location.origin}/auth/callback` })
     }
 
     return (
         <>
-            <h1 className="auth-title">Log in</h1>
-            <p className="auth-sub">Welcome back! Please enter your details.</p>
+            <h1 className="text-[30px] font-bold text-slate-900 mb-1.5">Log in</h1>
+            <p className="text-[15px] text-slate-500 mb-7">Welcome back! Please enter your details.</p>
 
             {errorMsg && (
-                <Alert message={errorMsg} type="error" showIcon style={{ marginBottom: 20, borderRadius: 8 }} />
+                <Alert title={errorMsg} type="error" showIcon className="mb-5 rounded-lg" />
             )}
 
             <Form layout="vertical" onFinish={handleSubmit(handleLogin)} requiredMark={false}>
                 {/* Email */}
                 <Form.Item
-                    label={<span style={{ fontWeight: 500, color: '#374151' }}>Email</span>}
+                    label={<span className="font-medium text-gray-700">Email</span>}
                     validateStatus={errors.email ? 'error' : ''}
                     help={errors.email?.message}
                 >
@@ -81,14 +68,14 @@ export default function LoginPage() {
                         name="email"
                         control={control}
                         render={({ field }) => (
-                            <Input {...field} prefix={<MailOutlined style={{ color: '#94a3b8' }} />} placeholder="Enter your email" size="large" />
+                            <Input {...field} prefix={<MailOutlined className="text-slate-400" />} placeholder="Enter your email" size="large" />
                         )}
                     />
                 </Form.Item>
 
                 {/* Password */}
                 <Form.Item
-                    label={<span style={{ fontWeight: 500, color: '#374151' }}>Password</span>}
+                    label={<span className="font-medium text-gray-700">Password</span>}
                     validateStatus={errors.password ? 'error' : ''}
                     help={errors.password?.message}
                 >
@@ -96,25 +83,25 @@ export default function LoginPage() {
                         name="password"
                         control={control}
                         render={({ field }) => (
-                            <Input.Password {...field} prefix={<LockOutlined style={{ color: '#94a3b8' }} />} placeholder="••••••••" size="large" />
+                            <Input.Password {...field} prefix={<LockOutlined className="text-slate-400" />} placeholder="••••••••" size="large" />
                         )}
                     />
                 </Form.Item>
 
                 {/* Remember + Forgot */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                <div className="flex justify-between items-center mb-5">
                     <Form.Item noStyle>
                         <Controller
                             name="remember"
                             control={control}
                             render={({ field: { value, onChange, ...rest } }) => (
-                                <Checkbox {...rest} checked={value} onChange={e => onChange(e.target.checked)} style={{ color: '#374151', fontSize: 14 }}>
+                                <Checkbox {...rest} checked={value} onChange={e => onChange(e.target.checked)} className="text-gray-700 text-sm">
                                     Remember for 30 days
                                 </Checkbox>
                             )}
                         />
                     </Form.Item>
-                    <Link href="/auth/forgot-password" className="auth-forgot-link">Forgot password</Link>
+                    <Link href="/auth/forgot-password" className="text-sm text-[#7c3aed] font-medium no-underline">Forgot password</Link>
                 </div>
 
                 {/* Submit */}
@@ -128,14 +115,14 @@ export default function LoginPage() {
 
             {/* Google */}
             <Button block size="large" onClick={handleGoogleLogin}
-                style={{ height: 44, borderRadius: 8, border: '1.5px solid #e2e8f0', fontWeight: 500, fontSize: 15, color: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+                className="h-[44px] rounded-lg border-[1.5px] border-slate-200 font-medium text-[15px] text-slate-800 flex items-center justify-center gap-2.5 w-full">
                 <GoogleIcon /> Sign in with Google
             </Button>
 
             {/* Sign up link */}
-            <p style={{ marginTop: 24, textAlign: 'center', fontSize: 14, color: '#64748b' }}>
+            <p className="mt-6 text-center text-sm text-slate-500">
                 Don&apos;t have an account?{' '}
-                <Link href="/auth/register" style={{ color: PURPLE, fontWeight: 600 }}>Sign up</Link>
+                <Link href="/auth/register" className="text-[#7c3aed] font-semibold">Sign up</Link>
             </p>
         </>
     )

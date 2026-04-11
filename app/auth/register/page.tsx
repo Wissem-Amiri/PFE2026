@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/lib/AuthContext'
 import { Form, Input, Button, Alert } from 'antd'
 import { UserOutlined, MailOutlined, LockOutlined } from '@ant-design/icons'
 import { useForm, Controller } from 'react-hook-form'
@@ -12,19 +12,20 @@ import * as yup from 'yup'
 
 /* ─── Validation Schema ────────────────────────────────────── */
 const registerSchema = yup.object().shape({
-  name: yup.string().required('Name is required').min(2, 'Name must be at least 2 characters'),
-  email: yup.string().email('Invalid email').required('Email is required'),
+  name: yup.string().trim().required('Name is required').min(2, 'Name must be at least 2 characters'),
+  email: yup.string().trim().email('Invalid email').required('Email is required'),
   password: yup.string().min(8, 'Must be at least 8 characters').required('Password is required'),
 })
 
 type RegisterFormInputs = yup.InferType<typeof registerSchema>
 
-const PURPLE = '#7c3aed'
+
 
 export default function RegisterPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
+  const { signUp, signInWithOAuth } = useAuth()
 
   const { control, handleSubmit, formState: { errors } } = useForm<RegisterFormInputs>({
     resolver: yupResolver(registerSchema),
@@ -35,14 +36,10 @@ export default function RegisterPage() {
     setLoading(true)
     setErrorMsg('')
 
-    const { error } = await supabase.auth.signUp({
-      email: values.email,
-      password: values.password,
-      options: {
-        data: {
-          full_name: values.name,
-          role: 'postulant',
-        },
+    const { error } = await signUp(values.email, values.password, {
+      data: {
+        full_name: values.name,
+        role: 'postulant',
       },
     })
 
@@ -53,30 +50,27 @@ export default function RegisterPage() {
       return
     }
 
-    // Redirect to check-email page with the email as a query param
-    router.push(`/auth/check-email?email=${encodeURIComponent(values.email)}`)
+    // Redirect to verify-email page with the email as a query param
+    router.push(`/auth/verify-email?email=${encodeURIComponent(values.email)}`)
   }
 
   const handleGoogleSignup = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    })
+    await signInWithOAuth('google', { redirectTo: `${window.location.origin}/auth/callback` })
   }
 
   return (
     <>
-      <h1 className="auth-title" style={{ marginTop: 32 }}>Sign up</h1>
+      <h1 className="text-[30px] font-bold text-slate-900 mb-1.5 mt-8">Sign up</h1>
 
       {errorMsg && (
-        <Alert message={errorMsg} type="error" showIcon style={{ marginBottom: 20, borderRadius: 8 }} />
+        <Alert message={errorMsg} type="error" showIcon className="mb-5 rounded-lg" />
       )}
 
       <Form layout="vertical" onFinish={handleSubmit(handleRegister)} requiredMark={false}>
 
         {/* Name */}
         <Form.Item
-          label={<span style={{ fontWeight: 500, color: '#374151' }}>Name<span style={{ color: PURPLE }}>*</span></span>}
+          label={<span className="font-medium text-gray-700">Name<span className="text-[#7c3aed]">*</span></span>}
           validateStatus={errors.name ? 'error' : ''}
           help={errors.name?.message}
         >
@@ -86,7 +80,7 @@ export default function RegisterPage() {
             render={({ field }) => (
               <Input
                 {...field}
-                prefix={<UserOutlined style={{ color: '#94a3b8' }} />}
+                prefix={<UserOutlined className="text-slate-400" />}
                 placeholder="Enter your name"
                 size="large"
               />
@@ -96,7 +90,7 @@ export default function RegisterPage() {
 
         {/* Email */}
         <Form.Item
-          label={<span style={{ fontWeight: 500, color: '#374151' }}>Email<span style={{ color: PURPLE }}>*</span></span>}
+          label={<span className="font-medium text-gray-700">Email<span className="text-[#7c3aed]">*</span></span>}
           validateStatus={errors.email ? 'error' : ''}
           help={errors.email?.message}
         >
@@ -106,7 +100,7 @@ export default function RegisterPage() {
             render={({ field }) => (
               <Input
                 {...field}
-                prefix={<MailOutlined style={{ color: '#94a3b8' }} />}
+                prefix={<MailOutlined className="text-slate-400" />}
                 placeholder="Enter your email"
                 size="large"
               />
@@ -116,10 +110,10 @@ export default function RegisterPage() {
 
         {/* Password */}
         <Form.Item
-          label={<span style={{ fontWeight: 500, color: '#374151' }}>Password<span style={{ color: PURPLE }}>*</span></span>}
+          label={<span className="font-medium text-gray-700">Password<span className="text-[#7c3aed]">*</span></span>}
           validateStatus={errors.password ? 'error' : ''}
           help={errors.password?.message ?? (
-            <span style={{ color: '#94a3b8', fontSize: 13 }}>Must be at least 8 characters.</span>
+            <span className="text-slate-400 text-[13px]">Must be at least 8 characters.</span>
           )}
         >
           <Controller
@@ -128,7 +122,7 @@ export default function RegisterPage() {
             render={({ field }) => (
               <Input.Password
                 {...field}
-                prefix={<LockOutlined style={{ color: '#94a3b8' }} />}
+                prefix={<LockOutlined className="text-slate-400" />}
                 placeholder="Create a password"
                 size="large"
               />
@@ -137,7 +131,7 @@ export default function RegisterPage() {
         </Form.Item>
 
         {/* Submit */}
-        <Form.Item style={{ marginTop: 8 }}>
+        <Form.Item className="mt-2">
           <Button
             type="primary"
             htmlType="submit"
@@ -156,26 +150,15 @@ export default function RegisterPage() {
         block
         size="large"
         onClick={handleGoogleSignup}
-        style={{
-          height: 44,
-          borderRadius: 8,
-          border: '1.5px solid #e2e8f0',
-          fontWeight: 500,
-          fontSize: 15,
-          color: '#1e293b',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 10,
-        }}
+        className="h-[44px] rounded-lg border-[1.5px] border-slate-200 font-medium text-[15px] text-slate-800 flex items-center justify-center gap-2.5 w-full"
       >
         <GoogleIcon /> Sign up with Google
       </Button>
 
       {/* Login link */}
-      <p style={{ marginTop: 24, textAlign: 'center', fontSize: 14, color: '#64748b' }}>
+      <p className="mt-6 text-center text-sm text-slate-500">
         Already have an account?{' '}
-        <Link href="/login" style={{ color: PURPLE, fontWeight: 600 }}>Log in</Link>
+        <Link href="/login" className="text-[#7c3aed] font-semibold">Log in</Link>
       </p>
     </>
   )

@@ -3,36 +3,11 @@
 import { useRef, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
-import { MailOutlined, CheckCircleFilled, ArrowLeftOutlined } from '@ant-design/icons'
-import { Button, ConfigProvider, Alert } from 'antd'
+import { useAuth } from '@/lib/AuthContext'
+import { MailOutlined, ArrowLeftOutlined } from '@ant-design/icons'
+import { Button, Alert } from 'antd'
+import CheckLayout from '@/CheckLayout'
 
-const PURPLE = '#7c3aed'
-const PURPLE_LIGHT = '#ede9fe'
-
-const STEPS = [
-  { key: 'check', label: 'Check your email', desc: 'We sent a verification link to your email', status: 'done' },
-  { key: 'verify', label: 'Verify Code', desc: 'Click the link in your email to verify', status: 'active' },
-  { key: 'login', label: 'Continue to login', desc: 'Start collaborating with your team', status: 'pending' },
-]
-
-function StepIcon({ status }: { status: 'done' | 'active' | 'pending' }) {
-  if (status === 'done') return (
-    <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#fff', border: `2px solid ${PURPLE}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <CheckCircleFilled style={{ color: PURPLE, fontSize: 18 }} />
-    </div>
-  )
-  if (status === 'active') return (
-    <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#fff', border: `2px solid ${PURPLE}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ width: 14, height: 14, borderRadius: '50%', background: PURPLE }} />
-    </div>
-  )
-  return (
-    <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#fff', border: '2px solid #d1d5db', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#d1d5db' }} />
-    </div>
-  )
-}
 
 const OTP_LENGTH = 8
 
@@ -40,6 +15,7 @@ export default function VerifyOtpPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const email = searchParams.get('email') ?? ''
+  const { verifyOtp, resend } = useAuth()
 
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''))
   const [activeIdx, setActiveIdx] = useState(0)
@@ -50,7 +26,6 @@ export default function VerifyOtpPage() {
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>(Array(OTP_LENGTH).fill(null))
 
-  // Auto-focus first input on mount
   useEffect(() => {
     inputRefs.current[0]?.focus()
   }, [])
@@ -108,12 +83,7 @@ export default function VerifyOtpPage() {
     setLoading(true)
     setErrorMsg('')
 
-    const { error } = await supabase.auth.verifyOtp({
-      email,
-      token,
-      type: 'signup',
-    })
-
+    const { error } = await verifyOtp({ email, token, type: 'signup' })
     setLoading(false)
 
     if (error) {
@@ -121,13 +91,13 @@ export default function VerifyOtpPage() {
       return
     }
 
-    router.push('/')
+    router.push(`/auth/verify-email?email=${encodeURIComponent(email)}`)
   }
 
   const handleResend = async () => {
     setResendLoading(true)
     setResendMsg('')
-    const { error } = await supabase.auth.resend({ type: 'signup', email })
+    const { error } = await resend({ type: 'signup', email })
     setResendLoading(false)
     if (error) {
       setResendMsg(error.message)
@@ -137,138 +107,79 @@ export default function VerifyOtpPage() {
   }
 
   return (
-    <ConfigProvider theme={{ token: { colorPrimary: PURPLE, fontFamily: "'Sora', sans-serif" } }}>
-      <div style={{ display: 'flex', minHeight: '100vh', fontFamily: "'Sora', sans-serif" }}>
+    <CheckLayout currentStep="verify-otp">
 
-        {/* ── LEFT SIDEBAR ── */}
-        <aside style={{ width: 280, minWidth: 280, background: '#f8f7ff', borderRight: '1px solid #ede9fe', display: 'flex', flexDirection: 'column', padding: '40px 32px' }}>
-          <div style={{ marginBottom: 56 }}>
-            <span style={{ fontSize: 24, fontWeight: 800, color: PURPLE, letterSpacing: '-0.5px' }}>Yunr</span>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-            {STEPS.map((step, idx) => (
-              <div key={step.key} style={{ display: 'flex', gap: 14 }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <StepIcon status={step.status as any} />
-                  {idx < STEPS.length - 1 && (
-                    <div style={{ width: 2, flex: 1, minHeight: 40, background: step.status === 'done' ? PURPLE : '#e5e7eb', margin: '4px 0' }} />
-                  )}
-                </div>
-                <div style={{ paddingBottom: idx < STEPS.length - 1 ? 32 : 0, paddingTop: 4 }}>
-                  <p style={{ margin: 0, fontWeight: 600, fontSize: 14, color: step.status === 'pending' ? '#9ca3af' : '#0f172a' }}>
-                    {step.label}
-                  </p>
-                  <p style={{ margin: '3px 0 0', fontSize: 12, color: step.status === 'active' ? PURPLE : '#9ca3af', fontWeight: step.status === 'active' ? 500 : 400 }}>
-                    {step.desc}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div style={{ flex: 1 }} />
-          <div style={{ fontSize: 12, color: '#94a3b8', display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <span>© SoftyEducation</span>
-            <span>✉ help@SoftyEducation.com</span>
-          </div>
-        </aside>
-
-        {/* ── MAIN CONTENT ── */}
-        <main style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', padding: '48px 32px' }}>
-          <div style={{ maxWidth: 420, width: '100%', textAlign: 'center' }}>
-
-            {/* Envelope icon */}
-            <div style={{ width: 72, height: 72, borderRadius: '50%', background: PURPLE_LIGHT, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 28px' }}>
-              <MailOutlined style={{ fontSize: 30, color: PURPLE }} />
-            </div>
-
-            {/* Title */}
-            <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0f172a', margin: '0 0 12px', lineHeight: 1.3 }}>
-              Type the code we sent you
-            </h1>
-
-            {/* Subtitle */}
-            <p style={{ fontSize: 14, color: '#64748b', margin: '0 0 32px', lineHeight: 1.6 }}>
-              We sent a verification link to{' '}
-              <span style={{ color: '#0f172a', fontWeight: 600 }}>{email || 'your email'}</span>
-            </p>
-
-            {/* OTP Inputs */}
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 32 }} onPaste={handlePaste}>
-              {otp.map((digit, idx) => (
-                <input
-                  key={idx}
-                  ref={el => { inputRefs.current[idx] = el }}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={1}
-                  value={digit}
-                  onChange={e => handleChange(e.target.value, idx)}
-                  onKeyDown={e => handleKeyDown(e, idx)}
-                  onFocus={() => setActiveIdx(idx)}
-                  style={{
-                    width: 52,
-                    height: 52,
-                    fontSize: 22,
-                    fontWeight: 600,
-                    textAlign: 'center',
-                    borderRadius: 10,
-                    border: idx === activeIdx
-                      ? `2px dashed ${PURPLE}`
-                      : `1.5px solid ${digit ? PURPLE : '#e2e8f0'}`,
-                    color: digit ? PURPLE : '#0f172a',
-                    background: '#fff',
-                    outline: 'none',
-                    transition: 'border-color 0.15s',
-                    fontFamily: "'Sora', sans-serif",
-                    cursor: 'text',
-                  }}
-                />
-              ))}
-            </div>
-
-            {/* Error / resend messages */}
-            {errorMsg && (
-              <Alert message={errorMsg} type="error" showIcon style={{ marginBottom: 16, borderRadius: 8, textAlign: 'left' }} />
-            )}
-            {resendMsg && (
-              <Alert message={resendMsg} type="success" showIcon style={{ marginBottom: 16, borderRadius: 8, textAlign: 'left' }} />
-            )}
-
-            {/* Verify button */}
-            <Button
-              type="primary"
-              block
-              size="large"
-              loading={loading}
-              onClick={handleVerify}
-              className="!bg-[#7c3aed] hover:!bg-[#6d28d9] !border-none font-semibold text-[15px] h-[44px] rounded-lg"
-              style={{ marginBottom: 20 }}
-            >
-              Verify email
-            </Button>
-
-            {/* Resend */}
-            <p style={{ fontSize: 13, color: '#64748b', marginBottom: 16 }}>
-              Didn&apos;t receive the email?{' '}
-              <button
-                onClick={handleResend}
-                disabled={resendLoading}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: PURPLE, fontWeight: 600, fontSize: 13, fontFamily: 'inherit', padding: 0 }}
-              >
-                {resendLoading ? 'Sending...' : 'Click to resend'}
-              </button>
-            </p>
-
-            {/* Back to login */}
-            <Link href="/login" style={{ fontSize: 14, color: '#64748b', display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none', fontWeight: 500 }}>
-              <ArrowLeftOutlined style={{ fontSize: 12 }} />
-              Back to log in
-            </Link>
-          </div>
-        </main>
+      {/* Envelope icon */}
+      <div className="w-[72px] h-[72px] rounded-full bg-[#ede9fe] flex items-center justify-center mx-auto mb-7">
+        <MailOutlined className="text-[30px] text-[#7c3aed]" />
       </div>
-    </ConfigProvider>
+
+      {/* Title */}
+      <h1 className="text-[24px] font-bold text-slate-900 mb-3 leading-snug">
+        Type the code we sent you
+      </h1>
+
+      {/* Subtitle */}
+      <p className="text-[14px] text-slate-500 mb-8 leading-relaxed">
+        We sent a verification link to{' '}
+        <span className="text-slate-900 font-semibold">{email || 'your email'}</span>
+      </p>
+
+      {/* OTP Inputs */}
+      <div className="flex justify-center gap-2 mb-8" onPaste={handlePaste}>
+        {otp.map((digit, idx) => (
+          <input
+            key={idx}
+            ref={el => { inputRefs.current[idx] = el }}
+            type="text"
+            inputMode="numeric"
+            maxLength={1}
+            value={digit}
+            onChange={e => handleChange(e.target.value, idx)}
+            onKeyDown={e => handleKeyDown(e, idx)}
+            onFocus={() => setActiveIdx(idx)}
+            className={`w-[52px] h-[52px] text-[22px] font-semibold text-center rounded-[10px] bg-white outline-none transition-colors duration-150 cursor-text font-['Sora',sans-serif] ${idx === activeIdx ? 'border-2 border-dashed border-[#7c3aed]' : digit ? 'border-[1.5px] border-solid border-[#7c3aed] text-[#7c3aed]' : 'border-[1.5px] border-solid border-[#e2e8f0] text-slate-900'}`}
+          />
+        ))}
+      </div>
+
+      {/* Error / resend messages */}
+      {errorMsg && (
+        <Alert message={errorMsg} type="error" showIcon className="mb-4 rounded-lg text-left" />
+      )}
+      {resendMsg && (
+        <Alert message={resendMsg} type="success" showIcon className="mb-4 rounded-lg text-left" />
+      )}
+
+      {/* Verify button */}
+      <Button
+        type="primary"
+        block
+        size="large"
+        loading={loading}
+        onClick={handleVerify}
+        className="!bg-[#7c3aed] hover:!bg-[#6d28d9] !border-none font-semibold text-[15px] h-[44px] rounded-lg mb-5"
+      >
+        Verify email
+      </Button>
+
+      {/* Resend */}
+      <p className="text-[13px] text-slate-500 mb-4">
+        Didn&apos;t receive the email?{' '}
+        <button
+          onClick={handleResend}
+          disabled={resendLoading}
+          className="bg-transparent border-none cursor-pointer text-[#7c3aed] font-semibold text-[13px] font-inherit p-0"
+        >
+          {resendLoading ? 'Sending...' : 'Click to resend'}
+        </button>
+      </p>
+
+      {/* Back to login */}
+      <Link href="/login" className="inline-flex items-center gap-1.5 text-[14px] text-slate-500 font-medium no-underline hover:text-[#7c3aed] transition-colors">
+        <ArrowLeftOutlined className="text-[12px]" />
+        Back to log in
+      </Link>
+    </CheckLayout>
   )
 }

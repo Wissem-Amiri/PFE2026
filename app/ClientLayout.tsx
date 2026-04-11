@@ -42,12 +42,12 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         },
       }}
     >
-      <div className="auth-root">
+      <div className="flex min-h-screen font-['Sora',sans-serif]">
         {/* ── LEFT PANEL ── */}
-        <div className="auth-left">
+        <div className="flex-1 flex flex-col justify-between py-12 px-14 bg-white min-w-0">
           {/* Logo */}
           <div>
-            <Link href="/" className="auth-logo" style={{ textDecoration: 'none' }}>
+            <Link href="/" className="text-[26px] font-extrabold text-[#7c3aed] tracking-[-0.5px] mb-10 no-underline inline-block">
               Yunr
             </Link>
 
@@ -56,29 +56,29 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           </div>
 
           {/* Footer */}
-          <div className="auth-footer">
+          <div className="mt-8 flex justify-between text-[13px] text-slate-400">
             <span>© SoftyEducation</span>
             <span>✉ help@SoftyEducation.com</span>
           </div>
         </div>
 
         {/* ── RIGHT PANEL ── */}
-        <div className="auth-right">
-          <div className="auth-curl" />
-          <div className="auth-overlay">
-            <div className="yu-sparkle auth-sparkle">✦ ✦✦</div>
-            <h2 className="auth-hero-title">Streamline your HR management</h2>
-            <p className="auth-hero-desc">
+        <div className="w-[48%] flex items-end p-14 relative overflow-hidden bg-[length:cover] bg-center bg-no-repeat" style={{ backgroundImage: "linear-gradient(135deg, rgba(15, 10, 30, 0.80) 0%, rgba(30, 15, 60, 0.70) 100%), url('https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&q=80')" }}>
+          <div className="absolute bottom-12 left-8 w-[100px] h-[90px] border-[2.5px] border-[rgba(167,139,250,0.8)] border-t-0 border-r-0 rounded-[50%_50%_50%_50%/60%_60%_40%_40%] -rotate-10" />
+          <div className="text-white max-w-[420px]">
+            <div className="yu-sparkle text-[22px] tracking-[4px] mb-[18px] opacity-90">✦ ✦✦</div>
+            <h2 className="text-[32px] font-bold leading-[1.25] mb-3.5">Streamline your HR management</h2>
+            <p className="text-[15px] opacity-80 leading-[1.7] mb-7">
               A powerful platform to manage employees, leaves, recruitment and
               AI-powered attendance — all in one place.
             </p>
-            <div className="auth-avatar-row">
-              <div className="auth-avatar-stack">
+            <div className="flex items-center gap-3">
+              <div className="flex">
                 {['#C4B5FD', '#A78BFA', '#D4A574', '#C4B5FD'].map((c, i) => (
-                  <span key={i} className="auth-avatar-dot" style={{ background: c }} />
+                  <span key={i} className="w-9 h-9 rounded-full border-[2.5px] border-white/80 -ml-2.5 inline-block" style={{ background: c }} />
                 ))}
               </div>
-              <p className="auth-join-text">Join 40,000+ users</p>
+              <p className="text-sm opacity-85">Join 40,000+ users</p>
             </div>
           </div>
         </div>
