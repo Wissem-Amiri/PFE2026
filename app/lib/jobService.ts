@@ -42,3 +42,27 @@ export async function deleteJob(id: string) {
 
   return { error }
 }
+
+/** Upload job picture to bucket */
+export async function uploadJobPicture(file: File) {
+  // Generate a random unique file name
+  const fileExt = file.name.split('.').pop()
+  const fileName = `${Math.random().toString(36).substring(2, 15)}-${Date.now()}.${fileExt}`
+  const filePath = `${fileName}`
+
+  // Upload to 'job-pictures' bucket
+  const { error: uploadError } = await supabase.storage
+    .from('job-pictures')
+    .upload(filePath, file)
+
+  if (uploadError) {
+    return { data: null, error: uploadError }
+  }
+
+  // Get public URL
+  const { data } = supabase.storage
+    .from('job-pictures')
+    .getPublicUrl(filePath)
+
+  return { publicUrl: data.publicUrl, error: null }
+}

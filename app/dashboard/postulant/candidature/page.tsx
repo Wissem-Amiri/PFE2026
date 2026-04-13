@@ -3,81 +3,79 @@
 import { useAuth } from '@/lib/AuthContext'
 import { ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons'
 import { Tag } from 'antd'
+import { useState, useEffect } from 'react'
+import { getUserCandidatures } from '@/lib/candidatureService'
 
 export default function PostulantCandidaturePage() {
-  const { profile, user } = useAuth()
+  const { user } = useAuth()
+  const [candidatures, setCandidatures] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const statusConfig = (() => {
-    switch (profile?.status) {
-      case 'approved':
-        return {
-          label: 'Approuvée', color: 'success' as const, icon: <CheckCircleOutlined />,
-          description: 'Votre candidature a été acceptée. Félicitations !',
-          bg: 'bg-emerald-50', text: 'text-emerald-700',
-        }
-      case 'rejected':
-        return {
-          label: 'Refusée', color: 'error' as const, icon: <CloseCircleOutlined />,
-          description: "Votre candidature n'a pas été retenue pour ce poste.",
-          bg: 'bg-red-50', text: 'text-red-700',
-        }
-      default:
-        return {
-          label: 'En attente', color: 'warning' as const, icon: <ClockCircleOutlined />,
-          description: "Votre dossier est en cours d'examen. Vous serez notifié par email dès qu'une décision est prise.",
-          bg: 'bg-amber-50', text: 'text-amber-700',
-        }
+  useEffect(() => {
+    async function loadCandidatures() {
+      if (user) {
+        const { data } = await getUserCandidatures(user.id)
+        setCandidatures(data ?? [])
+      }
+      setLoading(false)
     }
-  })()
+    loadCandidatures()
+  }, [user])
+
+  const getStatusConfig = (status: string) => {
+    switch (status) {
+      case 'accepted':
+        return { label: 'Acceptée', color: 'success', icon: <CheckCircleOutlined /> }
+      case 'rejected':
+        return { label: 'Refusée', color: 'error', icon: <CloseCircleOutlined /> }
+      default:
+        return { label: 'En attente', color: 'warning', icon: <ClockCircleOutlined /> }
+    }
+  }
 
   return (
     <div>
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-[#101828]">Mes candidatures</h1>
-        <p className="text-[#475467] text-sm mt-1">Suivez l&apos;état de votre dossier de candidature.</p>
+        <p className="text-[#475467] text-sm mt-1">Suivez l&apos;état de vos dossiers de candidature aux offres.</p>
       </div>
 
-      {/* Card */}
-      <div className="bg-white rounded-2xl border border-[#E4E7EC] shadow-sm p-6 max-w-lg">
-
-        {/* Status */}
-        <div className="flex items-center justify-between mb-6">
-          <p className="text-sm font-semibold text-[#344054]">Statut de la candidature</p>
-          <Tag
-            color={statusConfig.color}
-            icon={statusConfig.icon}
-            className="text-[13px] px-3 py-1 rounded-lg font-semibold"
-          >
-            {statusConfig.label}
-          </Tag>
+      {loading ? (
+        <div className="text-center py-12 text-[#475467]">Chargement de vos candidatures...</div>
+      ) : candidatures.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-[#E4E7EC] shadow-sm p-6 text-center text-[#475467]">
+          Vous n&apos;avez encore postulé à aucune offre d&apos;emploi.
         </div>
-
-        {/* Details */}
-        <div className="space-y-3 text-sm text-[#475467] border-t border-[#F2F4F7] pt-5">
-          <div className="flex justify-between items-center">
-            <span className="text-[#98A2B3]">Nom</span>
-            <span className="font-medium text-[#101828]">{profile?.user_name || '—'}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-[#98A2B3]">Email</span>
-            <span className="font-medium text-[#101828]">{user?.email}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-[#98A2B3]">Date d&apos;inscription</span>
-            <span className="font-medium text-[#101828]">
-              {profile?.created_at
-                ? new Date(profile.created_at).toLocaleDateString('fr-FR')
-                : '—'}
-            </span>
-          </div>
+      ) : (
+        <div className="grid gap-4 max-w-3xl">
+          {candidatures.map((cand) => {
+            const config = getStatusConfig(cand.status)
+            return (
+              <div key={cand.id} className="bg-white rounded-2xl border border-[#E4E7EC] shadow-sm p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <h3 className="font-bold text-[#101828] text-[16px] mb-1">{cand.job?.title || 'Offre supprimée'}</h3>
+                  <div className="flex gap-2 items-center text-sm text-[#475467]">
+                    <span className="font-medium">{cand.job?.category}</span>
+                    <span>•</span>
+                    <span>Postulé le {new Date(cand.applied_at).toLocaleDateString('fr-FR')}</span>
+                  </div>
+                </div>
+                
+                <div>
+                  <Tag
+                    color={config.color}
+                    icon={config.icon}
+                    className="text-[13px] px-3 py-1 rounded-lg font-semibold m-0"
+                  >
+                    {config.label}
+                  </Tag>
+                </div>
+              </div>
+            )
+          })}
         </div>
-
-        {/* Message */}
-        <div className={`mt-6 rounded-xl px-4 py-3 text-sm leading-relaxed ${statusConfig.bg} ${statusConfig.text}`}>
-          {statusConfig.description}
-        </div>
-      </div>
+      )}
     </div>
   )
 }

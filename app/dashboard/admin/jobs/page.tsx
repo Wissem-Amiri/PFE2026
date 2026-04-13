@@ -1,18 +1,15 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Modal, Form, Input, Select, DatePicker, Popconfirm, message } from 'antd'
-import { getAllJobs, createJob, updateJob, deleteJob } from '@/lib/jobService'
+import { Popconfirm, message } from 'antd'
+import { getAllJobs, deleteJob } from '@/lib/jobService'
 import type { Job } from '@/lib/database.types'
-import dayjs from 'dayjs'
+import Link from 'next/link'
 
 export default function JobsPage() {
   const [activeTab, setActiveTab] = useState('View all')
   const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [editingJob, setEditingJob] = useState<Job | null>(null)
-  const [form] = Form.useForm()
   const [messageApi, contextHolder] = message.useMessage()
 
   const fetchJobs = async () => {
@@ -26,53 +23,9 @@ export default function JobsPage() {
     fetchJobs()
   }, [])
 
-  const handleOpenModal = (job?: Job) => {
-    if (job) {
-      setEditingJob(job)
-      form.setFieldsValue({
-        ...job,
-        deadline: dayjs(job.deadline)
-      })
-    } else {
-      setEditingJob(null)
-      form.resetFields()
-      form.setFieldsValue({ status: 'draft' })
-    }
-    setIsModalOpen(true)
-  }
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false)
-    form.resetFields()
-    setEditingJob(null)
-  }
-
-  const handleSave = async (values: any) => {
-    const jobData = {
-      ...values,
-      deadline: values.deadline.format('YYYY-MM-DD')
-    }
-
-    if (editingJob) {
-      const { error } = await updateJob(editingJob.id, jobData)
-      if (error) {
-        messageApi.error('Error updating job')
-      } else {
-        messageApi.success('Job updated successfully')
-        fetchJobs()
-        handleCloseModal()
-      }
-    } else {
-      const { error } = await createJob(jobData)
-      if (error) {
-        messageApi.error('Error creating job')
-      } else {
-        messageApi.success('Job created successfully')
-        fetchJobs()
-        handleCloseModal()
-      }
-    }
-  }
+  useEffect(() => {
+    fetchJobs()
+  }, [])
 
   const handleDelete = async (id: string) => {
     const { error } = await deleteJob(id)
@@ -105,12 +58,12 @@ export default function JobsPage() {
       <div className="flex justify-between items-center mb-[20px]">
         <h1 className="text-[22px] font-bold text-[#101828] mb-0">Jobs</h1>
         <div className="flex gap-[8px] items-center">
-          <button 
-            onClick={() => handleOpenModal()}
-            className="px-[14px] py-[7px] border border-[#7C3AED] rounded-[8px] bg-[#7C3AED] text-white font-['Sora',sans-serif] text-[12px] font-medium cursor-pointer hover:bg-[#6D28D9]"
+          <Link 
+            href="/dashboard/admin/jobs/createJob"
+            className="px-[14px] py-[7px] border border-[#7C3AED] rounded-[8px] bg-[#7C3AED] text-white font-['Sora',sans-serif] text-[12px] font-medium cursor-pointer hover:bg-[#6D28D9] no-underline inline-block"
           >
             + Add Job
-          </button>
+          </Link>
         </div>
       </div>
 
@@ -138,12 +91,19 @@ export default function JobsPage() {
           {filteredJobs.map(job => (
             <div key={job.id} className="bg-white border border-[#E4E7EC] rounded-[16px] p-[20px] transition-all hover:-translate-y-[2px] hover:shadow-sm">
               <div className="flex justify-between items-start mb-[12px]">
-                <h3 className="text-[16px] font-semibold text-[#101828] leading-[1.3] m-0 cursor-pointer hover:text-[#7C3AED]">
-                  {job.title}
-                </h3>
+                <div className="flex gap-[12px] items-center">
+                  {job.job_picture ? (
+                    <img src={job.job_picture} alt="Job logo" className="w-[40px] h-[40px] rounded-[8px] object-cover bg-gray-50 border border-gray-100" />
+                  ) : (
+                    <div className="w-[40px] h-[40px] rounded-[8px] bg-[#4F46E5] flex-shrink-0"></div>
+                  )}
+                  <h3 className="text-[16px] font-semibold text-[#101828] leading-[1.3] m-0 cursor-pointer hover:text-[#7C3AED]">
+                    {job.title}
+                  </h3>
+                </div>
                 <div className="flex gap-[12px] text-[14px] opacity-70">
                   <span className="cursor-pointer hover:opacity-100 hover:text-[#7C3AED]" title="Copy link">🔗</span>
-                  <span onClick={() => handleOpenModal(job)} className="cursor-pointer hover:opacity-100 hover:text-[#7C3AED]" title="Edit">✏️</span>
+                  <Link href={`/dashboard/admin/jobs/editJob/${job.id}`} className="cursor-pointer hover:opacity-100 hover:text-[#7C3AED] no-underline" title="Edit">✏️</Link>
                   <Popconfirm
                     title="Delete Job"
                     description="Are you sure to delete this job?"
@@ -160,14 +120,14 @@ export default function JobsPage() {
                 {job.description}
               </p>
               <div className="flex justify-between items-center bg-[#F9FAFB] p-[12px] rounded-[8px]">
-                <div>
-                  {job.status === 'published' ? (
+                <div className="flex gap-[6px]">
+                  {job.is_open ? (
                     <div className="inline-block px-[10px] py-[4px] rounded-full text-[10px] font-semibold bg-[#DCFCE7] text-[#16A34A] border border-[#BBF7D0]">
-                      Published
+                      Open
                     </div>
                   ) : (
                     <div className="inline-block px-[10px] py-[4px] rounded-full text-[10px] font-semibold bg-[#F3F4F6] text-[#4B5563] border border-[#E5E7EB]">
-                      Draft
+                      Closed
                     </div>
                   )}
                 </div>
@@ -178,57 +138,16 @@ export default function JobsPage() {
                   </span>
                 </div>
               </div>
-              <button className="w-full mt-[16px] px-[12px] py-[8px] rounded-[8px] border-[1.5px] border-[#D0D5DD] bg-white font-['Sora',sans-serif] text-[12px] font-medium text-[#101828] cursor-pointer hover:border-[#7c3aed] transition-colors">
+              <Link 
+                href={`/dashboard/admin/jobs/${job.id}`}
+                className="block text-center w-full mt-[16px] px-[12px] py-[8px] rounded-[8px] border-[1.5px] border-[#D0D5DD] bg-white font-['Sora',sans-serif] text-[12px] font-medium text-[#101828] cursor-pointer hover:border-[#7c3aed] hover:text-[#7C3AED] transition-colors no-underline"
+              >
                 See More
-              </button>
+              </Link>
             </div>
           ))}
         </div>
       )}
-
-      {/* Add / Edit Modal */}
-      <Modal
-        title={editingJob ? "Edit Job" : "Create New Job"}
-        open={isModalOpen}
-        onCancel={handleCloseModal}
-        onOk={() => form.submit()}
-        okText={editingJob ? "Save Changes" : "Create Job"}
-        okButtonProps={{ style: { background: '#7C3AED', borderColor: '#7C3AED' } }}
-      >
-        <Form form={form} layout="vertical" onFinish={handleSave} className="mt-4">
-          <Form.Item name="title" label="Job Title" rules={[{ required: true }]}>
-            <Input placeholder="e.g. Lead Software Engineer" />
-          </Form.Item>
-          <div className="grid grid-cols-2 gap-4">
-            <Form.Item name="category" label="Category" rules={[{ required: true }]}>
-              <Select 
-                placeholder="e.g. Informatics"
-                options={[
-                  { value: 'Informatics', label: 'Informatics' },
-                  { value: 'Business', label: 'Business' },
-                  { value: 'Design', label: 'Design' },
-                  { value: 'Marketing', label: 'Marketing' },
-                  { value: 'Sales', label: 'Sales' },
-                ]}
-              />
-            </Form.Item>
-            <Form.Item name="deadline" label="Deadline" rules={[{ required: true }]}>
-              <DatePicker className="w-full" />
-            </Form.Item>
-          </div>
-          <Form.Item name="status" label="Status" rules={[{ required: true }]}>
-            <Select 
-              options={[
-                { value: 'draft', label: 'Draft' },
-                { value: 'published', label: 'Published' }
-              ]}
-            />
-          </Form.Item>
-          <Form.Item name="description" label="Description" rules={[{ required: true }]}>
-            <Input.TextArea rows={4} placeholder="Describe the job role..." />
-          </Form.Item>
-        </Form>
-      </Modal>
     </div>
   )
 }
