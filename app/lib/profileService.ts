@@ -58,6 +58,14 @@ export async function updateUserStatus(
   const updates: Partial<Utilisateur> = { status }
   if (status === 'approved') {
     updates.role = 'employee'
+    
+    // Calculate initial vacation balance (Proration)
+    const hireDate = hiringDetails?.hire_date ? new Date(hiringDetails.hire_date) : new Date()
+    const joinMonth = hireDate.getMonth() + 1 // 1-indexed
+    const monthsRemaining = 12 - joinMonth + 1
+    const initialBalance = (24 / 12) * monthsRemaining
+    
+    updates.vacation_balance = initialBalance
     if (hiringDetails) {
       if (hiringDetails.hire_date) updates.hire_date = hiringDetails.hire_date
       if (hiringDetails.department) updates.department = hiringDetails.department

@@ -4,80 +4,86 @@ import { useAuth } from '@/lib/AuthContext'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
-  DashboardOutlined,
-  UserOutlined,
   LogoutOutlined,
 } from '@ant-design/icons'
-import { Button } from 'antd'
 
 const navItems = [
-  { href: '/dashboard/employee', label: 'Accueil', icon: <DashboardOutlined /> },
-  { href: '/dashboard/employee/profile', label: 'Mon profil', icon: <UserOutlined /> },
+  { href: '/dashboard/employee', label: 'Home', icon: '🏠', badge: '10' },
+  { href: '/dashboard/employee/registrations', label: 'Registrations', icon: '📋' },
+  { href: '/dashboard/employee/employee-list', label: 'Employee', icon: '👥' },
+  { href: '/dashboard/employee/profile', label: 'Mon profil', icon: '👤' },
 ]
 
 export default function EmployeeLayout({ children }: { children: React.ReactNode }) {
   const { profile, user, signout } = useAuth()
   const pathname = usePathname()
 
+  // Get initials for avatar
+  const initials = profile?.user_name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'EM'
+
   return (
     <div className="flex min-h-screen font-['Sora',sans-serif] bg-[#f8f7ff]">
 
-      {/* ── SIDEBAR ── */}
-      <aside className="w-[260px] min-w-[260px] bg-white border-r border-slate-100 flex flex-col py-8 px-5 shadow-sm">
+        {/* ── SIDEBAR (Aligned with Admin style) ── */}
+        <aside className="w-[180px] min-w-[180px] bg-white border-r border-[#E4E7EC] flex flex-col h-screen sticky top-0">
+          
+          {/* Logo */}
+          <div className="py-[18px] px-[18px] pb-[16px] border-b border-[#E4E7EC]">
+            <span className="text-[24px] font-bold text-[#7c3aed] italic tracking-[-1px]">Yunr</span>
+            <span className="ml-2 text-[8px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full uppercase tracking-tighter">
+              Employé
+            </span>
+          </div>
 
-        {/* Logo */}
-        <div className="mb-10 px-2">
-          <span className="text-2xl font-extrabold text-[#7c3aed] tracking-tight">Yunr</span>
-          <span className="ml-2 text-xs font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">Employé</span>
-        </div>
+          {/* Nav Items */}
+          <nav className="flex-1 px-[10px] py-[14px] flex flex-col gap-[2px] overflow-y-auto">
+            {navItems.map(item => {
+              const isActive = pathname === item.href
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-[9px] px-[10px] py-[8px] rounded-[8px] text-[12px] font-medium transition-all no-underline
+                    ${isActive
+                      ? 'bg-[#EDE9FE] text-[#7C3AED]'
+                      : 'text-[#475467] hover:bg-[#F9FAFB] hover:text-[#101828]'
+                    }`}
+                >
+                  <span className="text-[14px] w-[18px] text-center">{item.icon}</span>
+                  {item.label}
+                  {item.badge && item.label === 'Home' && (
+                    <span className="ml-auto bg-[#7C3AED] text-white text-[9px] font-bold px-[6px] py-[2px] rounded-full">
+                      {item.badge}
+                    </span>
+                  )}
+                </Link>
+              )
+            })}
+          </nav>
 
-        {/* Nav */}
-        <nav className="flex flex-col gap-1 flex-1">
-          {navItems.map(item => {
-            const isActive = pathname === item.href
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all no-underline
-                  ${isActive
-                    ? 'bg-[#ede9fe] text-[#7c3aed]'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                  }`}
-              >
-                <span className="text-base">{item.icon}</span>
-                {item.label}
-              </Link>
-            )
-          })}
-        </nav>
-
-        {/* User + Logout */}
-        <div className="border-t border-slate-100 pt-5 mt-4">
-          <div className="flex items-center gap-3 px-2 mb-4">
-            <div className="w-9 h-9 rounded-full bg-[#ede9fe] flex items-center justify-center">
-              <UserOutlined className="text-[#7c3aed]" />
+          {/* Sidebar Footer (Settings + User) */}
+          <div className="px-[10px] py-[14px] border-t border-[#E4E7EC]">
+            <div className="flex items-center gap-[9px] px-[10px] py-[8px] rounded-[8px] text-[12px] font-medium text-[#475467] hover:text-[#7C3AED] cursor-pointer mb-[10px]">
+              <span className="text-[14px] w-[18px] text-center">⚙️</span>
+              Settings
             </div>
-            <div className="overflow-hidden">
-              <p className="text-sm font-semibold text-slate-800 truncate">{profile?.user_name ?? 'Employé'}</p>
-              <p className="text-xs text-slate-400 truncate">{user?.email}</p>
+            
+            <div className="flex items-center gap-[8px] px-[2px] cursor-pointer" onClick={signout}>
+              <div className="w-[32px] h-[32px] rounded-full bg-[#EDE9FE] flex items-center justify-center text-[11px] font-bold text-[#7C3AED] overflow-hidden shrink-0">
+                {initials}
+              </div>
+              <div className="overflow-hidden">
+                <h5 className="text-[11px] font-semibold text-[#101828] mb-0 truncate">{profile?.user_name ?? 'Employé'}</h5>
+                <p className="text-[10px] text-[#98A2B3] mb-0 truncate" title={user?.email}>{user?.email}</p>
+              </div>
             </div>
           </div>
-          <Button
-            block
-            icon={<LogoutOutlined />}
-            onClick={signout}
-            className="rounded-lg border-slate-200 text-slate-600 text-sm font-medium h-[38px]"
-          >
-            Se déconnecter
-          </Button>
-        </div>
-      </aside>
+        </aside>
 
-      {/* ── MAIN ── */}
-      <main className="flex-1 overflow-y-auto">
-        {children}
-      </main>
+        {/* ── MAIN CONTENT ── */}
+        <main className="flex-1 overflow-y-auto bg-white min-w-0">
+          {children}
+        </main>
     </div>
   )
 }

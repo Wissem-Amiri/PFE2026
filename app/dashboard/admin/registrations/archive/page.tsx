@@ -10,7 +10,7 @@ import {
   DeleteOutlined,
   FolderOpenOutlined 
 } from '@ant-design/icons'
-import { getArchivedCandidaturesDetailed, restoreCandidatures } from '@/lib/candidatureService'
+import { getArchivedCandidaturesDetailed, restoreCandidatures, hardDeleteCandidatures } from '@/lib/candidatureService'
 
 export default function ArchiveRegistrationsPage() {
   const [applications, setApplications] = useState<any[]>([])
@@ -29,6 +29,27 @@ export default function ArchiveRegistrationsPage() {
   }
 
   useEffect(() => { fetchApplications() }, [])
+
+  const handleHardDelete = async (ids: string[]) => {
+    Modal.confirm({
+      title: 'Delete Permanently?',
+      content: `Are you sure you want to permanently delete ${ids.length > 1 ? 'these registrations' : 'this registration'}? This action cannot be undone.`,
+      okText: 'Yes, Delete',
+      okType: 'danger',
+      cancelText: 'No',
+      centered: true,
+      onOk: async () => {
+        const { error } = await hardDeleteCandidatures(ids)
+        if (!error) {
+          message.success(`${ids.length} registration(s) deleted permanently`)
+          fetchApplications()
+          setSelectedIds(new Set())
+        } else {
+          message.error('Failed to delete registrations')
+        }
+      }
+    })
+  }
 
   const handleRestoreSelected = async () => {
     const ids = Array.from(selectedIds)
@@ -93,12 +114,20 @@ export default function ArchiveRegistrationsPage() {
           </div>
           <div className="flex gap-[8px] items-center">
             {selectedIds.size > 0 && (
-              <button
-                onClick={() => setIsRestoreModalVisible(true)}
-                className="px-[14px] py-[7px] border-[1.5px] border-[#12B76A] rounded-[8px] bg-[#ECFDF3] font-['Sora',sans-serif] text-[12px] font-semibold text-[#027A48] cursor-pointer flex items-center gap-[6px] hover:bg-[#D1FADF] transition-all"
-              >
-                <ReloadOutlined /> Restore {selectedIds.size}
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setIsRestoreModalVisible(true)}
+                  className="px-[14px] py-[7px] border-[1.5px] border-[#12B76A] rounded-[8px] bg-[#ECFDF3] font-['Sora',sans-serif] text-[12px] font-semibold text-[#027A48] cursor-pointer flex items-center gap-[6px] hover:bg-[#D1FADF] transition-all"
+                >
+                  <ReloadOutlined /> Restore {selectedIds.size}
+                </button>
+                <button
+                  onClick={() => handleHardDelete(Array.from(selectedIds))}
+                  className="px-[14px] py-[7px] border-[1.5px] border-[#F04438] rounded-[8px] bg-[#FEF2F2] font-['Sora',sans-serif] text-[12px] font-semibold text-[#D92D20] cursor-pointer flex items-center gap-[6px] hover:bg-[#FEE4E2] transition-all"
+                >
+                  <DeleteOutlined /> Clear {selectedIds.size}
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -188,17 +217,27 @@ export default function ArchiveRegistrationsPage() {
                       {new Date(app.created_at).toLocaleDateString()}
                     </td>
                     <td className="px-[16px] py-[12px] border-b border-[#F2F4F7] align-middle">
-                      <Tooltip title="Restore Registration">
-                        <button 
-                          onClick={() => {
-                            setSelectedIds(new Set([app.id]))
-                            setIsRestoreModalVisible(true)
-                          }}
-                          className="w-[32px] h-[32px] rounded-[8px] border border-[#D0D5DD] bg-white flex items-center justify-center cursor-pointer text-[#12B76A] hover:bg-[#ECFDF3] hover:border-[#12B76A] transition-all"
-                        >
-                          <ReloadOutlined className="text-[14px]" />
-                        </button>
-                      </Tooltip>
+                      <div className="flex gap-2">
+                        <Tooltip title="Restore Registration">
+                          <button 
+                            onClick={() => {
+                              setSelectedIds(new Set([app.id]))
+                              setIsRestoreModalVisible(true)
+                            }}
+                            className="w-[32px] h-[32px] rounded-[8px] border border-[#D0D5DD] bg-white flex items-center justify-center cursor-pointer text-[#12B76A] hover:bg-[#ECFDF3] hover:border-[#12B76A] transition-all"
+                          >
+                            <ReloadOutlined className="text-[14px]" />
+                          </button>
+                        </Tooltip>
+                        <Tooltip title="Delete Permanently">
+                          <button 
+                            onClick={() => handleHardDelete([app.id])}
+                            className="w-[32px] h-[32px] rounded-[8px] border border-[#D0D5DD] bg-white flex items-center justify-center cursor-pointer text-[#F04438] hover:bg-[#FEF2F2] hover:border-[#F04438] transition-all"
+                          >
+                            <DeleteOutlined className="text-[14px]" />
+                          </button>
+                        </Tooltip>
+                      </div>
                     </td>
                   </tr>
                 ))

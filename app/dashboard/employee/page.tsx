@@ -2,170 +2,395 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/AuthContext'
 import Link from 'next/link'
-import { UserOutlined, ArrowRightOutlined, CalendarOutlined, ClockCircleOutlined, StarOutlined } from '@ant-design/icons'
-import { Button, Card, Col, Row, Statistic, Spin } from 'antd'
-import { getMyLeaves } from '@/lib/congeService'
+import dayjs from 'dayjs'
+import { 
+  UserOutlined, 
+  SearchOutlined, 
+  EllipsisOutlined,
+  LockFilled,
+  MedicineBoxFilled,
+  AlertFilled,
+  SunFilled,
+  BarChartOutlined,
+  InboxOutlined,
+  ArrowDownOutlined,
+  CalendarOutlined,
+  InfoCircleOutlined
+} from '@ant-design/icons'
+import { Button, Table, Tag, Avatar, Modal, Form, DatePicker, Select, Input, message } from 'antd'
+import { getMyLeaves, requestLeave } from '@/lib/congeService'
+
+const { RangePicker } = DatePicker
+const { Option } = Select
 
 export default function EmployeeDashboardPage() {
   const { profile, user } = useAuth()
   const [leaves, setLeaves] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [form] = Form.useForm()
+  const [messageApi, contextHolder] = message.useMessage()
+
+  const loadLeaves = async () => {
+    if (user?.id) {
+      const { data } = await getMyLeaves(user.id)
+      setLeaves(data ?? [])
+    }
+    setLoading(false)
+  }
 
   useEffect(() => {
-    if (user?.id) {
-      getMyLeaves(user.id).then(({ data }) => {
-        setLeaves(data ?? [])
-        setLoading(false)
-      })
-    }
+    loadLeaves()
   }, [user?.id])
 
-  const approvedLeaves = leaves.filter(l => l.status === 'approved').length
-  const pendingLeaves = leaves.filter(l => l.status === 'pending').length
-  const totalDays = 25 // Default yearly balance
+  // Helper to calculate days taken per type (Approved or Pending)
+  const calculateDaysForType = (type: string) => {
+    return leaves
+      .filter(l => l.type === type && l.status === 'approved')
+      .reduce((total, leave) => {
+        const duration = dayjs(leave.end_date).diff(dayjs(leave.start_date), 'day') + 1
+        return total + duration
+      }, 0)
+  }
+
+  const handleApplyLeave = async (values: any) => {
+    if (!user?.id) return
+
+    setLoading(true)
+    const [start, end] = values.dates
+    
+    const leaveData = {
+      user_id: user.id,
+      type: values.type,
+      start_date: start.format('YYYY-MM-DD'),
+      end_date: end.format('YYYY-MM-DD'),
+      reason: values.reason
+    }
+
+    const { error } = await requestLeave(leaveData)
+
+    if (error) {
+      messageApi.error("Error submitting leave request: " + error.message)
+    } else {
+      messageApi.success("Leave request submitted successfully!")
+      setIsModalOpen(false)
+      form.resetFields()
+      loadLeaves()
+    }
+    setLoading(false)
+  }
+
+  const CustomEmpty = () => (
+    <div className="flex flex-col items-center justify-center py-[80px]">
+       <div className="w-[64px] h-[64px] bg-[#f9fafb] border border-[#f2f4f7] rounded-[18px] flex items-center justify-center mb-4 shadow-sm">
+          <InboxOutlined className="text-[#d0d5dd] text-[28px]" />
+       </div>
+       <span className="text-[14px] text-[#667085] font-medium">No data found</span>
+    </div>
+  )
+
+  const stats = [
+    { title: 'Vacation', count: calculateDaysForType('Vacation').toString().padStart(2, '0'), icon: <SunFilled />, color: '#FFF4ED', iconColor: '#F97316' },
+    { title: 'Casual', count: calculateDaysForType('Casual').toString().padStart(2, '0'), icon: <AlertFilled />, color: '#F5F3FF', iconColor: '#7C3AED' },
+    { title: 'Personal', count: calculateDaysForType('Personal').toString().padStart(2, '0'), icon: <LockFilled />, color: '#EFF6FF', iconColor: '#3B82F6' },
+    { title: 'Sick', count: calculateDaysForType('Sick').toString().padStart(2, '0'), icon: <MedicineBoxFilled />, color: '#FEF2F2', iconColor: '#EF4444' },
+  ]
+
+  const columns = [
+    {
+      title: (
+        <div className="flex items-center gap-1">
+          SUBMISSION DATE <ArrowDownOutlined className="text-[10px]" />
+        </div>
+      ),
+      dataIndex: 'created_at',
+      key: 'created_at',
+      render: (date: string) => (
+        <span className="text-[13px] font-medium text-[#475467]">
+          {new Date(date).toLocaleString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).replace(',', '')}
+        </span>
+      )
+    },
+    {
+      title: 'FROM - TO',
+      key: 'duration',
+      render: (record: any) => (
+        <span className="text-[13px] text-[#475467] font-medium">
+          {new Date(record.start_date).toLocaleDateString('en-US')} to {new Date(record.end_date).toLocaleDateString('en-US')}
+        </span>
+      )
+    },
+    {
+      title: 'TYPE',
+      dataIndex: 'type',
+      key: 'type',
+      render: (type: string) => {
+        let icon = <SunFilled />;
+        let color = '#F97316';
+        if (type === 'Casual') { icon = <AlertFilled />; color = '#7C3AED'; }
+        if (type === 'Personal') { icon = <LockFilled />; color = '#3B82F6'; }
+        if (type === 'Sick') { icon = <MedicineBoxFilled />; color = '#EF4444'; }
+        return (
+          <div className="flex items-center gap-2">
+            <span className="text-[12px]" style={{ color }}>{icon}</span>
+            <span className="text-[13px] font-bold" style={{ color }}>{type}</span>
+          </div>
+        )
+      }
+    },
+    {
+      title: 'STATUS',
+      dataIndex: 'status',
+      key: 'status',
+      render: (status: string) => {
+        let color = 'orange'
+        if (status === 'approved') color = 'green'
+        if (status === 'rejected') color = 'error'
+        return (
+          <Tag color={color} className="rounded-full px-3 py-0 pb-0.5 font-bold uppercase text-[9px] border-none shadow-sm capitalize">
+            {status}
+          </Tag>
+        )
+      }
+    }
+  ]
 
   return (
-    <div className="p-[28px] max-w-[1200px] mx-auto">
+    <div className="flex-1 p-[32px] px-[40px] h-full overflow-y-auto bg-[#fcfcfd]">
+      {contextHolder}
       {/* ── HEADER ── */}
-      <div className="mb-8">
-        <h1 className="text-[24px] font-bold text-slate-900 tracking-tight">
-          Welcome back, {profile?.user_name?.split(' ')[0] ?? user?.email?.split('@')[0]} 👋
-        </h1>
-        <p className="text-slate-500 text-[14px]">Here's what's happening with your workspace today.</p>
+      <div className="flex justify-between items-center mb-[32px]">
+        <h1 className="text-[26px] font-black text-[#101828] mb-0 tracking-tight">Home</h1>
+        <div className="w-[40px] h-[40px] flex items-center justify-center cursor-pointer text-[#667085] hover:bg-slate-50 rounded-full transition-all">
+          <SearchOutlined className="text-[20px]" />
+        </div>
       </div>
 
-      <Row gutter={[20, 20]} className="mb-8">
-        {/* Leaves Remaining */}
-        <Col xs={24} sm={8}>
-          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+      {/* ── STATS CARDS ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[24px] mb-[32px]">
+        {stats.map((stat, idx) => (
+          <div key={idx} className="bg-white p-[24px] rounded-[16px] border border-[#eaecf0] shadow-sm relative overflow-hidden group hover:border-[#7c3aed] transition-all">
             <div className="flex justify-between items-start mb-4">
-              <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600 text-lg">
-                <CalendarOutlined />
-              </div>
-              <span className="text-slate-300 text-lg">⋯</span>
+              <span className="text-[12px] font-extrabold text-[#667085] uppercase tracking-[0.1em]">{stat.title}</span>
+              <EllipsisOutlined className="text-[#d0d5dd] cursor-pointer" />
             </div>
-            <div className="text-[12px] font-semibold text-slate-500 mb-1">Leaves remaining</div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-[28px] font-bold text-slate-900">{totalDays - approvedLeaves}</span>
-              <span className="text-slate-400 text-sm">/ {totalDays} days</span>
-            </div>
-          </div>
-        </Col>
-
-        {/* Hours spent */}
-        <Col xs={24} sm={8}>
-          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-            <div className="flex justify-between items-start mb-4">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 text-lg">
-                <ClockCircleOutlined />
-              </div>
-              <span className="text-slate-300 text-lg">⋯</span>
-            </div>
-            <div className="text-[12px] font-semibold text-slate-500 mb-1">Hours spent (Monthly)</div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-[28px] font-bold text-slate-900">142</span>
-              <span className="text-slate-400 text-sm">hours</span>
-            </div>
-          </div>
-        </Col>
-
-        {/* Pending Requests */}
-        <Col xs={24} sm={8}>
-          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-            <div className="flex justify-between items-start mb-4">
-              <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600 text-lg">
-                <StarOutlined />
-              </div>
-              <span className="text-slate-300 text-lg">⋯</span>
-            </div>
-            <div className="text-[12px] font-semibold text-slate-500 mb-1">Pending leave requests</div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-[28px] font-bold text-slate-900">{pendingLeaves}</span>
-              <span className="text-slate-400 text-sm">requests</span>
-            </div>
-          </div>
-        </Col>
-      </Row>
-
-      <Row gutter={[24, 24]}>
-        {/* Profile Details Card */}
-        <Col xs={24} lg={12}>
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8 h-full">
-            <div className="flex items-center gap-6 mb-8">
-              <div className="w-20 h-20 rounded-full bg-[#ede9fe] flex items-center justify-center border-4 border-[#f5f3ff]">
-                <UserOutlined className="text-[#7c3aed] text-3xl" />
-              </div>
-              <div>
-                <h3 className="text-[18px] font-bold text-slate-900 m-0">{profile?.user_name || '—'}</h3>
-                <p className="text-purple-600 font-semibold text-sm">{profile?.position || 'Employee'}</p>
-                <div className="flex items-center gap-2 mt-1 px-2 py-0.5 bg-green-50 text-green-600 text-[10px] font-bold rounded-full w-fit uppercase tracking-wider">
-                  <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
-                  Active
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4 border-t border-slate-50 pt-6 mt-2">
-              <div className="flex justify-between items-center group cursor-default">
-                <span className="text-slate-400 text-[13px] font-medium">Email address</span>
-                <span className="text-slate-700 font-semibold text-[13px]">{user?.email}</span>
-              </div>
-              <div className="flex justify-between items-center group cursor-default">
-                <span className="text-slate-400 text-[13px] font-medium">Department</span>
-                <span className="text-slate-700 font-semibold text-[13px]">{profile?.department || 'Not assigned'}</span>
-              </div>
-              <div className="flex justify-between items-center group cursor-default">
-                <span className="text-slate-400 text-[13px] font-medium">Hiring Date</span>
-                <span className="text-slate-700 font-semibold text-[13px]">
-                  {profile?.hire_date ? new Date(profile.hire_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—'}
-                </span>
-              </div>
-              <div className="flex justify-between items-center group cursor-default">
-                <span className="text-slate-400 text-[13px] font-medium">Monthly Rate</span>
-                <span className="text-purple-700 font-bold text-[14px]">
-                  {/* @ts-expect-error adding custom field */}
-                  {profile?.monthly_rate ? `${profile.monthly_rate.toLocaleString()} TND` : '—'}
-                </span>
-              </div>
-            </div>
-
-            <Link href="/dashboard/employee/profile" className="block mt-10">
-              <Button
-                block
-                className="!h-[48px] !rounded-xl !border-slate-200 !text-slate-700 font-bold hover:!border-purple-600 hover:!text-purple-600 shadow-sm flex items-center justify-center gap-2"
+            <div className="flex justify-between items-center">
+              <span className="text-[34px] font-black text-[#101828]">{stat.count}</span>
+              <div 
+                className="w-[44px] h-[44px] rounded-full flex items-center justify-center text-[18px]"
+                style={{ backgroundColor: stat.color, color: stat.iconColor }}
               >
-                View profile <ArrowRightOutlined className="text-[12px]" />
-              </Button>
-            </Link>
-          </div>
-        </Col>
-
-        {/* Quick Actions / Shortcut */}
-        <Col xs={24} lg={12}>
-          <div className="bg-[#7c3aed] rounded-2xl p-8 h-full relative overflow-hidden flex flex-col justify-between shadow-xl shadow-purple-100">
-            {/* Abstract Shapes */}
-            <div className="absolute top-[-20px] right-[-20px] w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-[-50px] left-[-30px] w-60 h-60 bg-white/5 rounded-full blur-2xl"></div>
-
-            <div className="relative z-10">
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-white text-xl mb-6 backdrop-blur-md">
-                <StarOutlined />
+                {stat.icon}
               </div>
-              <h2 className="text-white text-[22px] font-bold mb-3">Planning a break?</h2>
-              <p className="text-purple-100 text-[14px] leading-relaxed max-w-[280px]">
-                Submit your leave requests quickly and track their approval status in real-time.
-              </p>
             </div>
-
-            <Link href="/dashboard/employee/leaves" className="relative z-10">
-              <button className="px-8 py-[12px] bg-white text-[#7c3aed] rounded-xl font-bold text-[14px] hover:bg-slate-50 transition-all flex items-center gap-3">
-                Manage Leaves <ArrowRightOutlined />
-              </button>
-            </Link>
           </div>
-        </Col>
-      </Row>
+        ))}
+      </div>
+
+      <div className="flex flex-col xl:flex-row gap-[32px]">
+        {/* ── MAIN CONTENT (TABLE) ── */}
+        <div className="flex-1 xl:flex-[0.73]">
+          <div className="bg-white rounded-[16px] border border-[#eaecf0] shadow-sm overflow-hidden min-h-[500px] flex flex-col">
+            <div className="px-[24px] py-[22px] border-b border-[#eaecf0]">
+              <h3 className="text-[16px] font-bold text-[#101828] mb-0">Latest Leaves</h3>
+            </div>
+            
+            <div className="flex-1">
+              <Table 
+                columns={columns} 
+                dataSource={leaves} 
+                pagination={false}
+                loading={loading}
+                className="pixel-perfect-table"
+                rowKey="id"
+                rowSelection={{ type: 'checkbox' }}
+                locale={{ emptyText: <CustomEmpty /> }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* ── SIDEBAR ── */}
+        <div className="w-full xl:w-[320px] xl:flex-[0.27] flex flex-col gap-[32px]">
+          {/* Profile Card */}
+          <div className="bg-white rounded-[20px] border border-[#eaecf0] shadow-sm p-[32px] flex flex-col items-center">
+            <div className="relative mb-6">
+               <Avatar 
+                  size={96} 
+                  src={profile?.avatar_url}
+                  icon={<UserOutlined />} 
+                  className="border-[4px] border-white shadow-xl shadow-slate-100"
+               />
+            </div>
+            <h2 className="text-[20px] font-black text-[#101828] mb-1">{profile?.user_name || 'Farouk Abichou'}</h2>
+            <p className="text-[14px] font-bold text-[#667085] mb-[28px]">{profile?.position || 'Software Developer'}</p>
+            
+            <div className="flex gap-2 w-full">
+              <Link href="/dashboard/employee/settings" className="flex-1">
+                <Button block className="h-[44px] rounded-[10px] font-bold text-[#344054] border-[#d0d5dd] hover:border-[#7c3aed] hover:text-[#7c3aed]">Settings</Button>
+              </Link>
+              <Link href="/dashboard/employee/profile" className="flex-1">
+                <Button block type="primary" className="h-[44px] rounded-[10px] font-bold bg-[#7C3AED] hover:bg-[#6D28D9] border-none shadow-md shadow-purple-50">View profile</Button>
+              </Link>
+            </div>
+          </div>
+
+          {/* Balance Card */}
+          <div className="bg-white rounded-[20px] border border-[#eaecf0] shadow-sm p-[24px]">
+             <div className="flex justify-between items-center mb-6">
+                <span className="text-[14px] font-bold text-[#101828]">Balance</span>
+                <EllipsisOutlined className="text-[#d0d5dd]" />
+             </div>
+             <div className="flex justify-between items-center">
+                <span className="text-[38px] font-black text-[#101828]">{profile?.vacation_balance ?? 0}</span>
+                <div className="w-[52px] h-[52px] rounded-[14px] bg-[#dcfce7] flex items-center justify-center text-[#16a34a] text-[24px]">
+                   <BarChartOutlined className="rotate-90" />
+                </div>
+             </div>
+          </div>
+
+          {/* Action Button */}
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="w-full h-[52px] bg-[#7c3aed] hover:bg-[#6d28d9] text-white rounded-[12px] font-black text-[15px] shadow-lg shadow-purple-100 transition-all flex items-center justify-center gap-2 cursor-pointer border-none"
+          >
+            Apply for leave
+          </button>
+        </div>
+      </div>
+
+      {/* ── APPLY LEAVE MODAL ── */}
+      <Modal
+        open={isModalOpen}
+        onCancel={() => {
+          setIsModalOpen(false)
+          form.resetFields()
+        }}
+        footer={null}
+        width={500}
+        className="apply-leave-modal"
+        centered
+        closeIcon={false}
+      >
+        <div className="p-4">
+          <div className="mb-6">
+            <h2 className="text-[20px] font-black text-[#101828] mb-1">Apply For Leave</h2>
+            <p className="text-[13px] text-[#667085] font-medium mb-0">Fill in the details below to request your time off.</p>
+          </div>
+
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={handleApplyLeave}
+            className="high-fidelity-form"
+            requiredMark={false}
+          >
+            <Form.Item
+              label={<span className="text-[13px] font-bold text-[#344054]">Leave Date</span>}
+              name="dates"
+              rules={[{ required: true, message: 'Please select your leave dates' }]}
+              extra={<span className="text-[11px] text-[#667085] flex items-center gap-1 mt-1"><InfoCircleOutlined className="text-[10px]" /> This is a hint text to help user.</span>}
+            >
+              <RangePicker 
+                className="w-full h-[44px] rounded-[10px] border-[#d0d5dd]" 
+                placeholder={['Start Date', 'End Date']}
+              />
+            </Form.Item>
+
+            <Form.Item
+              label={<span className="text-[13px] font-bold text-[#344054]">Type</span>}
+              name="type"
+              rules={[{ required: true, message: 'Please select leave type' }]}
+              extra={<span className="text-[11px] text-[#667085] flex items-center gap-1 mt-1"><InfoCircleOutlined className="text-[10px]" /> This is a hint text to help user.</span>}
+            >
+              <Select placeholder="Select..." className="w-full h-[44px] rounded-[10px] items-center flex" suffixIcon={<ArrowDownOutlined className="text-[12px]" />}>
+                <Option value="Vacation">Vacation</Option>
+                <Option value="Casual">Casual</Option>
+                <Option value="Personal">Personal</Option>
+                <Option value="Sick">Sick</Option>
+              </Select>
+            </Form.Item>
+
+            <Form.Item
+              label={<span className="text-[13px] font-bold text-[#344054]">Description</span>}
+              name="reason"
+              rules={[{ required: true, message: 'Please provide a reason' }]}
+              help={<span className="text-red-500 text-[11px] hidden">This is a error message.</span>}
+            >
+              <Input.TextArea 
+                placeholder="Type..." 
+                rows={4} 
+                className="rounded-[10px] border-[#d0d5dd] p-3 text-[14px]"
+              />
+            </Form.Item>
+
+            <div className="flex gap-3 mt-8">
+              <Button 
+                onClick={() => {
+                  setIsModalOpen(false)
+                  form.resetFields()
+                }}
+                className="flex-1 h-[48px] rounded-[12px] font-black text-[#344054] border-[#d0d5dd] hover:border-[#7c3aed] hover:text-[#7c3aed]"
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="primary" 
+                htmlType="submit" 
+                loading={loading}
+                className="flex-1 h-[48px] rounded-[12px] font-black bg-[#7C3AED] hover:bg-[#6D28D9] border-none shadow-md shadow-purple-100"
+              >
+                Apply For Leave
+              </Button>
+            </div>
+          </Form>
+        </div>
+      </Modal>
+
+      <style jsx global>{`
+        .pixel-perfect-table .ant-table-thead > tr > th {
+          background: #fcfcfd !important;
+          color: #667085 !important;
+          font-size: 11px !important;
+          text-transform: uppercase !important;
+          font-weight: 800 !important;
+          letter-spacing: 0.1em !important;
+          padding: 18px 24px !important;
+          border-bottom: 2px solid #f2f4f7 !important;
+        }
+        .pixel-perfect-table .ant-table-tbody > tr > td {
+          padding: 20px 24px !important;
+          border-bottom: 1px solid #f2f4f7 !important;
+        }
+        .pixel-perfect-table .ant-table-row:hover > td {
+          background-color: #f9fafb !important;
+        }
+        .ant-table-placeholder {
+           padding: 0 !important;
+           border: none !important;
+        }
+
+        /* Modal styling */
+        .apply-leave-modal .ant-modal-content {
+          border-radius: 20px !important;
+          padding: 24px !important;
+          box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1) !important;
+        }
+        .high-fidelity-form .ant-form-item-label > label {
+          height: auto !important;
+        }
+        .ant-select-selector {
+          border-radius: 10px !important;
+          border-color: #d0d5dd !important;
+          height: 44px !important;
+          display: flex !important;
+          align-items: center !important;
+        }
+        .ant-picker {
+          border-radius: 10px !important;
+          border-color: #d0d5dd !important;
+        }
+      `}</style>
     </div>
   )
 }
-

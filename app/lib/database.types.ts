@@ -18,6 +18,7 @@ export interface Utilisateur {
   position: string | null
   hire_date: string | null
   avatar_url: string | null
+  vacation_balance: number | null
   created_at: string | null
   country?: string | null
   timezone?: string | null

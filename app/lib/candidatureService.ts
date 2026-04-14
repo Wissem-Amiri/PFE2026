@@ -118,6 +118,16 @@ export async function restoreCandidatures(ids: string[]) {
   return { error }
 }
 
+/** Permanent delete candidatures from database (Hard Delete) */
+export async function hardDeleteCandidatures(ids: string[]) {
+  const { error } = await supabase
+    .from('candidatures')
+    .delete()
+    .in('id', ids)
+  
+  return { error }
+}
+
 /** Permanent delete all other candidatures for a user (Maintenance/Cleanup) */
 export async function deleteAllOtherCandidatures(userId: string, excludeCandidatureId: string) {
   const { error } = await supabase
