@@ -29,7 +29,8 @@ export default function CreateJobPage() {
     const { error } = await createJob(jobData as any)
     
     if (error) {
-      messageApi.error('Erreur lors de la création du Job')
+      console.error('Job creation error details:', { message: error.message, code: error.code, details: error })
+      messageApi.error(`Erreur: ${error.message || 'lors de la création du Job'}`)
     } else {
       messageApi.success('Job créé avec succès !')
       setTimeout(() => router.push('/dashboard/admin/jobs'), 1000)

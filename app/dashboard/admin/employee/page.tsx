@@ -4,11 +4,11 @@ import { useEffect, useState } from 'react'
 import { SearchOutlined, TeamOutlined, MailOutlined, BankOutlined, UserOutlined, ArrowLeftOutlined } from '@ant-design/icons'
 import { Input, Avatar, Card, Tag, Spin, Button } from 'antd'
 import { getAllUsers } from '@/lib/profileService'
-import type { Utilisateur } from '@/lib/database.types'
+import type { FullProfile } from '@/lib/database.types'
 import { useRouter } from 'next/navigation'
 
 export default function AdminEmployeeListPage() {
-  const [employees, setEmployees] = useState<Utilisateur[]>([])
+  const [employees, setEmployees] = useState<FullProfile[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const router = useRouter()
@@ -27,8 +27,8 @@ export default function AdminEmployeeListPage() {
 
   const filtered = employees.filter(e =>
     (e.user_name ?? '').toLowerCase().includes(search.toLowerCase()) ||
-    (e.department ?? '').toLowerCase().includes(search.toLowerCase()) ||
-    (e.position ?? '').toLowerCase().includes(search.toLowerCase())
+    (e.employee?.department ?? '').toLowerCase().includes(search.toLowerCase()) ||
+    (e.employee?.position ?? '').toLowerCase().includes(search.toLowerCase())
   )
 
   return (
@@ -82,7 +82,7 @@ export default function AdminEmployeeListPage() {
               <div className="relative mb-5 mt-2">
                 <Avatar
                   size={90}
-                  src={emp.avatar_url}
+                  src={emp.avatar_url ?? undefined}
                   icon={<UserOutlined />}
                   className="bg-[#f5f3ff] text-[#7c3aed] border-[4px] border-white shadow-md ring-1 ring-slate-100"
                 />
@@ -93,13 +93,13 @@ export default function AdminEmployeeListPage() {
                 {emp.user_name || 'Anonymous'}
               </h3>
               <p className="text-[#667085] text-[13px] font-bold mb-4 uppercase tracking-widest">
-                {emp.position || 'Team Member'}
+                {emp.employee?.position || 'Team Member'}
               </p>
 
               <div className="grid grid-cols-1 gap-3 w-full mt-auto pt-5 border-t border-[#f2f4f7]">
                 <div className="flex items-center justify-center gap-2.5 text-[12px] text-[#475467] font-medium">
                   <BankOutlined className="text-[#98A2B3]" />
-                  <span>{emp.department || 'General'}</span>
+                  <span>{emp.employee?.department || 'General'}</span>
                 </div>
                 <div className="flex items-center justify-center gap-2.5 text-[12px] text-[#475467] font-medium">
                   <MailOutlined className="text-[#98A2B3]" />

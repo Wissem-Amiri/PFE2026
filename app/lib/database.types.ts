@@ -7,27 +7,52 @@ export interface Experience {
   projectUrl?: string
 }
 
-export interface Utilisateur {
+export interface BaseUtilisateur {
   id: string
   user_name: string | null
   email: string | null
   role: 'postulant' | 'employee' | 'admin'
   status: 'pending' | 'approved' | 'rejected'
   phone: string | null
+  avatar_url: string | null
+  created_at: string | null
+}
+
+export interface Postulant {
+  id: string
+  bio: string | null
+  country: string | null
+  timezone: string | null
+  resume_url: string | null
+  motivational_letter_url: string | null
+  website: string | null
+  portfolio: string | null
+  position: string | null
+  experiences: Experience[] | null
+}
+
+export interface Employee {
+  id: string
   department: string | null
   position: string | null
   hire_date: string | null
-  avatar_url: string | null
   vacation_balance: number | null
-  created_at: string | null
-  country?: string | null
-  timezone?: string | null
-  bio?: string | null
-  resume_url?: string | null
-  motivational_letter_url?: string | null
-  website?: string | null
-  portfolio?: string | null
-  experiences?: Experience[] | null
+  monthly_rate: number | null
+  bio: string | null
+  country: string | null
+  postulant_id: string | null
+}
+
+export interface Admin {
+  id: string
+  department: string | null
+}
+
+/** Combined type for convenience in some views */
+export type FullProfile = BaseUtilisateur & {
+  postulant?: Postulant | null
+  employee?: Employee | null
+  admin?: Admin | null
 }
 
 export interface Job {
@@ -44,15 +69,16 @@ export interface Job {
 
 export interface Candidature {
   id: string
-  user_id: string
+  postulant_id: string
   job_id: string
   status: 'pending' | 'accepted' | 'rejected'
+  is_archived: boolean
   applied_at: string
 }
 
 export interface Conge {
   id: string
-  user_id: string
+  employee_id: string
   type: string
   start_date: string
   end_date: string
@@ -65,9 +91,27 @@ export interface Database {
   public: {
     Tables: {
       utilisateur: {
-        Row: Utilisateur
-        Insert: Partial<Utilisateur> & { id: string }
-        Update: Partial<Utilisateur>
+        Row: BaseUtilisateur
+        Insert: Partial<BaseUtilisateur> & { id: string }
+        Update: Partial<BaseUtilisateur>
+        Relationships: []
+      }
+      postulant: {
+        Row: Postulant
+        Insert: Partial<Postulant> & { id: string }
+        Update: Partial<Postulant>
+        Relationships: []
+      }
+      employee: {
+        Row: Employee
+        Insert: Partial<Employee> & { id: string }
+        Update: Partial<Employee>
+        Relationships: []
+      }
+      admin: {
+        Row: Admin
+        Insert: Partial<Admin> & { id: string }
+        Update: Partial<Admin>
         Relationships: []
       }
       jobs: {
@@ -78,7 +122,7 @@ export interface Database {
       }
       candidatures: {
         Row: Candidature
-        Insert: Omit<Candidature, 'id' | 'applied_at' | 'status'> & { id?: string; applied_at?: string; status?: 'pending' | 'accepted' | 'rejected' }
+        Insert: Omit<Candidature, 'id' | 'applied_at' | 'status' | 'is_archived'> & { id?: string; applied_at?: string; status?: 'pending' | 'accepted' | 'rejected'; is_archived?: boolean }
         Update: Partial<Omit<Candidature, 'id'>>
         Relationships: []
       }

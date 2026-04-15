@@ -5,11 +5,11 @@ import dayjs from 'dayjs'
 
 /** Request a new leave (Employee) */
 export async function requestLeave(leaveData: Omit<Conge, 'id' | 'created_at' | 'status'>) {
-  // 1. Validation for ALL leave types (Vacation, Casual, Personal, Sick)
-  const { data: profile } = await getProfile(leaveData.user_id)
-  if (profile) {
+  // 1. Validation for ALL leave types
+  const { data: profile } = await getProfile(leaveData.employee_id)
+  if (profile?.employee) {
     const duration = dayjs(leaveData.end_date).diff(dayjs(leaveData.start_date), 'day') + 1
-    const currentBalance = profile.vacation_balance ?? 0
+    const currentBalance = profile.employee.vacation_balance ?? 0
     
     if (duration > currentBalance) {
       return { data: null, error: { message: `Insufficient Balance. You have ${currentBalance} days remaining, but requested ${duration} days.` } }
@@ -25,11 +25,11 @@ export async function requestLeave(leaveData: Omit<Conge, 'id' | 'created_at' | 
 }
 
 /** Get leaves for a specific user (Employee) */
-export async function getMyLeaves(userId: string) {
+export async function getMyLeaves(employeeId: string) {
   const { data, error } = await supabase
     .from('conges')
     .select('*')
-    .eq('user_id', userId)
+    .eq('employee_id', employeeId)
     .order('created_at', { ascending: false })
   
   return { data: data as Conge[], error }
@@ -41,11 +41,14 @@ export async function getAllLeavesDetailed() {
     .from('conges')
     .select(`
       *,
-      user:utilisateur(*)
+      employee:employee(
+        *,
+        user:utilisateur(*)
+      )
     `)
     .order('created_at', { ascending: false })
   
-  return { data: data as (Conge & { user: any })[], error }
+  return { data: data as any[], error }
 }
 
 /** Update leave status (Admin) */
@@ -55,11 +58,11 @@ export async function updateLeaveStatus(leaveId: string, status: 'approved' | 'r
     const { data: leave } = await supabase.from('conges').select('*').eq('id', leaveId).single()
     if (leave) {
       const duration = dayjs(leave.end_date).diff(dayjs(leave.start_date), 'day') + 1
-      const { data: profile } = await getProfile(leave.user_id)
+      const { data: profile } = await getProfile(leave.employee_id)
       
-      if (profile) {
-        const newBalance = (profile.vacation_balance ?? 0) - duration
-        await supabase.from('utilisateur').update({ vacation_balance: newBalance }).eq('id', leave.user_id)
+      if (profile?.employee) {
+        const newBalance = (profile.employee.vacation_balance ?? 0) - duration
+        await supabase.from('employee').update({ vacation_balance: newBalance }).eq('id', leave.employee_id)
       }
     }
   }

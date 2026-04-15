@@ -5,7 +5,7 @@ import { getAllLeavesDetailed } from '@/lib/congeService'
 import { getAllCandidaturesDetailed } from '@/lib/candidatureService'
 import { useAuth } from '@/lib/AuthContext'
 import Link from 'next/link'
-import type { Utilisateur } from '@/lib/database.types'
+import type { FullProfile } from '@/lib/database.types'
 import {
   Avatar,
   Table,
@@ -33,8 +33,8 @@ import dayjs from 'dayjs'
 
 export default function AdminDashboardPage() {
   const { user } = useAuth()
-  const [adminProfile, setAdminProfile] = useState<Utilisateur | null>(null)
-  const [users, setUsers] = useState<Utilisateur[]>([])
+  const [adminProfile, setAdminProfile] = useState<FullProfile | null>(null)
+  const [users, setUsers] = useState<FullProfile[]>([])
   const [leaves, setLeaves] = useState<any[]>([])
   const [candidatures, setCandidatures] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -69,7 +69,7 @@ export default function AdminDashboardPage() {
       id: l.id, 
       date: l.created_at,
       type: 'leave',
-      user: l.user,
+      user: l.employee?.user,
       details: `Requested ${l.type} Leave`,
       status: l.status,
       leaveType: l.type
@@ -78,7 +78,7 @@ export default function AdminDashboardPage() {
       id: c.id,
       date: c.applied_at,
       type: 'candidature',
-      user: c.user,
+      user: c.postulant?.user,
       details: `Applied for ${c.job?.title}`,
       status: c.status
     }))
@@ -133,7 +133,7 @@ export default function AdminDashboardPage() {
       )
     },
     {
-      title: 'EMPLOYEE',
+      title: 'APPLICANT',
       key: 'user',
       render: (record: any) => (
         <div className="flex items-center gap-[12px]">

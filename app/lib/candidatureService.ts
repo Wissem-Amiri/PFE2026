@@ -2,11 +2,11 @@ import { supabase } from './supabase'
 import type { Database, Candidature } from './database.types'
 
 /** Apply to a Job */
-export async function applyToJob(userId: string, jobId: string) {
+export async function applyToJob(postulantId: string, jobId: string) {
   const { data, error } = await supabase
     .from('candidatures')
     // @ts-expect-error type fallback fix
-    .insert([{ user_id: userId, job_id: jobId }])
+    .insert([{ postulant_id: postulantId, job_id: jobId }])
     .select()
     .single()
   
@@ -14,11 +14,11 @@ export async function applyToJob(userId: string, jobId: string) {
 }
 
 /** Check if user applied to a Job */
-export async function checkIfApplied(userId: string, jobId: string) {
+export async function checkIfApplied(postulantId: string, jobId: string) {
   const { data, error } = await supabase
     .from('candidatures')
     .select('id')
-    .eq('user_id', userId)
+    .eq('postulant_id', postulantId)
     .eq('job_id', jobId)
     .maybeSingle()
   
@@ -26,15 +26,14 @@ export async function checkIfApplied(userId: string, jobId: string) {
 }
 
 /** Get all candidatures for a user, including job details */
-export async function getUserCandidatures(userId: string) {
-  // Using join syntax to fetch the job details along with candidature
+export async function getUserCandidatures(postulantId: string) {
   const { data, error } = await supabase
     .from('candidatures')
     .select(`
       *,
       job:jobs(*)
     `)
-    .eq('user_id', userId)
+    .eq('postulant_id', postulantId)
     .order('applied_at', { ascending: false })
   
   return { data: data as any[], error }
@@ -46,7 +45,10 @@ export async function getJobApplications(jobId: string) {
     .from('candidatures')
     .select(`
       *,
-      user:utilisateur(*)
+      postulant:postulant(
+        *,
+        user:utilisateur(*)
+      )
     `)
     .eq('job_id', jobId)
     .order('applied_at', { ascending: false })
@@ -72,7 +74,10 @@ export async function getAllCandidaturesDetailed() {
     .from('candidatures')
     .select(`
       *,
-      user:utilisateur(*),
+      postulant:postulant(
+        *,
+        user:utilisateur(*)
+      ),
       job:jobs(*)
     `)
     .eq('is_archived', false)
@@ -87,7 +92,10 @@ export async function getArchivedCandidaturesDetailed() {
     .from('candidatures')
     .select(`
       *,
-      user:utilisateur(*),
+      postulant:postulant(
+        *,
+        user:utilisateur(*)
+      ),
       job:jobs(*)
     `)
     .eq('is_archived', true)
@@ -100,7 +108,6 @@ export async function getArchivedCandidaturesDetailed() {
 export async function archiveCandidatures(ids: string[]) {
   const { error } = await supabase
     .from('candidatures')
-    // @ts-expect-error type fallback fix
     .update({ is_archived: true })
     .in('id', ids)
   
@@ -111,7 +118,6 @@ export async function archiveCandidatures(ids: string[]) {
 export async function restoreCandidatures(ids: string[]) {
   const { error } = await supabase
     .from('candidatures')
-    // @ts-expect-error type fallback fix
     .update({ is_archived: false })
     .in('id', ids)
   
@@ -129,11 +135,11 @@ export async function hardDeleteCandidatures(ids: string[]) {
 }
 
 /** Permanent delete all other candidatures for a user (Maintenance/Cleanup) */
-export async function deleteAllOtherCandidatures(userId: string, excludeCandidatureId: string) {
+export async function deleteAllOtherCandidatures(postulantId: string, excludeCandidatureId: string) {
   const { error } = await supabase
     .from('candidatures')
     .delete()
-    .eq('user_id', userId)
+    .eq('postulant_id', postulantId)
     .neq('id', excludeCandidatureId)
   
   return { error }

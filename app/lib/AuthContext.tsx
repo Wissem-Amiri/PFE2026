@@ -11,7 +11,7 @@ import type { Utilisateur } from "./database.types";
 type AuthContextType = {
   user: User | null | undefined
   session: Session | null | undefined
-  profile: Utilisateur | null | undefined
+  profile: FullProfile | null | undefined
   isLoading: boolean
   signIn: (email: string, password: string) => Promise<{ error: any; data: any }>
   signInWithOAuth: (provider: any, options?: any) => Promise<{ error: any; data: any }>
@@ -27,7 +27,7 @@ const AuthContext = createContext<AuthContextType | null>(null)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>()
   const [user, setUser] = useState<User | null>()
-  const [profile, setProfile] = useState<Utilisateur | null>()
+  const [profile, setProfile] = useState<FullProfile | null>()
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
 

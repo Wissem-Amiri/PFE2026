@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/AuthContext'
 import { getProfile, updateProfile, uploadDocument } from '@/lib/profileService'
 import { uploadJobPicture, getJobById } from '@/lib/jobService' // using this for avatar
 import { applyToJob, getUserCandidatures } from '@/lib/candidatureService'
-import type { Utilisateur } from '@/lib/database.types'
+import type { FullProfile } from '@/lib/database.types'
 import { Form, Input, Select, Upload, Button, message, Space } from 'antd'
 import { CheckCircleFilled, CloudUploadOutlined, LoadingOutlined, PlusOutlined, MinusCircleOutlined } from '@ant-design/icons'
 
@@ -55,7 +55,7 @@ export default function CompleteProfilePage() {
         const firstName = names[0] || ''
         const lastName = names.slice(1).join(' ') || ''
 
-        let resolvedPosition = data.position || '';
+        let resolvedPosition = data.postulant?.position || '';
 
         // Auto-resolve role based on job application
         if (applyToJobId) {
@@ -72,17 +72,17 @@ export default function CompleteProfilePage() {
           firstName,
           lastName,
           position: resolvedPosition,
-          country: data.country || undefined,
-          timezone: data.timezone || undefined,
-          bio: data.bio || '',
-          website: data.website || '',
-          portfolio: data.portfolio || '',
-          experiences: data.experiences || [],
+          country: data.postulant?.country || undefined,
+          timezone: data.postulant?.timezone || undefined,
+          bio: data.postulant?.bio || '',
+          website: data.postulant?.website || '',
+          portfolio: data.postulant?.portfolio || '',
+          experiences: data.postulant?.experiences || [],
         })
 
         setAvatarUrl(data.avatar_url || null)
-        setResumeUrl(data.resume_url || null)
-        setLetterUrl(data.motivational_letter_url || null)
+        setResumeUrl(data.postulant?.resume_url || null)
+        setLetterUrl(data.postulant?.motivational_letter_url || null)
       }
       setLoading(false)
     })
@@ -94,24 +94,31 @@ export default function CompleteProfilePage() {
 
     const fullName = `${values.firstName} ${values.lastName}`.trim()
 
-    // 1. Update Profile
-    const { error: profileError } = await updateProfile(user.id, {
+    // 1. Update Profile - Structuring for 4-table architecture
+    const updatePayload: Partial<FullProfile> = {
       user_name: fullName,
-      position: values.position,
-      country: values.country,
-      timezone: values.timezone,
-      bio: values.bio,
-      website: values.website,
-      portfolio: values.portfolio,
-      experiences: values.experiences?.map((exp: any) => ({ ...exp, id: exp.id || Math.random().toString(36).substr(2, 9) })) || [],
       avatar_url: avatarUrl,
-      resume_url: resumeUrl,
-      motivational_letter_url: letterUrl
-    } as any) // cast to any due to new fields
+      postulant: {
+        position: values.position,
+        country: values.country,
+        timezone: values.timezone,
+        bio: values.bio,
+        website: values.website,
+        portfolio: values.portfolio,
+        resume_url: resumeUrl,
+        motivational_letter_url: letterUrl,
+        experiences: values.experiences?.map((exp: any) => ({ 
+          ...exp, 
+          id: exp.id || Math.random().toString(36).substr(2, 9) 
+        })) || []
+      }
+    }
+
+    const { error: profileError } = await updateProfile(user.id, updatePayload)
 
     if (profileError) {
-      console.error("Profile Error Details:", profileError)
-      messageApi.error("Erreur lors de la mise à jour du profil.")
+      console.error("Profile Error Details:", { message: profileError.message, code: (profileError as any).code, details: profileError })
+      messageApi.error(`Erreur: ${profileError.message || 'lors de la mise à jour du profil.'}`)
       setSaving(false)
       return
     }

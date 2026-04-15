@@ -15,7 +15,7 @@ import {
 } from '@ant-design/icons'
 import { getAllUsers, updateUserStatus as updateGlobalUserStatus, exportToCSV, downloadCSV } from '@/lib/profileService'
 import { getAllCandidaturesDetailed, updateCandidatureStatus, archiveCandidatures, deleteAllOtherCandidatures } from '@/lib/candidatureService'
-import type { Utilisateur } from '@/lib/database.types'
+import type { FullProfile } from '@/lib/database.types'
 
 export default function RegistrationsPage() {
   const [applications, setApplications] = useState<any[]>([])
@@ -86,11 +86,11 @@ export default function RegistrationsPage() {
     if (!appError) {
       // 2. If approving, also ensure the user becomes an employee (global role)
       if (status === 'accepted') {
-        const { error: statusError } = await updateGlobalUserStatus(application.user_id, 'approved', hiringDetails)
+        const { error: statusError } = await updateGlobalUserStatus(application.postulant_id, 'approved', hiringDetails)
         
         if (!statusError) {
           // 3. Cleanup: Delete all other candidatures for this user permanently
-          await deleteAllOtherCandidatures(application.user_id, application.id)
+          await deleteAllOtherCandidatures(application.postulant_id, application.id)
         }
       }
 
@@ -124,13 +124,13 @@ export default function RegistrationsPage() {
 
   const handleExport = () => {
     // Note: Exporting users from applications list
-    const usersToExport = Array.from(new Set(filtered.map(app => app.user)))
+    const usersToExport = Array.from(new Set(filtered.map(app => app.postulant?.user)))
     const csv = exportToCSV(usersToExport as any[])
     downloadCSV(csv, 'registrations.csv')
   }
 
   const filtered = applications.filter(app => {
-    const u = app.user
+    const u = app.postulant?.user
     const j = app.job
 
     const matchSearch =
@@ -222,16 +222,16 @@ export default function RegistrationsPage() {
                     <td className="px-[16px] py-[10px] text-[12px] text-[#475467] border-b border-[#F2F4F7] align-middle">
                       <div className="flex items-center gap-[10px]">
                         <div className="w-[32px] h-[32px] rounded-full overflow-hidden bg-[#EDE9FE] flex items-center justify-center text-[11px] font-bold text-[#7C3AED] shrink-0">
-                          {app.user?.user_name?.substring(0, 2).toUpperCase() || 'UN'}
+                          {app.postulant?.user?.user_name?.substring(0, 2).toUpperCase() || 'UN'}
                         </div>
                         <div>
-                          <div className="text-[12px] font-semibold text-[#101828]">{app.user?.user_name || '—'}</div>
+                          <div className="text-[12px] font-semibold text-[#101828]">{app.postulant?.user?.user_name || '—'}</div>
                           <div className="text-[11px] text-[#7C3AED] font-medium">{app.job?.title || 'Postulant'}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-[16px] py-[10px] text-[12px] text-[#475467] border-b border-[#F2F4F7] align-middle">
-                      {app.user?.email || '—'}
+                      {app.postulant?.user?.email || '—'}
                     </td>
                     <td className="px-[16px] py-[10px] text-[12px] text-[#475467] border-b border-[#F2F4F7] align-middle">
                       {new Date(app.applied_at || app.created_at || '').toLocaleString('en-US', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
@@ -243,7 +243,7 @@ export default function RegistrationsPage() {
                     </td>
                     <td className="px-[16px] py-[10px] text-[12px] text-[#475467] border-b border-[#F2F4F7] align-middle">
                       <div className="flex gap-[6px] items-center">
-                        <button onClick={() => router.push(`/dashboard/admin/registrations/${app.user_id}?jobId=${app.job_id}`)} className="w-[28px] h-[28px] rounded-[6px] border border-[#D0D5DD] bg-white flex items-center justify-center cursor-pointer text-[13px] hover:border-[#7c3aed]">
+                        <button onClick={() => router.push(`/dashboard/admin/registrations/${app.postulant_id}?jobId=${app.job_id}`)} className="w-[28px] h-[28px] rounded-[6px] border border-[#D0D5DD] bg-white flex items-center justify-center cursor-pointer text-[13px] hover:border-[#7c3aed]">
                           👁
                         </button>
                         {app.status === 'pending' && (
@@ -306,7 +306,7 @@ export default function RegistrationsPage() {
               </div>
 
               <h3 className="text-[16px] font-bold text-[#101828] text-center mb-[4px]">
-                Accept {appToApprove.user?.user_name || 'this candidate'} for {appToApprove.job?.title || 'this position'}?
+                Accept {appToApprove.postulant?.user?.user_name || 'this candidate'} for {appToApprove.job?.title || 'this position'}?
               </h3>
 
               <p className="text-[13px] text-[#475467] text-center leading-[1.6] mb-[20px]">
@@ -352,7 +352,7 @@ export default function RegistrationsPage() {
               </div>
 
               <h3 className="text-[16px] font-bold text-[#101828] text-center mb-[4px]">
-                Reject {appToDelete.user?.user_name || 'this candidate'} for {appToDelete.job?.title || 'this position'}?
+                Reject {appToDelete.postulant?.user?.user_name || 'this candidate'} for {appToDelete.job?.title || 'this position'}?
               </h3>
 
               <p className="text-[13px] text-[#475467] text-center leading-[1.6] mb-[20px]">

@@ -3,9 +3,9 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/AuthContext'
 import Link from 'next/link'
 import dayjs from 'dayjs'
-import { 
-  UserOutlined, 
-  SearchOutlined, 
+import {
+  UserOutlined,
+  SearchOutlined,
   EllipsisOutlined,
   LockFilled,
   MedicineBoxFilled,
@@ -58,9 +58,9 @@ export default function EmployeeDashboardPage() {
 
     setLoading(true)
     const [start, end] = values.dates
-    
+
     const leaveData = {
-      user_id: user.id,
+      employee_id: user.id,
       type: values.type,
       start_date: start.format('YYYY-MM-DD'),
       end_date: end.format('YYYY-MM-DD'),
@@ -82,10 +82,10 @@ export default function EmployeeDashboardPage() {
 
   const CustomEmpty = () => (
     <div className="flex flex-col items-center justify-center py-[80px]">
-       <div className="w-[64px] h-[64px] bg-[#f9fafb] border border-[#f2f4f7] rounded-[18px] flex items-center justify-center mb-4 shadow-sm">
-          <InboxOutlined className="text-[#d0d5dd] text-[28px]" />
-       </div>
-       <span className="text-[14px] text-[#667085] font-medium">No data found</span>
+      <div className="w-[64px] h-[64px] bg-[#f9fafb] border border-[#f2f4f7] rounded-[18px] flex items-center justify-center mb-4 shadow-sm">
+        <InboxOutlined className="text-[#d0d5dd] text-[28px]" />
+      </div>
+      <span className="text-[14px] text-[#667085] font-medium">No data found</span>
     </div>
   )
 
@@ -176,7 +176,7 @@ export default function EmployeeDashboardPage() {
             </div>
             <div className="flex justify-between items-center">
               <span className="text-[34px] font-black text-[#101828]">{stat.count}</span>
-              <div 
+              <div
                 className="w-[44px] h-[44px] rounded-full flex items-center justify-center text-[18px]"
                 style={{ backgroundColor: stat.color, color: stat.iconColor }}
               >
@@ -194,11 +194,11 @@ export default function EmployeeDashboardPage() {
             <div className="px-[24px] py-[22px] border-b border-[#eaecf0]">
               <h3 className="text-[16px] font-bold text-[#101828] mb-0">Latest Leaves</h3>
             </div>
-            
+
             <div className="flex-1">
-              <Table 
-                columns={columns} 
-                dataSource={leaves} 
+              <Table
+                columns={columns}
+                dataSource={leaves}
                 pagination={false}
                 loading={loading}
                 className="pixel-perfect-table"
@@ -215,16 +215,16 @@ export default function EmployeeDashboardPage() {
           {/* Profile Card */}
           <div className="bg-white rounded-[20px] border border-[#eaecf0] shadow-sm p-[32px] flex flex-col items-center">
             <div className="relative mb-6">
-               <Avatar 
-                  size={96} 
-                  src={profile?.avatar_url}
-                  icon={<UserOutlined />} 
-                  className="border-[4px] border-white shadow-xl shadow-slate-100"
-               />
+              <Avatar
+                size={96}
+                src={profile?.avatar_url ?? undefined}
+                icon={<UserOutlined />}
+                className="border-[4px] border-white shadow-xl shadow-slate-100"
+              />
             </div>
             <h2 className="text-[20px] font-black text-[#101828] mb-1">{profile?.user_name || 'Farouk Abichou'}</h2>
-            <p className="text-[14px] font-bold text-[#667085] mb-[28px]">{profile?.position || 'Software Developer'}</p>
-            
+            <p className="text-[14px] font-bold text-[#667085] mb-[28px]">{profile?.employee?.position || 'Software Developer'}</p>
+
             <div className="flex gap-2 w-full">
               <Link href="/dashboard/employee/settings" className="flex-1">
                 <Button block className="h-[44px] rounded-[10px] font-bold text-[#344054] border-[#d0d5dd] hover:border-[#7c3aed] hover:text-[#7c3aed]">Settings</Button>
@@ -237,20 +237,20 @@ export default function EmployeeDashboardPage() {
 
           {/* Balance Card */}
           <div className="bg-white rounded-[20px] border border-[#eaecf0] shadow-sm p-[24px]">
-             <div className="flex justify-between items-center mb-6">
-                <span className="text-[14px] font-bold text-[#101828]">Balance</span>
-                <EllipsisOutlined className="text-[#d0d5dd]" />
-             </div>
-             <div className="flex justify-between items-center">
-                <span className="text-[38px] font-black text-[#101828]">{profile?.vacation_balance ?? 0}</span>
-                <div className="w-[52px] h-[52px] rounded-[14px] bg-[#dcfce7] flex items-center justify-center text-[#16a34a] text-[24px]">
-                   <BarChartOutlined className="rotate-90" />
-                </div>
-             </div>
+            <div className="flex justify-between items-center mb-6">
+              <span className="text-[14px] font-bold text-[#101828]">Balance</span>
+              <EllipsisOutlined className="text-[#d0d5dd]" />
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-[38px] font-black text-[#101828]">{profile?.employee?.vacation_balance ?? 0}</span>
+              <div className="w-[52px] h-[52px] rounded-[14px] bg-[#dcfce7] flex items-center justify-center text-[#16a34a] text-[24px]">
+                <BarChartOutlined className="rotate-90" />
+              </div>
+            </div>
           </div>
 
           {/* Action Button */}
-          <button 
+          <button
             onClick={() => setIsModalOpen(true)}
             className="w-full h-[52px] bg-[#7c3aed] hover:bg-[#6d28d9] text-white rounded-[12px] font-black text-[15px] shadow-lg shadow-purple-100 transition-all flex items-center justify-center gap-2 cursor-pointer border-none"
           >
@@ -291,8 +291,8 @@ export default function EmployeeDashboardPage() {
               rules={[{ required: true, message: 'Please select your leave dates' }]}
               extra={<span className="text-[11px] text-[#667085] flex items-center gap-1 mt-1"><InfoCircleOutlined className="text-[10px]" /> This is a hint text to help user.</span>}
             >
-              <RangePicker 
-                className="w-full h-[44px] rounded-[10px] border-[#d0d5dd]" 
+              <RangePicker
+                className="w-full h-[44px] rounded-[10px] border-[#d0d5dd]"
                 placeholder={['Start Date', 'End Date']}
               />
             </Form.Item>
@@ -317,15 +317,15 @@ export default function EmployeeDashboardPage() {
               rules={[{ required: true, message: 'Please provide a reason' }]}
               help={<span className="text-red-500 text-[11px] hidden">This is a error message.</span>}
             >
-              <Input.TextArea 
-                placeholder="Type..." 
-                rows={4} 
+              <Input.TextArea
+                placeholder="Type..."
+                rows={4}
                 className="rounded-[10px] border-[#d0d5dd] p-3 text-[14px]"
               />
             </Form.Item>
 
             <div className="flex gap-3 mt-8">
-              <Button 
+              <Button
                 onClick={() => {
                   setIsModalOpen(false)
                   form.resetFields()
@@ -334,9 +334,9 @@ export default function EmployeeDashboardPage() {
               >
                 Cancel
               </Button>
-              <Button 
-                type="primary" 
-                htmlType="submit" 
+              <Button
+                type="primary"
+                htmlType="submit"
                 loading={loading}
                 className="flex-1 h-[48px] rounded-[12px] font-black bg-[#7C3AED] hover:bg-[#6D28D9] border-none shadow-md shadow-purple-100"
               >
@@ -366,8 +366,8 @@ export default function EmployeeDashboardPage() {
           background-color: #f9fafb !important;
         }
         .ant-table-placeholder {
-           padding: 0 !important;
-           border: none !important;
+          padding: 0 !important;
+          border: none !important;
         }
 
         /* Modal styling */

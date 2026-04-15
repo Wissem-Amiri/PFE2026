@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { getProfile } from '@/lib/profileService'
 import { getAllJobs } from '@/lib/jobService'
-import type { Utilisateur } from '@/lib/database.types'
+import type { FullProfile } from '@/lib/database.types'
 import { Button, Tag } from 'antd'
 import { ArrowLeftOutlined, EllipsisOutlined, PlusOutlined, FileTextOutlined } from '@ant-design/icons'
 
@@ -15,7 +15,7 @@ export default function RegistrationDetailPage() {
   const id = params.id as string
   const jobId = searchParams.get('jobId')
 
-  const [user, setUser] = useState<Utilisateur | null>(null)
+  const [user, setUser] = useState<FullProfile | null>(null)
   const [jobTitle, setJobTitle] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [isBioExpanded, setIsBioExpanded] = useState(false)
@@ -116,7 +116,7 @@ export default function RegistrationDetailPage() {
       <div className="mb-[40px]">
         <h2 className="text-[18px] font-BOLD text-[#101828] mb-[8px] m-0">Experience</h2>
         <p className="text-[14px] text-[#475467] m-0">
-          {user.position ? `I specialise in ${user.position}.` : 'I specialize in UX/UI design, brand strategy, and Webflow development.'}
+          {user.postulant?.position ? `I specialise in ${user.postulant.position}.` : 'I specialize in UX/UI design, brand strategy, and Webflow development.'}
         </p>
       </div>
 
@@ -128,14 +128,14 @@ export default function RegistrationDetailPage() {
         <div className="flex-1 min-w-0 max-w-[500px]">
           <h2 className="text-[18px] font-bold text-[#101828] mb-[16px] m-0">About me</h2>
           <div className="text-[14px] text-[#475467] leading-[24px] space-y-[16px]">
-            {user.bio ? (
+            {user.postulant?.bio ? (
               <>
                 <p className="m-0 whitespace-pre-wrap break-all">
-                  {isBioExpanded || user.bio.length <= 100
-                    ? user.bio
-                    : `${user.bio.substring(0, 100)}...`}
+                  {isBioExpanded || user.postulant.bio.length <= 100
+                    ? user.postulant.bio
+                    : `${user.postulant.bio.substring(0, 100)}...`}
                 </p>
-                {user.bio.length > 100 && (
+                {user.postulant.bio.length > 100 && (
                   <button
                     onClick={() => setIsBioExpanded(!isBioExpanded)}
                     className="text-[#7C3AED] font-medium text-[14px] bg-transparent border-none p-0 cursor-pointer hover:underline mt-[8px]"
@@ -161,22 +161,22 @@ export default function RegistrationDetailPage() {
           <div>
             <h4 className="text-[12px] font-medium text-[#475467] mb-[8px] m-0">Location</h4>
             <div className="flex items-center gap-[8px] text-[14px] font-medium text-[#101828]">
-              {user.country ? `🌍 ${user.country}` : '🇦🇺 Melbourne, Australia'}
+              {user.postulant?.country ? `🌍 ${user.postulant.country}` : '🇦🇺 Melbourne, Australia'}
             </div>
           </div>
           <div>
             <h4 className="text-[12px] font-medium text-[#475467] mb-[8px] m-0">Website</h4>
-            {user.website ? (
-              <a href={user.website} target="_blank" rel="noreferrer" className="text-[14px] font-medium text-[#7C3AED] hover:underline flex items-center gap-[4px] no-underline break-all">
-                {user.website} ↗
+            {user.postulant?.website ? (
+              <a href={user.postulant.website} target="_blank" rel="noreferrer" className="text-[14px] font-medium text-[#7C3AED] hover:underline flex items-center gap-[4px] no-underline break-all">
+                {user.postulant.website} ↗
               </a>
             ) : <span className="text-[14px] text-[#98A2B3]">—</span>}
           </div>
           <div>
             <h4 className="text-[12px] font-medium text-[#475467] mb-[8px] m-0">Portfolio</h4>
-            {user.portfolio ? (
-              <a href={user.portfolio} target="_blank" rel="noreferrer" className="text-[14px] font-medium text-[#7C3AED] hover:underline flex items-center gap-[4px] no-underline break-all">
-                {user.portfolio} ↗
+            {user.postulant?.portfolio ? (
+              <a href={user.postulant.portfolio} target="_blank" rel="noreferrer" className="text-[14px] font-medium text-[#7C3AED] hover:underline flex items-center gap-[4px] no-underline break-all">
+                {user.postulant.portfolio} ↗
               </a>
             ) : <span className="text-[14px] text-[#98A2B3]">—</span>}
           </div>
@@ -194,7 +194,7 @@ export default function RegistrationDetailPage() {
         {/* Motivational Letter Card */}
         <div className="flex-1">
           <h2 className="text-[16px] font-bold text-[#101828] mb-[16px] m-0">Motivational letter</h2>
-          {user.motivational_letter_url ? (
+          {user.postulant?.motivational_letter_url ? (
             <div className="h-[72px] rounded-[12px] border border-[#EAECF0] bg-white flex items-center px-[20px] shadow-sm hover:border-[#7C3AED] transition-colors">
               <div className="flex gap-[12px] items-center">
                 <div className="w-[40px] h-[40px] rounded-full bg-[#F9F5FF] flex items-center justify-center text-[#7C3AED]">
@@ -202,7 +202,7 @@ export default function RegistrationDetailPage() {
                 </div>
                 <div>
                   <div className="text-[14px] font-medium text-[#101828]">Cover_Letter.pdf</div>
-                  <a href={user.motivational_letter_url} target="_blank" rel="noreferrer" className="text-[13px] font-medium text-[#7C3AED] hover:underline cursor-pointer no-underline block mt-[2px]">View file</a>
+                  <a href={user.postulant.motivational_letter_url} target="_blank" rel="noreferrer" className="text-[13px] font-medium text-[#7C3AED] hover:underline cursor-pointer no-underline block mt-[2px]">View file</a>
                 </div>
               </div>
             </div>
@@ -216,7 +216,7 @@ export default function RegistrationDetailPage() {
         {/* Resume Card */}
         <div className="flex-1">
           <h2 className="text-[16px] font-bold text-[#101828] mb-[16px] m-0">Resume</h2>
-          {user.resume_url ? (
+          {user.postulant?.resume_url ? (
             <div className="h-[72px] rounded-[12px] border border-[#EAECF0] bg-white flex items-center px-[20px] shadow-sm hover:border-[#7C3AED] transition-colors">
               <div className="flex gap-[12px] items-center">
                 <div className="w-[40px] h-[40px] rounded-full bg-[#F9F5FF] flex items-center justify-center text-[#7C3AED]">
@@ -224,7 +224,7 @@ export default function RegistrationDetailPage() {
                 </div>
                 <div>
                   <div className="text-[14px] font-medium text-[#101828]">Resume_Current.pdf</div>
-                  <a href={user.resume_url} target="_blank" rel="noreferrer" className="text-[13px] font-medium text-[#7C3AED] hover:underline cursor-pointer no-underline block mt-[2px]">View file</a>
+                  <a href={user.postulant.resume_url} target="_blank" rel="noreferrer" className="text-[13px] font-medium text-[#7C3AED] hover:underline cursor-pointer no-underline block mt-[2px]">View file</a>
                 </div>
               </div>
             </div>
@@ -237,13 +237,13 @@ export default function RegistrationDetailPage() {
       </div>
 
       {/* Dynamic Experience Cards */}
-      {(!user.experiences || user.experiences.length === 0) ? (
+      {(!user.postulant?.experiences || user.postulant.experiences.length === 0) ? (
         <div className="rounded-[12px] border border-dashed border-[#EAECF0] bg-gray-50 flex flex-col items-center justify-center py-[48px] text-[14px] text-[#98A2B3]">
           No experiences recorded by the applicant.
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-[24px]">
-          {user.experiences.map((exp: any, i: number) => (
+          {user.postulant.experiences.map((exp: any, i: number) => (
             <div key={i} className="rounded-[12px] border border-[#EAECF0] bg-white p-[24px] shadow-sm flex flex-col justify-between h-[180px]">
               <div>
                 <h3 className="text-[16px] font-bold text-[#101828] m-0 text-center">{exp.title}</h3>
