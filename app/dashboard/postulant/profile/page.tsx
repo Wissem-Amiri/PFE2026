@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/lib/AuthContext'
 import { getProfile, updateProfile, uploadDocument } from '@/lib/profileService'
-import { uploadJobPicture } from '@/lib/jobService' // using this for avatar
-import { applyToJob } from '@/lib/candidatureService'
+import { uploadJobPicture, getJobById } from '@/lib/jobService' // using this for avatar
+import { applyToJob, getUserCandidatures } from '@/lib/candidatureService'
 import type { Utilisateur } from '@/lib/database.types'
 import { Form, Input, Select, Upload, Button, message, Space } from 'antd'
 import { CheckCircleFilled, CloudUploadOutlined, LoadingOutlined, PlusOutlined, MinusCircleOutlined } from '@ant-design/icons'
@@ -48,17 +48,30 @@ export default function CompleteProfilePage() {
 
   useEffect(() => {
     if (!user) return
-    getProfile(user.id).then(({ data }) => {
+    getProfile(user.id).then(async ({ data }) => {
       if (data) {
         // Split user_name into first and last for the UI
         const names = (data.user_name || '').split(' ')
         const firstName = names[0] || ''
         const lastName = names.slice(1).join(' ') || ''
 
+        let resolvedPosition = data.position || '';
+
+        // Auto-resolve role based on job application
+        if (applyToJobId) {
+          const { data: jobDetails } = await getJobById(applyToJobId)
+          if (jobDetails) resolvedPosition = jobDetails.title
+        } else {
+          const { data: candidatures } = await getUserCandidatures(user.id)
+          if (candidatures && candidatures.length > 0) {
+            resolvedPosition = candidatures[0].job?.title || resolvedPosition
+          }
+        }
+
         form.setFieldsValue({
           firstName,
           lastName,
-          position: data.position || '',
+          position: resolvedPosition,
           country: data.country || undefined,
           timezone: data.timezone || undefined,
           bio: data.bio || '',
@@ -73,7 +86,7 @@ export default function CompleteProfilePage() {
       }
       setLoading(false)
     })
-  }, [user, form])
+  }, [user, form, applyToJobId])
 
   const handleSave = async (values: any) => {
     if (!user) return
@@ -224,8 +237,11 @@ export default function CompleteProfilePage() {
               <div className="w-[280px] shrink-0 text-[14px] font-medium text-[#344054] pt-[10px]">Role</div>
               <div className="flex-1">
                 <Form.Item name="position" className="m-0" rules={[{ required: true, message: 'Required' }]}>
-                  <Input placeholder="e.g. Product Designer" className="h-[44px] rounded-[8px]" />
+                  <Input placeholder="Job title (Auto-filled)" disabled className="h-[44px] rounded-[8px] bg-[#F9FAFB] cursor-not-allowed" />
                 </Form.Item>
+                <div className="text-[11px] text-[#98A2B3] mt-2 italic flex items-center gap-1">
+                   <CheckCircleFilled className="text-green-500" /> This role is automatically locked to your job application.
+                </div>
               </div>
             </div>
 

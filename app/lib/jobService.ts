@@ -10,6 +10,16 @@ export async function getAllJobs() {
   return { data: data as Job[] | null, error }
 }
 
+export async function getJobById(id: string) {
+  const { data, error } = await supabase
+    .from('jobs')
+    .select('*')
+    .eq('id', id)
+    .single()
+
+  return { data: data as Job | null, error }
+}
+
 export async function createJob(jobData: Database['public']['Tables']['jobs']['Insert']) {
   const { data, error } = await supabase
     .from('jobs')
