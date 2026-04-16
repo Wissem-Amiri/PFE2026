@@ -83,7 +83,7 @@ export default function VerifyOtpPage() {
     setLoading(true)
     setErrorMsg('')
 
-    const { error } = await verifyOtp({ email, token, type: 'signup' })
+    const { error, data } = await verifyOtp({ email, token, type: 'signup' })
     setLoading(false)
 
     if (error) {
@@ -91,7 +91,9 @@ export default function VerifyOtpPage() {
       return
     }
 
-    router.push(`/auth/verify-email?email=${encodeURIComponent(email)}`)
+   const { data: profileData } = await import('@/lib/profileService').then(m => m.getProfile(data.user?.id ?? ''))
+    const { getDashboardByRole } = await import('@/lib/AuthContext')
+    router.push(getDashboardByRole(profileData?.role))
   }
 
   const handleResend = async () => {

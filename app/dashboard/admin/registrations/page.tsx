@@ -15,6 +15,7 @@ import {
 } from '@ant-design/icons'
 import { getAllUsers, updateUserStatus as updateGlobalUserStatus, exportToCSV, downloadCSV } from '@/lib/profileService'
 import { getAllCandidaturesDetailed, updateCandidatureStatus, archiveCandidatures, deleteAllOtherCandidatures } from '@/lib/candidatureService'
+import { getAllJobs, decrementJobSeats } from '@/lib/jobService'
 import type { FullProfile } from '@/lib/database.types'
 
 export default function RegistrationsPage() {
@@ -91,6 +92,11 @@ export default function RegistrationsPage() {
         if (!statusError) {
           // 3. Cleanup: Delete all other candidatures for this user permanently
           await deleteAllOtherCandidatures(application.postulant_id, application.id)
+          
+          // 4. Update Job Seats!
+          if (application.job_id) {
+            await decrementJobSeats(application.job_id)
+          }
         }
       }
 

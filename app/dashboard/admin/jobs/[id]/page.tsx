@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { getJobApplications, updateCandidatureStatus } from '@/lib/candidatureService'
+import { decrementJobSeats } from '@/lib/jobService'
 import type { Job } from '@/lib/database.types'
 import { message, Table, Tag, Space, Avatar, Button as AntButton, Modal } from 'antd'
 import { CheckCircleOutlined, CloseCircleOutlined, UserOutlined } from '@ant-design/icons'
@@ -63,6 +64,12 @@ export default function JobOverviewPage() {
       onOk: async () => {
         const { error } = await updateCandidatureStatus(id, status)
         if (!error) {
+          if (status === 'accepted') {
+            await decrementJobSeats(jobId)
+            // Reload job details to see new available seats
+            const { data } = await supabase.from('jobs').select('*').eq('id', jobId).single()
+            if (data) setJob(data as Job)
+          }
           messageApi.success(`Candidature ${status} successfully`)
           loadApplications()
         } else {

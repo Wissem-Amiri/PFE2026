@@ -76,3 +76,23 @@ export async function uploadJobPicture(file: File) {
 
   return { publicUrl: data.publicUrl, error: null }
 }
+
+/** Decrement available seats and close job if 0 */
+export async function decrementJobSeats(jobId: string) {
+  // 1. Fetch current job info
+  const { data: job, error: fetchError } = await getJobById(jobId)
+  if (fetchError || !job) return { error: fetchError || new Error('Job not found') }
+
+  // 2. Decrement seats
+  const newSeats = Math.max(0, job.open_seats - 1)
+  const updates: Partial<Job> = { open_seats: newSeats }
+
+  // 3. Close job if no seats left
+  if (newSeats === 0) {
+    updates.is_open = false
+  }
+
+  // 4. Update job
+  const { error: updateError } = await updateJob(jobId, updates)
+  return { error: updateError }
+}
