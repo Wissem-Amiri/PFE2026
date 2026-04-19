@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { useAuth } from '@/lib/AuthContext'
+import { useAuth } from '@/api/AuthContext'
 import { Form, Input, Button, Alert } from 'antd'
 import { UserOutlined, MailOutlined, LockOutlined } from '@ant-design/icons'
 import { useForm, Controller } from 'react-hook-form'
@@ -70,7 +70,7 @@ export default function RegisterPage() {
 
         {/* Name */}
         <Form.Item
-          label={<span className="font-medium text-gray-700">Name<span className="text-[#7c3aed]">*</span></span>}
+          label={<span className="font-medium text-gray-700">Name<span className="text-[#7F56D9]">*</span></span>}
           validateStatus={errors.name ? 'error' : ''}
           help={errors.name?.message}
         >
@@ -90,7 +90,7 @@ export default function RegisterPage() {
 
         {/* Email */}
         <Form.Item
-          label={<span className="font-medium text-gray-700">Email<span className="text-[#7c3aed]">*</span></span>}
+          label={<span className="font-medium text-gray-700">Email<span className="text-[#7F56D9]">*</span></span>}
           validateStatus={errors.email ? 'error' : ''}
           help={errors.email?.message}
         >
@@ -110,7 +110,7 @@ export default function RegisterPage() {
 
         {/* Password */}
         <Form.Item
-          label={<span className="font-medium text-gray-700">Password<span className="text-[#7c3aed]">*</span></span>}
+          label={<span className="font-medium text-gray-700">Password<span className="text-[#7F56D9]">*</span></span>}
           validateStatus={errors.password ? 'error' : ''}
           help={errors.password?.message ?? (
             <span className="text-slate-400 text-[13px]">Must be at least 8 characters.</span>
@@ -138,7 +138,7 @@ export default function RegisterPage() {
             loading={loading}
             block
             size="large"
-            className="!bg-[#7c3aed] hover:!bg-[#6d28d9] !border-none font-semibold text-[15px] h-[44px] rounded-lg"
+            className="!bg-[#7F56D9] hover:!bg-[#6d28d9] !border-none font-semibold text-[15px] h-[44px] rounded-lg"
           >
             Create account
           </Button>
@@ -158,7 +158,7 @@ export default function RegisterPage() {
       {/* Login link */}
       <p className="mt-6 text-center text-sm text-slate-500">
         Already have an account?{' '}
-        <Link href="/login" className="text-[#7c3aed] font-semibold">Log in</Link>
+        <Link href="/login" className="text-[#7F56D9] font-semibold">Log in</Link>
       </p>
     </>
   )

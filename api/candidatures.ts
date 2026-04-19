@@ -1,11 +1,10 @@
 import { supabase } from './supabase'
-import type { Database, Candidature } from './database.types'
+import type { Candidature } from './database.types'
 
 /** Apply to a Job */
 export async function applyToJob(postulantId: string, jobId: string) {
   const { data, error } = await supabase
     .from('candidatures')
-    // @ts-expect-error type fallback fix
     .insert([{ postulant_id: postulantId, job_id: jobId }])
     .select()
     .single()

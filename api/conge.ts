@@ -1,6 +1,6 @@
 import { supabase } from './supabase'
 import type { Conge } from './database.types'
-import { getProfile } from './profileService'
+import { getProfile } from './profile'
 import dayjs from 'dayjs'
 
 /** Request a new leave (Employee) */

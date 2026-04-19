@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { BaseUtilisateur, FullProfile, Postulant, Employee, Admin } from './database.types'
+import type { BaseUtilisateur, FullProfile, Employee } from './database.types'
 
 /** Get a single user profile with all role-specific data using joins */
 export async function getProfile(userId: string) {
@@ -129,44 +129,7 @@ export async function deleteUsers(userIds: string[]) {
     .delete({ count: 'exact' })
     .in('id', userIds)
   
-  if (error) {
-    console.error('Database deletion error:', error)
-  }
-
-  if (count === 0 && !error) {
-    console.warn('Deletion successful command-wise but 0 rows removed. Likely RLS policy issue.')
-  }
-  
   return { error, count: count ?? 0 }
-}
-
-/** Export users list correctly using nested properties */
-export function exportToCSV(users: FullProfile[]): string {
-  const headers = ['Nom', 'Email', 'Rôle', 'Statut', 'Département', 'Poste', 'Téléphone', 'Date embauche', 'Inscrit le']
-  const rows = users.map(u => [
-    u.user_name ?? '',
-    u.email ?? '',
-    u.role ?? '',
-    u.status ?? '',
-    u.employee?.department ?? '',
-    u.employee?.position ?? '',
-    u.phone ?? '',
-    u.employee?.hire_date ?? '',
-    u.created_at ? new Date(u.created_at).toLocaleDateString('fr-FR') : '',
-  ])
-  const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n')
-  return csv
-}
-
-/** Trigger CSV download in browser */
-export function downloadCSV(csv: string, filename = 'utilisateurs.csv') {
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  a.click()
-  URL.revokeObjectURL(url)
 }
 
 /** Upload user document to 'documents' bucket */
@@ -188,4 +151,42 @@ export async function uploadDocument(file: File) {
     .getPublicUrl(filePath)
 
   return { publicUrl: data.publicUrl, error: null }
+}
+
+/**
+ * Export a list of users to CSV format
+ */
+export function exportToCSV(users: FullProfile[]) {
+  const headers = ['Name', 'Email', 'Role', 'Status', 'Created At']
+  const rows = users.map(u => [
+    u.user_name || '',
+    u.email || '',
+    u.role || '',
+    u.status || '',
+    u.created_at ? new Date(u.created_at).toLocaleDateString() : ''
+  ])
+
+  const csvContent = [
+    headers.join(','),
+    ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+  ].join('\n')
+
+  return csvContent
+}
+
+/**
+ * Triggers a download of a CSV string in the browser
+ */
+export function downloadCSV(csvContent: string, fileName: string) {
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+  const link = document.createElement('a')
+  if (link.download !== undefined) {
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', fileName)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
 }

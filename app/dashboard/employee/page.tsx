@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { useAuth } from '@/lib/AuthContext'
+import { useAuth } from '@/api/AuthContext'
 import Link from 'next/link'
 import dayjs from 'dayjs'
 import {
@@ -18,7 +18,7 @@ import {
   InfoCircleOutlined
 } from '@ant-design/icons'
 import { Button, Table, Tag, Avatar, Modal, Form, DatePicker, Select, Input, message } from 'antd'
-import { getMyLeaves, requestLeave } from '@/lib/congeService'
+import { getMyLeaves, requestLeave } from '@/api/conge'
 
 const { RangePicker } = DatePicker
 const { Option } = Select

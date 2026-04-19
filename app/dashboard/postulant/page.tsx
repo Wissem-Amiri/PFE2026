@@ -4,10 +4,10 @@ import { SearchOutlined, BankOutlined, EnvironmentOutlined, ClockCircleOutlined,
 import { Input, message } from 'antd'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/lib/AuthContext'
-import { getAllJobs } from '@/lib/jobService'
-import { getUserCandidatures } from '@/lib/candidatureService'
-import type { Job } from '@/lib/database.types'
+import { useAuth } from '@/api/AuthContext'
+import { getAllJobs } from '@/api/job'
+import { getUserCandidatures } from '@/api/candidatures'
+import type { Job } from '@/api/database.types'
 
 export default function PostulantJobsPage() {
   const { user } = useAuth()
@@ -136,7 +136,7 @@ export default function PostulantJobsPage() {
                   <div className="text-[12px] text-[#475467] mb-4 flex gap-1 items-center">
                     <ClockCircleOutlined /> Date limite : <span className="font-semibold text-gray-800">{new Date(job.deadline).toLocaleDateString()}</span>
                   </div>
-                  
+
                   {hasApplied ? (
                     candidatureStatus === 'rejected' ? (
                       <button disabled className="w-full py-2.5 rounded-xl border border-red-500 bg-red-50 text-red-700 font-medium text-sm flex items-center justify-center gap-2">
@@ -148,7 +148,7 @@ export default function PostulantJobsPage() {
                       </button>
                     )
                   ) : (
-                    <button 
+                    <button
                       onClick={() => handleApplyClick(job.id)}
                       className="w-full py-2.5 rounded-xl border border-[#7C3AED] bg-[#7C3AED] text-white font-medium text-sm hover:bg-[#6D28D9] transition-colors"
                     >

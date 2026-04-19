@@ -18,6 +18,8 @@ export interface BaseUtilisateur {
   created_at: string | null
 }
 
+export type Utilisateur = BaseUtilisateur;
+
 export interface Postulant {
   id: string
   bio: string | null
@@ -64,6 +66,7 @@ export interface Job {
   is_open: boolean
   job_picture: string | null
   open_seats: number
+  requirements: string
   created_at: string
 }
 
@@ -116,7 +119,7 @@ export interface Database {
       }
       jobs: {
         Row: Job
-        Insert: Omit<Job, 'id' | 'created_at'> & { id?: string; created_at?: string }
+        Insert: Omit<Job, 'id' | 'created_at' | 'requirements'> & { id?: string; created_at?: string; requirements?: string }
         Update: Partial<Omit<Job, 'id'>>
         Relationships: []
       }

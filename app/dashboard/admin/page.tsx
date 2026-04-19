@@ -1,11 +1,11 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { getAllUsers, getProfile } from '@/lib/profileService'
-import { getAllLeavesDetailed } from '@/lib/congeService'
-import { getAllCandidaturesDetailed } from '@/lib/candidatureService'
-import { useAuth } from '@/lib/AuthContext'
+import { getAllUsers, getProfile } from '@/api/profile'
+import { getAllLeavesDetailed } from '@/api/conge'
+import { getAllCandidaturesDetailed } from '@/api/candidatures'
+import { useAuth } from '@/api/AuthContext'
 import Link from 'next/link'
-import type { FullProfile } from '@/lib/database.types'
+import type { FullProfile } from '@/api/database.types'
 import {
   Avatar,
   Table,
@@ -65,8 +65,8 @@ export default function AdminDashboardPage() {
 
   // Aggregated Activity Feed
   const activities = [
-    ...leaves.map(l => ({ 
-      id: l.id, 
+    ...leaves.map(l => ({
+      id: l.id,
       date: l.created_at,
       type: 'leave',
       user: l.employee?.user,
@@ -91,32 +91,20 @@ export default function AdminDashboardPage() {
 
 
   const stats = [
-    { 
-      title: 'Active Employees', 
-      count: users.filter(u => u.role === 'employee').length.toString().padStart(2, '0'), 
-      icon: <UserOutlined />, 
-      color: '#F5F3FF', 
-      iconColor: '#7C3AED',
-      sub: 'Total team members',
-      href: '/dashboard/admin/employee'
+    {
+      title: 'Registration requests',
+      count: candidatures.filter(c => c.status === 'pending').length.toString(),
+      href: '/dashboard/admin/registrations'
     },
-    { 
-      title: 'Leave requests', 
-      count: leaves.filter(l => l.status === 'pending').length.toString().padStart(2, '0'), 
-      icon: <CalendarOutlined />, 
-      color: '#FFF4ED', 
-      iconColor: '#F97316',
-      sub: `${leaves.filter(l => l.status === 'pending').length} action required`,
+    {
+      title: 'Leave requests',
+      count: leaves.filter(l => l.status === 'pending').length.toString(),
       href: '/dashboard/admin/leaves'
     },
-    { 
-      title: 'Job submissions', 
-      count: candidatures.filter(c => c.status === 'pending').length.toString().padStart(2, '0'), 
-      icon: <SolutionOutlined />, 
-      color: '#EFF6FF', 
-      iconColor: '#3B82F6',
-      sub: `${candidatures.filter(c => c.status === 'pending').length} new submissions`,
-      href: '/dashboard/admin/registrations'
+    {
+      title: 'Job submissions',
+      count: candidatures.length.toString(),
+      href: '/dashboard/admin/jobs'
     },
   ]
 
@@ -127,8 +115,8 @@ export default function AdminDashboardPage() {
       key: 'date',
       render: (date: string) => (
         <div className="flex flex-col">
-          <span className="text-[14px] font-bold text-[#101828]">{dayjs(date).format('MM/DD/YYYY')}</span>
-          <span className="text-[12px] text-[#667085] font-medium">{dayjs(date).format('HH:mm')}</span>
+          <span className="text-[14px] font-medium text-[#101828] uppercase">{dayjs(date).format('MM/DD/YYYY')}</span>
+          <span className="text-[12px] text-[#667085]">{dayjs(date).format('HH:mm')}</span>
         </div>
       )
     },
@@ -140,10 +128,11 @@ export default function AdminDashboardPage() {
           <Avatar
             size={40}
             src={record.user?.avatar_url}
-            icon={<UserOutlined />}
-            className="border-2 border-white shadow-sm ring-1 ring-slate-100"
-          />
-          <div className="text-[14px] font-bold text-[#101828]">{record.user?.user_name || 'Unknown'}</div>
+            className="bg-[#c7b9da]"
+          >
+            {record.user?.user_name?.substring(0, 2).toUpperCase() || 'U'}
+          </Avatar>
+          <div className="text-[14px] font-medium text-[#101828]">{record.user?.user_name || 'Unknown'}</div>
         </div>
       )
     },
@@ -151,31 +140,14 @@ export default function AdminDashboardPage() {
       title: 'ACTIVITY',
       key: 'activity',
       render: (record: any) => {
-        let icon = <CheckCircleOutlined />;
-        let color = '#7C3AED';
-        let bgColor = '#F5F3FF';
         let label = record.details;
-
-        if (record.type === 'leave') {
-          if (record.leaveType === 'Vacation') { icon = <SunFilled />; color = '#F97316'; bgColor = '#FFF4ED'; }
-          else if (record.leaveType === 'Casual') { icon = <AlertFilled />; color = '#7C3AED'; bgColor = '#F5F3FF'; }
-          else if (record.leaveType === 'Personal') { icon = <LockFilled />; color = '#3B82F6'; bgColor = '#EFF6FF'; }
-          else if (record.leaveType === 'Sick') { icon = <MedicineBoxFilled />; color = '#EF4444'; bgColor = '#FEF2F2'; }
-        } else if (record.type === 'registration') {
-          icon = <UserOutlined />; color = '#7C3AED'; bgColor = '#F5F3FF';
-        } else if (record.type === 'candidature') {
-          icon = <SolutionOutlined />; color = '#3B82F6'; bgColor = '#EFF6FF';
-        }
 
         return (
           <div className="flex items-center gap-2.5">
-            <div
-              className="w-[28px] h-[28px] rounded-full flex items-center justify-center text-[12px]"
-              style={{ backgroundColor: bgColor, color: color }}
-            >
-              {icon}
+            <div className="bg-[#fffaeb] px-[8px] py-[2px] rounded-full flex items-center gap-1.5 border border-transparent shadow-sm">
+                <img src="/assets/activity-check.svg" className="w-[14px] h-[14px]" alt="" />
+                <span className="text-[12px] font-medium text-[#b54708] whitespace-nowrap">{label}</span>
             </div>
-            <span className="text-[13px] font-bold text-[#475467]">{label}</span>
           </div>
         )
       }
@@ -185,13 +157,23 @@ export default function AdminDashboardPage() {
       dataIndex: 'status',
       key: 'status',
       render: (status: string) => {
-        let color = 'orange'
-        if (status === 'approved' || status === 'accepted') color = 'green'
-        if (status === 'rejected') color = 'error'
+        let color = '#B54708'
+        let bgColor = '#FFFAEB'
+        if (status === 'approved' || status === 'accepted') {
+            color = '#067647'
+            bgColor = '#ECFDF3'
+        }
+        if (status === 'rejected') {
+            color = '#B42318'
+            bgColor = '#FEF3F2'
+        }
         return (
-          <Tag color={color} className="rounded-full px-3 font-black uppercase text-[9px] border-none shadow-sm capitalize">
+          <div 
+            style={{ backgroundColor: bgColor, color: color }}
+            className="rounded-full px-2.5 py-0.5 font-medium text-[12px] capitalize inline-block border border-transparent"
+          >
             {status}
-          </Tag>
+          </div>
         )
       }
     }
@@ -199,7 +181,7 @@ export default function AdminDashboardPage() {
 
   const CustomEmpty = () => (
     <div className="flex flex-col items-center justify-center py-[60px]">
-      <div className="w-[64px] h-[64px] bg-[#f9fafb] border border-[#f2f4f7] rounded-[18px] flex items-center justify-center mb-4 shadow-sm">
+      <div className="w-[64px] h-[64px] bg-[#f9fafb] border border-[#eaecf0] rounded-[18px] flex items-center justify-center mb-4 shadow-sm">
         <InboxOutlined className="text-[#d0d5dd] text-[28px]" />
       </div>
       <span className="text-[14px] text-[#667085] font-medium">No recent activity</span>
@@ -207,61 +189,58 @@ export default function AdminDashboardPage() {
   )
 
   return (
-    <div className="flex-1 flex flex-col lg:flex-row min-h-screen bg-[#fcfcfd]">
+    <div className="flex flex-col lg:flex-row min-h-screen bg-transparent">
       {/* ── MAIN CONTENT ── */}
-      <div className="flex-1 p-[32px] px-[40px] overflow-y-auto">
+      <div className="flex-1 p-[32px] overflow-y-auto">
         <div className="flex justify-between items-center mb-[32px]">
-          <h1 className="text-[26px] font-black text-[#101828] tracking-tight leading-none">Home</h1>
-          <div className="flex items-center gap-[12px] px-[14px] py-[10px] border border-[#eaecf0] rounded-[12px] bg-white shadow-sm w-[360px] focus-within:ring-2 focus-within:ring-purple-100 transition-all">
-            <SearchOutlined className="text-[#667085]" />
+          <h1 className="text-[30px] font-medium text-[#101828]">Home</h1>
+          <div className="relative group">
+            <img src="/assets/search.svg" className="absolute left-[12px] top-1/2 -translate-y-1/2 w-[20px] h-[20px] opacity-50" alt="search" />
             <input
-              placeholder="Search activity..."
+              placeholder="Search..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="border-none outline-none text-[14px] font-medium w-full text-[#101828] placeholder:text-[#98a2b3]"
+              className="pl-[44px] pr-[16px] py-[10px] border border-[#eaecf0] rounded-[8px] bg-white text-[14px] w-[320px] focus:outline-none focus:ring-2 focus:ring-[#7f56d9]/20 transition-all placeholder:text-[#98a2b3] font-medium shadow-sm"
             />
           </div>
         </div>
 
         {/* ── STATS ── */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-[24px] mb-[32px]">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-[16px] mb-[32px]">
           {stats.map((stat, idx) => (
-            <Link key={idx} href={stat.href} className="no-underline block">
-              <div className="bg-white p-[24px] rounded-[20px] border border-[#eaecf0] shadow-sm group hover:border-[#7c3aed] transition-all cursor-pointer">
-                <div className="flex justify-between items-center mb-4">
-                  <span className="text-[12px] font-black text-[#667085] uppercase tracking-[0.1em]">{stat.title}</span>
-                  <EllipsisOutlined className="text-[#d0d5dd] group-hover:text-[#7c3aed]" />
+            <Link key={idx} href={stat.href} className="no-underline block group">
+              <div className="bg-white p-[24px] rounded-[8px] border border-[#eaecf0] shadow-sm group-hover:border-[#7f56d9] transition-all cursor-pointer h-full relative overflow-hidden">
+                <div className="flex justify-between items-start mb-[8px]">
+                  <span className="text-[14px] font-semibold text-[#101828]">{stat.title}</span>
+                  <button className="bg-transparent border-none p-0 cursor-pointer">
+                    <img src="/assets/dots-vertical.svg" className="w-[16px] h-[16px]" alt="more" />
+                  </button>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-[34px] font-black text-[#101828]">{stat.count}</span>
-                  <div 
-                    className="w-[48px] h-[48px] rounded-[14px] flex items-center justify-center text-[20px]"
-                    style={{ backgroundColor: stat.color, color: stat.iconColor }}
-                  >
-                    {stat.icon}
-                  </div>
+                <div className="flex items-end h-[40px]">
+                  <span className="text-[36px] font-semibold text-[#101828] leading-none tracking-tight">{stat.count}</span>
                 </div>
-                <div className="mt-3 text-[12px] text-[#667085] font-medium">{stat.sub}</div>
               </div>
             </Link>
           ))}
         </div>
 
         {/* ── TABLE ── */}
-        <div className="bg-white rounded-[20px] border border-[#eaecf0] shadow-sm overflow-hidden">
+        <div className="bg-white rounded-[8px] border border-[#eaecf0] shadow-sm overflow-hidden mb-[48px]">
           <div className="px-6 py-5 border-b border-[#eaecf0] flex justify-between items-center">
-            <h3 className="text-[17px] font-black text-[#101828] mb-0">Recent activity</h3>
-            <button className="flex items-center gap-2 text-[13px] font-bold text-[#7c3aed] hover:gap-3 transition-all cursor-pointer bg-transparent border-none">
-              View detailed reports <ArrowRightOutlined />
-            </button>
+            <h3 className="text-[18px] font-medium text-[#101828] mb-0">Recent activity</h3>
           </div>
 
           <Table
             columns={columns}
             dataSource={filteredActivities}
-            pagination={{ pageSize: 8, hideOnSinglePage: true, position: ['bottomCenter'] }}
+            pagination={{ 
+                pageSize: 10, 
+                hideOnSinglePage: true, 
+                position: ['bottomCenter'],
+                className: 'custom-pagination'
+            }}
             loading={loading}
-            className="pixel-perfect-table"
+            className="figma-dashboard-table"
             rowKey={(record) => `${record.type}-${record.id}`}
             locale={{ emptyText: <CustomEmpty /> }}
           />
@@ -269,64 +248,55 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* ── RIGHT PANEL (Admin Profile) ── */}
-      <div className="w-full lg:w-[320px] bg-white border-l border-[#eaecf0] p-[32px] flex flex-col items-center">
-        <div className="sticky top-[32px] w-full flex flex-col items-center">
+      <div className="w-full lg:w-[296px] bg-transparent p-[32px] lg:pt-[40px] flex flex-col items-center">
+        <div className="sticky top-[40px] w-full flex flex-col items-center">
           <div className="relative mb-[24px]">
-            <Avatar
-              size={120}
-              src={adminProfile?.avatar_url}
-              icon={<UserOutlined />}
-              className="border-[4px] border-white shadow-xl ring-1 ring-slate-100"
-            />
-            <div className="absolute bottom-1 right-1 w-[24px] h-[24px] bg-green-500 border-[3px] border-white rounded-full"></div>
+             <div className="ring-[4px] ring-white shadow-lg rounded-full">
+                <Avatar
+                size={160}
+                src={adminProfile?.avatar_url}
+                className="bg-[#c7b9da]"
+                >
+                    {adminProfile?.user_name?.substring(0, 2).toUpperCase() || 'AD'}
+                </Avatar>
+             </div>
           </div>
 
-          <h2 className="text-[22px] font-black text-[#101828] mb-1">{adminProfile?.user_name || 'Admin'}</h2>
-          <p className="text-[14px] text-[#667085] font-bold uppercase tracking-wider mb-8">System Administrator</p>
+          <h2 className="text-[24px] font-medium text-[#101828] mb-1">{adminProfile?.user_name || 'Admin'}</h2>
+          <p className="text-[16px] text-[#667085] font-normal mb-8 text-center">{adminProfile?.role === 'admin' ? 'System Administrator' : 'Admin'}</p>
 
-          <div className="w-full grid grid-cols-2 gap-3 mb-[32px]">
-            <button className="h-[44px] rounded-[12px] border border-[#d0d5dd] bg-white text-[14px] font-bold text-[#344054] hover:bg-slate-50 transition-all shadow-sm">Settings</button>
-            <button className="h-[44px] rounded-[12px] bg-[#7c3aed] text-[14px] font-bold text-white hover:bg-[#6d28d9] transition-all shadow-md">View profile</button>
-          </div>
-
-          <div className="w-full space-y-[24px]">
-            <div className="p-5 rounded-[20px] bg-[#f9fafb] border border-[#eaecf0]">
-              <div className="text-[11px] font-black text-[#667085] uppercase mb-4">Quick Shortcuts</div>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 text-[14px] font-bold text-[#344054] hover:text-[#7c3aed] cursor-pointer group">
-                  <div className="w-8 h-8 rounded-lg bg-white border border-[#eaecf0] shadow-sm flex items-center justify-center group-hover:bg-[#f5f3ff]"><CheckCircleOutlined /></div>
-                  Review Registrations
-                </div>
-                <div className="flex items-center gap-3 text-[14px] font-bold text-[#344054] hover:text-[#7c3aed] cursor-pointer group">
-                  <div className="w-8 h-8 rounded-lg bg-white border border-[#eaecf0] shadow-sm flex items-center justify-center group-hover:bg-[#f5f3ff]"><FileSearchOutlined /></div>
-                  Audit Logs
-                </div>
-              </div>
-            </div>
+          <div className="flex items-center gap-[12px] w-full mb-[40px]">
+            <button className="flex-1 h-[44px] rounded-[8px] border border-[#d0d5dd] bg-white text-[14px] font-medium text-[#344054] hover:bg-slate-50 transition-all shadow-sm">Settings</button>
+            <button className="flex-1 h-[44px] rounded-[8px] bg-[#7f56d9] text-[14px] font-medium text-white hover:bg-[#6941c6] transition-all shadow-sm">View profile</button>
           </div>
         </div>
       </div>
 
       <style jsx global>{`
-        .pixel-perfect-table .ant-table-thead > tr > th {
-          background: #fcfcfd !important;
+        .figma-dashboard-table .ant-table-thead > tr > th {
+          background: #f9fafb !important;
           color: #667085 !important;
-          font-size: 11px !important;
-          text-transform: uppercase !important;
-          font-weight: 800 !important;
-          letter-spacing: 0.1em !important;
-          padding: 18px 24px !important;
-          border-bottom: 2px solid #f2f4f7 !important;
+          font-size: 12px !important;
+          font-weight: 500 !important;
+          padding: 12px 24px !important;
+          border-bottom: 1px solid #eaecf0 !important;
         }
-        .pixel-perfect-table .ant-table-tbody > tr > td {
-          padding: 18px 24px !important;
-          border-bottom: 1px solid #f2f4f7 !important;
+        .figma-dashboard-table .ant-table-tbody > tr > td {
+          padding: 16px 24px !important;
+          border-bottom: 1px solid #eaecf0 !important;
         }
-        .pixel-perfect-table .ant-table-row:hover > td {
+        .figma-dashboard-table .ant-table-row:hover > td {
           background-color: #f9fafb !important;
         }
-        .ant-table-pagination {
-           margin: 24px 0 !important;
+        .custom-pagination {
+          margin: 16px 0 !important;
+        }
+        .custom-pagination .ant-pagination-item-active {
+            border-color: #7f56d9 !important;
+            background: #f9f5ff !important;
+        }
+        .custom-pagination .ant-pagination-item-active a {
+            color: #6941c6 !important;
         }
       `}</style>
     </div>

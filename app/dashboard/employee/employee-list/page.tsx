@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react'
 import { SearchOutlined, TeamOutlined, MailOutlined, BankOutlined, UserOutlined } from '@ant-design/icons'
 import { Input, Avatar, Card, Tag, Spin } from 'antd'
-import { getAllUsers } from '@/lib/profileService'
-import type { Utilisateur } from '@/lib/database.types'
+import { getAllUsers } from '@/api/profile'
+import type { Utilisateur } from '@/api/database.types'
 
 export default function EmployeeListPage() {
   const [employees, setEmployees] = useState<Utilisateur[]>([])

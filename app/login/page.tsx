@@ -2,9 +2,9 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { useAuth } from '@/lib/AuthContext'
-import { getDashboardByRole } from '@/lib/AuthContext'
-import { getProfile } from '@/lib/profileService'
+import { useAuth } from '@/api/AuthContext'
+import { getDashboardByRole } from '@/api/AuthContext'
+import { getProfile } from '@/api/profile'
 import { Form, Input, Button, Checkbox, Alert } from 'antd'
 import { MailOutlined, LockOutlined } from '@ant-design/icons'
 import { useForm, Controller } from 'react-hook-form'
@@ -101,13 +101,13 @@ export default function LoginPage() {
                             )}
                         />
                     </Form.Item>
-                    <Link href="/auth/forgot-password" className="text-sm text-[#7c3aed] font-medium no-underline">Forgot password</Link>
+                    <Link href="/auth/forgot-password" className="text-sm text-[#7F56D9] font-medium no-underline">Forgot password</Link>
                 </div>
 
                 {/* Submit */}
                 <Form.Item>
                     <Button type="primary" htmlType="submit" loading={loading} block size="large"
-                        className="!bg-[#7c3aed] hover:!bg-[#6d28d9] !border-none font-semibold text-[15px] h-[44px] rounded-lg">
+                        className="!bg-[#7F56D9] hover:!bg-[#6d28d9] !border-none font-semibold text-[15px] h-[44px] rounded-lg">
                         Sign in
                     </Button>
                 </Form.Item>
@@ -122,7 +122,7 @@ export default function LoginPage() {
             {/* Sign up link */}
             <p className="mt-6 text-center text-sm text-slate-500">
                 Don&apos;t have an account?{' '}
-                <Link href="/auth/register" className="text-[#7c3aed] font-semibold">Sign up</Link>
+                <Link href="/auth/register" className="text-[#7F56D9] font-semibold">Sign up</Link>
             </p>
         </>
     )

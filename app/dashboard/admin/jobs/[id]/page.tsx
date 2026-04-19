@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
-import { getJobApplications, updateCandidatureStatus } from '@/lib/candidatureService'
-import { decrementJobSeats } from '@/lib/jobService'
-import type { Job } from '@/lib/database.types'
+import { supabase } from '@/api/supabase'
+import { getJobApplications, updateCandidatureStatus } from '@/api/candidatures'
+import { decrementJobSeats } from '@/api/job'
+import type { Job } from '@/api/database.types'
 import { message, Table, Tag, Space, Avatar, Button as AntButton, Modal } from 'antd'
 import { CheckCircleOutlined, CloseCircleOutlined, UserOutlined } from '@ant-design/icons'
 

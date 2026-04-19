@@ -1,12 +1,23 @@
 'use client'
 
-import { useAuth } from '@/lib/AuthContext'
+import { useAuth } from '@/api/AuthContext'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { 
+  HomeOutlined, 
+  FileTextOutlined, 
+  SettingOutlined, 
+  LogoutOutlined,
+  MenuOutlined,
+  CloseOutlined 
+} from '@ant-design/icons'
+import { useState } from 'react'
 
 export default function PostulantLayout({ children }: { children: React.ReactNode }) {
   const { profile, user, signout } = useAuth()
   const pathname = usePathname()
+  const router = useRouter()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const fullName = profile?.user_name ?? user?.email?.split('@')[0] ?? 'Postulant'
   const initials = fullName
@@ -17,71 +28,84 @@ export default function PostulantLayout({ children }: { children: React.ReactNod
     .slice(0, 2)
 
   const navLinks = [
-    { href: '/dashboard/postulant', label: '💼 Offres d\'emploi', exact: true },
-    { href: '/dashboard/postulant/candidature', label: '📄 Mes candidatures', exact: false },
-    { href: '/dashboard/postulant/settings', label: '⚙️ Paramètres', exact: false },
+    { href: '/dashboard/postulant', label: 'Offres d\'emploi', icon: <HomeOutlined />, exact: true },
+    { href: '/dashboard/postulant/candidature', label: 'Mes candidatures', icon: <FileTextOutlined />, exact: false },
+    { href: '/dashboard/postulant/profile', label: 'Paramètres', icon: <SettingOutlined />, exact: false },
   ]
 
   const isActive = (href: string, exact: boolean) =>
     exact ? pathname === href : pathname.startsWith(href)
 
+  const handleLogout = async () => {
+    await signout()
+    router.push('/login')
+  }
+
   return (
-    <div className="min-h-screen bg-[#F9FAFB] font-['Sora',sans-serif]">
+    <div className="min-h-screen bg-[#F9FAFB] font-['Inter',sans-serif] flex overflow-hidden">
 
-      {/* ── NAVBAR ── */}
-      <nav className="bg-white border-b border-[#E4E7EC] sticky top-0 z-50 h-16 flex items-center justify-between px-8">
-
-        {/* Logo */}
-        <Link
-          href="/dashboard/postulant"
-          className="no-underline text-[22px] font-bold text-[#7C3AED] italic tracking-[-1px]"
-        >
-          Yunr
-        </Link>
-
-        {/* Nav Links */}
-        <div className="flex items-center gap-1">
-          {navLinks.map(link => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`px-4 py-2 rounded-lg text-[13px] font-medium no-underline transition-all
-                ${isActive(link.href, link.exact)
-                  ? 'bg-[#EDE9FE] text-[#7C3AED]'
-                  : 'text-[#475467] hover:bg-slate-50 hover:text-slate-900'
-                }`}
-            >
-              {link.label}
-            </Link>
-          ))}
+      {/* ── SIDEBAR (FIXED 243PX) ── */}
+      <aside className="w-[243px] bg-white border-r border-[#EAECF0] flex flex-col sticky top-0 h-screen shrink-0 z-[100] shadow-[1px_0_0_0_#EAECF0]">
+        
+        {/* Logo Section */}
+        <div className="pt-[24px] pb-[32px] px-[24px]">
+          <Link href="/dashboard/postulant" className="no-underline flex items-center gap-[12px] group">
+            <div className="w-[32px] h-[32px] bg-[#7C3AED] rounded-[8px] flex items-center justify-center text-white font-bold text-[18px] italic shadow-sm group-hover:scale-105 transition-transform">
+              Y
+            </div>
+            <span className="text-[20px] font-bold text-[#101828] tracking-[-0.5px]">Yunr</span>
+          </Link>
         </div>
 
-        {/* User Menu */}
-        <div className="flex items-center gap-3">
-          {/* Profile link via avatar */}
-          <Link href="/dashboard/postulant/profile" className="flex items-center gap-3 no-underline group">
-            <div className="w-9 h-9 rounded-full bg-[#EDE9FE] text-[#7C3AED] flex items-center justify-center text-xs font-bold select-none group-hover:ring-2 group-hover:ring-[#7C3AED]/30 transition-all">
+        {/* Navigation Section */}
+        <div className="flex-1 px-[24px] overflow-y-auto overflow-x-hidden">
+          <nav className="flex flex-col gap-[4px]">
+            {navLinks.map(link => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`flex items-center gap-[12px] px-[12px] h-[40px] rounded-[8px] text-[14px] font-medium no-underline transition-all
+                  ${isActive(link.href, link.exact)
+                    ? 'bg-[#F9F5FF] text-[#7C3AED]'
+                    : 'text-[#344054] hover:bg-[#F9FAFB] hover:text-[#101828]'
+                  }`}
+              >
+                <span className={`text-[15px] shrink-0 ${isActive(link.href, link.exact) ? 'text-[#7C3AED]' : 'text-[#667085]'}`}>
+                  {link.icon}
+                </span>
+                <span className="truncate whitespace-nowrap">{link.label}</span>
+              </Link>
+            ))}
+          </nav>
+        </div>
+
+        {/* User Footer Section */}
+        <div className="mt-auto border-t border-[#EAECF0] pt-[24px] pb-[24px] px-[24px] flex flex-col gap-[16px]">
+          <div className="flex items-center gap-[12px]">
+            <div className="w-[40px] h-[40px] rounded-full bg-[#EDE9FE] text-[#7C3AED] flex items-center justify-center text-[13px] font-bold border border-[#DDD6FE] shadow-sm">
               {initials}
             </div>
-            <div className="flex flex-col leading-none">
-              <span className="text-[12px] font-semibold text-[#101828] group-hover:text-[#7C3AED] transition-colors">{fullName}</span>
-              <span className="text-[10px] text-[#98A2B3] mt-0.5">Postulant</span>
+            <div className="flex flex-col overflow-hidden">
+              <span className="text-[14px] font-semibold text-[#101828] truncate leading-tight">{fullName}</span>
+              <span className="text-[12px] text-[#475467] truncate leading-tight mt-0.5">{user?.email}</span>
             </div>
-          </Link>
-
-          {/* Logout */}
+          </div>
+          
           <button
-            onClick={signout}
-            className="px-3.5 py-1.5 rounded-lg border border-[#D0D5DD] text-[12px] font-medium text-[#475467] bg-white hover:bg-slate-50 transition-colors cursor-pointer"
+            onClick={handleLogout}
+            className="flex items-center gap-[12px] px-[12px] h-[40px] w-full rounded-[8px] text-[14px] font-bold text-[#667085] hover:text-[#B42318] hover:bg-[#FEF3F2] transition-all border-none bg-transparent cursor-pointer"
           >
-            Déconnexion
+            <LogoutOutlined className="text-[18px] shrink-0" />
+            <span className="truncate">Déconnexion</span>
           </button>
         </div>
-      </nav>
+      </aside>
 
-      {/* ── PAGE CONTENT ── */}
-      <main className="max-w-[1100px] mx-auto px-6 py-8">
-        {children}
+      {/* ── MAIN CONTENT AREA ── */}
+      <main className="flex-1 min-w-0 h-screen overflow-y-auto bg-[#F9FAFB]">
+        <div className="w-full">
+          {children}
+        </div>
       </main>
 
     </div>

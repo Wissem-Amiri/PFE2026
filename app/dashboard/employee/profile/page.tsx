@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useAuth } from '@/lib/AuthContext'
-import { getProfile, updateProfile } from '@/lib/profileService'
-import type { Utilisateur } from '@/lib/database.types'
+import { useAuth } from '@/api/AuthContext'
+import { getProfile, updateProfile } from '@/api/profile'
+import type { BaseUtilisateur as Utilisateur } from '@/api/database.types'
 import { Form, Input, Button, DatePicker, message, Select } from 'antd'
 import { SaveOutlined, UserOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'

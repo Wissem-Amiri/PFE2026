@@ -4,10 +4,10 @@ import { SearchOutlined, BankOutlined, EnvironmentOutlined, ClockCircleOutlined,
 import { Input, message } from 'antd'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/lib/AuthContext'
-import { getAllJobs } from '@/lib/jobService'
-import { getUserCandidatures } from '@/lib/candidatureService'
-import type { Job } from '@/lib/database.types'
+import { useAuth } from '@/api/AuthContext'
+import { getAllJobs } from '@/api/job'
+import { getUserCandidatures } from '@/api/candidatures'
+import type { Job } from '@/api/database.types'
 
 export default function EmployeeJobsPage() {
   const { user } = useAuth()
@@ -93,8 +93,8 @@ export default function EmployeeJobsPage() {
         <div className="text-center py-24 text-slate-400">Loading jobs...</div>
       ) : filteredJobs.length === 0 ? (
         <div className="bg-white rounded-2xl border border-[#E4E7EC] p-[60px] text-center">
-            <h2 className="text-xl font-bold text-[#101828] mb-2">No jobs available right now</h2>
-            <p className="text-[#475467] text-sm max-w-xs mx-auto">Check back later for new internal positions.</p>
+          <h2 className="text-xl font-bold text-[#101828] mb-2">No jobs available right now</h2>
+          <p className="text-[#475467] text-sm max-w-xs mx-auto">Check back later for new internal positions.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -118,13 +118,13 @@ export default function EmployeeJobsPage() {
                   <div className="text-[12px] text-[#475467] mb-4 flex gap-1 items-center">
                     <ClockCircleOutlined /> Deadline : <span className="font-semibold text-gray-800">{new Date(job.deadline).toLocaleDateString()}</span>
                   </div>
-                  
+
                   {hasApplied ? (
                     <button disabled className="w-full py-2.5 rounded-xl border border-emerald-500 bg-emerald-50 text-emerald-700 font-medium text-sm flex items-center justify-center gap-2">
-                       <CheckCircleOutlined /> Application Sent
+                      <CheckCircleOutlined /> Application Sent
                     </button>
                   ) : (
-                    <button 
+                    <button
                       onClick={() => handleApplyClick(job.id)}
                       className="w-full py-2.5 rounded-xl border border-[#7C3AED] bg-[#7C3AED] text-white font-medium text-sm hover:bg-[#6D28D9] transition-colors"
                     >

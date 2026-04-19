@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Tag, message, Modal, DatePicker, Select, Input } from 'antd'
+import { Tag, message, Modal, DatePicker, Select, Input, Avatar } from 'antd'
 import { 
   CheckCircleOutlined, 
   CloseCircleOutlined, 
@@ -13,15 +13,17 @@ import {
   DownloadOutlined,
   SearchOutlined
 } from '@ant-design/icons'
-import { getAllUsers, updateUserStatus as updateGlobalUserStatus, exportToCSV, downloadCSV } from '@/lib/profileService'
-import { getAllCandidaturesDetailed, updateCandidatureStatus, archiveCandidatures, deleteAllOtherCandidatures } from '@/lib/candidatureService'
-import { getAllJobs, decrementJobSeats } from '@/lib/jobService'
-import type { FullProfile } from '@/lib/database.types'
+import { getAllUsers, updateUserStatus as updateGlobalUserStatus, exportToCSV, downloadCSV } from '@/api/profile'
+import { getAllCandidaturesDetailed, updateCandidatureStatus, archiveCandidatures, deleteAllOtherCandidatures } from '@/api/candidatures'
+import { getAllJobs, decrementJobSeats } from '@/api/job'
+import type { FullProfile } from '@/api/database.types'
 
 export default function RegistrationsPage() {
   const [applications, setApplications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const pageSize = 2
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [appToApprove, setAppToApprove] = useState<any | null>(null)
   
@@ -81,19 +83,14 @@ export default function RegistrationsPage() {
   }
 
   const handleAction = async (application: any, status: 'accepted' | 'rejected', hiringDetails?: any) => {
-    // 1. Update the specific candidature status
     const { error: appError } = await updateCandidatureStatus(application.id, status)
 
     if (!appError) {
-      // 2. If approving, also ensure the user becomes an employee (global role)
       if (status === 'accepted') {
         const { error: statusError } = await updateGlobalUserStatus(application.postulant_id, 'approved', hiringDetails)
         
         if (!statusError) {
-          // 3. Cleanup: Delete all other candidatures for this user permanently
           await deleteAllOtherCandidatures(application.postulant_id, application.id)
-          
-          // 4. Update Job Seats!
           if (application.job_id) {
             await decrementJobSeats(application.job_id)
           }
@@ -129,7 +126,6 @@ export default function RegistrationsPage() {
   }
 
   const handleExport = () => {
-    // Note: Exporting users from applications list
     const usersToExport = Array.from(new Set(filtered.map(app => app.postulant?.user)))
     const csv = exportToCSV(usersToExport as any[])
     downloadCSV(csv, 'registrations.csv')
@@ -146,27 +142,42 @@ export default function RegistrationsPage() {
     return matchSearch
   })
 
+  // Pagination Logic
+  const totalItems = filtered.length
+  const totalPages = Math.ceil(totalItems / pageSize)
+  const paginatedData = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+
+  // Reset to page 1 on search
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search])
+
   return (
-    <div className="flex-1 p-[24px] px-[28px] h-full overflow-y-auto">
-      <div className="flex justify-between items-center mb-[20px]">
-        <h1 className="text-[22px] font-bold text-[#101828] mb-0">Registrations</h1>
-        <div className="flex gap-[8px] items-center">
+    <div className="flex-1 p-[32px] h-full overflow-y-auto bg-transparent">
+      {/* ── HEADER ── */}
+      <div className="flex justify-between items-center mb-[32px]">
+        <div>
+           <h1 className="text-[30px] font-medium text-[#101828]">Registrations</h1>
+           <p className="text-[16px] text-[#667085] mt-1">Manage and review incoming candidate applications.</p>
+        </div>
+        <div className="flex gap-[12px] items-center">
           <button 
             onClick={() => router.push('/dashboard/admin/registrations/archive')}
-            className="px-[14px] py-[7px] border-[1.5px] border-[#D0D5DD] rounded-[8px] bg-white font-['Sora',sans-serif] text-[12px] font-medium text-[#475467] cursor-pointer flex items-center gap-[8px] hover:border-[#7c3aed] hover:text-[#7c3aed] transition-all"
+            className="h-[44px] px-[18px] border border-[#d0d5dd] rounded-[8px] bg-white font-medium text-[14px] text-[#344054] cursor-pointer flex items-center gap-[8px] hover:bg-gray-50 transition-all shadow-sm"
           >
-            <FolderOpenOutlined className="text-[14px]" />
+            <FolderOpenOutlined className="text-[16px] opacity-70" />
             Archive
           </button>
           
-          <button onClick={handleExport} className="px-[14px] py-[7px] border-[1.5px] border-[#D0D5DD] rounded-[8px] bg-white font-['Sora',sans-serif] text-[12px] font-medium text-[#475467] cursor-pointer flex items-center gap-[6px] hover:border-[#7c3aed] hover:text-[#7c3aed]">
-            <DownloadOutlined /> Export
+          <button onClick={handleExport} className="h-[44px] px-[18px] border border-[#d0d5dd] rounded-[8px] bg-white font-medium text-[14px] text-[#344054] cursor-pointer flex items-center gap-[8px] hover:bg-gray-50 transition-all shadow-sm">
+            <img src="/assets/export.svg" className="w-[20px] h-[20px]" alt="export" />
+            Export
           </button>
 
           {selectedIds.size > 0 && (
             <button
               onClick={() => setIsPermDeleteModalVisible(true)}
-              className="px-[14px] py-[7px] border-[1.5px] border-[#7c3aed] rounded-[8px] bg-[#F5F3FF] font-['Sora',sans-serif] text-[12px] font-semibold text-[#7c3aed] cursor-pointer flex items-center gap-[6px] hover:bg-[#EDE9FE] transition-colors animate-in fade-in slide-in-from-right-2"
+              className="h-[44px] px-[18px] border border-[#7f56d9] rounded-[8px] bg-[#f9f5ff] font-semibold text-[14px] text-[#7f56d9] cursor-pointer flex items-center gap-[8px] hover:bg-[#f4ebff] transition-all shadow-sm animate-in fade-in slide-in-from-right-2"
             >
               📂 Archive {selectedIds.size}
             </button>
@@ -174,18 +185,20 @@ export default function RegistrationsPage() {
         </div>
       </div>
 
-      <div className="bg-white border border-[#E4E7EC] rounded-[12px] overflow-hidden">
-        <div className="px-[18px] py-[14px] border-b border-[#E4E7EC] flex justify-between items-center">
+      <div className="bg-white border border-[#eaecf0] rounded-[12px] shadow-sm overflow-hidden mb-[40px]">
+        {/* ── TABLE HEADER SECTION ── */}
+        <div className="px-6 py-5 border-b border-[#eaecf0] flex justify-between items-center bg-white">
           <div>
-            <h3 className="text-[13px] font-semibold text-[#101828] mb-0 mt-0">Latest Registrations</h3>
-            <p className="text-[11px] text-[#475467] mt-[2px] mb-0">Keep track of registrations and their status.</p>
+            <h3 className="text-[18px] font-medium text-[#101828] mb-0">Latest Registrations</h3>
+            <p className="text-[14px] text-[#667085] mt-1 mb-0">Keep track of registrations and their status.</p>
           </div>
-          <div className="flex items-center gap-[8px] px-[12px] py-[7px] border-[1.5px] border-[#D0D5DD] rounded-[8px] text-[12px] text-[#475467] bg-white focus-within:border-[#7c3aed]">
-            🔍 <input
+          <div className="relative group">
+            <img src="/assets/search-small.svg" className="absolute left-[12px] top-1/2 -translate-y-1/2 w-[18px] h-[18px] opacity-50" alt="search" />
+            <input
               placeholder="Search"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="border-none outline-none font-['Sora',sans-serif] text-[12px] text-[#101828] bg-transparent"
+              className="pl-[40px] pr-[14px] py-[10px] border border-[#eaecf0] rounded-[8px] bg-white text-[14px] text-[#101828] w-[320px] focus:outline-none focus:ring-2 focus:ring-[#7f56d9]/20 transition-all placeholder:text-[#98a2b3] font-medium"
             />
           </div>
         </div>
@@ -193,64 +206,71 @@ export default function RegistrationsPage() {
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
-              <tr>
-                <th className="px-[16px] py-[9px] text-left text-[11px] text-[#98A2B3] font-medium border-b border-[#E4E7EC] whitespace-nowrap">
+              <tr className="bg-[#f9fafb]">
+                <th className="px-6 py-3 text-left border-b border-[#eaecf0] w-[40px]">
                   <input
                     type="checkbox"
-                    className="rounded cursor-pointer"
+                    className="w-4 h-4 rounded border-[#d0d5dd] cursor-pointer accent-[#7f56d9]"
                     checked={filtered.length > 0 && selectedIds.size === filtered.length}
                     onChange={toggleSelectAll}
                   />
                 </th>
-                <th className="px-[16px] py-[9px] text-left text-[11px] text-[#98A2B3] font-medium border-b border-[#E4E7EC] whitespace-nowrap">Name</th>
-                <th className="px-[16px] py-[9px] text-left text-[11px] text-[#98A2B3] font-medium border-b border-[#E4E7EC] whitespace-nowrap">Email address</th>
-                <th className="px-[16px] py-[9px] text-left text-[11px] text-[#98A2B3] font-medium border-b border-[#E4E7EC] whitespace-nowrap">Submission Date</th>
-                <th className="px-[16px] py-[9px] text-left text-[11px] text-[#98A2B3] font-medium border-b border-[#E4E7EC] whitespace-nowrap">Status</th>
-                <th className="px-[16px] py-[9px] text-left text-[11px] text-[#98A2B3] font-medium border-b border-[#E4E7EC] whitespace-nowrap">Actions</th>
+                <th className="px-6 py-3 text-left text-[12px] text-[#667085] font-medium border-b border-[#eaecf0] uppercase tracking-wider">Name</th>
+                <th className="px-6 py-3 text-left text-[12px] text-[#667085] font-medium border-b border-[#eaecf0] uppercase tracking-wider">Email address</th>
+                <th className="px-6 py-3 text-left text-[12px] text-[#667085] font-medium border-b border-[#eaecf0] uppercase tracking-wider">Submission Date</th>
+                <th className="px-6 py-3 text-left text-[12px] text-[#667085] font-medium border-b border-[#eaecf0] uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-[12px] text-[#667085] font-medium border-b border-[#eaecf0] uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="bg-white">
               {loading ? (
-                <tr><td colSpan={6} className="text-center py-10 text-slate-400 text-sm">Loading...</td></tr>
-              ) : filtered.length === 0 ? (
-                <tr><td colSpan={6} className="text-center py-10 text-slate-400 text-sm">No registrations found.</td></tr>
+                <tr><td colSpan={6} className="text-center py-16 text-slate-400 text-[14px]">Loading registrations...</td></tr>
+              ) : paginatedData.length === 0 ? (
+                <tr><td colSpan={6} className="text-center py-16 text-slate-400 text-[14px]">No registrations found.</td></tr>
               ) : (
-                filtered.map((app, i) => (
-                  <tr key={app.id}>
-                    <td className="px-[16px] py-[10px] text-[12px] text-[#475467] border-b border-[#F2F4F7] align-middle">
+                paginatedData.map((app) => (
+                  <tr key={app.id} className="hover:bg-[#f9fafb] transition-colors h-[72px]">
+                    <td className="px-6 py-4 border-b border-[#eaecf0]">
                       <input
                         type="checkbox"
-                        className="rounded cursor-pointer"
+                        className="w-4 h-4 rounded border-[#d0d5dd] cursor-pointer accent-[#7f56d9]"
                         checked={selectedIds.has(app.id)}
                         onChange={() => toggleSelectRow(app.id)}
                       />
                     </td>
-                    <td className="px-[16px] py-[10px] text-[12px] text-[#475467] border-b border-[#F2F4F7] align-middle">
-                      <div className="flex items-center gap-[10px]">
-                        <div className="w-[32px] h-[32px] rounded-full overflow-hidden bg-[#EDE9FE] flex items-center justify-center text-[11px] font-bold text-[#7C3AED] shrink-0">
+                    <td className="px-6 py-4 border-b border-[#eaecf0]">
+                      <div className="flex items-center gap-[12px]">
+                        <Avatar
+                          size={40}
+                          src={app.postulant?.user?.avatar_url}
+                          className="bg-[#f9f5ff] text-[#7f56d9] font-semibold text-[14px]"
+                        >
                           {app.postulant?.user?.user_name?.substring(0, 2).toUpperCase() || 'UN'}
-                        </div>
+                        </Avatar>
                         <div>
-                          <div className="text-[12px] font-semibold text-[#101828]">{app.postulant?.user?.user_name || '—'}</div>
-                          <div className="text-[11px] text-[#7C3AED] font-medium">{app.job?.title || 'Postulant'}</div>
+                          <div className="text-[14px] font-medium text-[#101828]">{app.postulant?.user?.user_name || '—'}</div>
+                          <div className="text-[14px] text-[#667085]">{app.job?.title || 'Postulant'}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-[16px] py-[10px] text-[12px] text-[#475467] border-b border-[#F2F4F7] align-middle">
+                    <td className="px-6 py-4 border-b border-[#eaecf0] text-[14px] text-[#667085]">
                       {app.postulant?.user?.email || '—'}
                     </td>
-                    <td className="px-[16px] py-[10px] text-[12px] text-[#475467] border-b border-[#F2F4F7] align-middle">
+                    <td className="px-6 py-4 border-b border-[#eaecf0] text-[14px] text-[#667085]">
                       {new Date(app.applied_at || app.created_at || '').toLocaleString('en-US', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </td>
-                    <td className="px-[16px] py-[10px] text-[12px] text-[#475467] border-b border-[#F2F4F7] align-middle">
-                      {app.status === 'pending' && <span className="px-[8px] py-[2px] rounded-full text-[10px] font-semibold bg-[#FEF3C7] text-[#D97706]">Pending</span>}
-                      {app.status === 'accepted' && <span className="px-[8px] py-[2px] rounded-full text-[10px] font-semibold bg-[#DCFCE7] text-[#16A34A]">Approved</span>}
-                      {app.status === 'rejected' && <span className="px-[8px] py-[2px] rounded-full text-[10px] font-semibold bg-[#FEF2F2] text-[#DC2626]">Rejected</span>}
+                    <td className="px-6 py-4 border-b border-[#eaecf0]">
+                      {app.status === 'pending' && <span className="px-[10px] py-[2px] rounded-full text-[12px] font-medium bg-[#fffaeb] text-[#b54708] border border-[#fedf89]">Pending</span>}
+                      {app.status === 'accepted' && <span className="px-[10px] py-[2px] rounded-full text-[12px] font-medium bg-[#ecfdf3] text-[#067647] border border-[#abefc6]">Approved</span>}
+                      {app.status === 'rejected' && <span className="px-[10px] py-[2px] rounded-full text-[12px] font-medium bg-[#fef3f2] text-[#b42318] border border-[#fecdca]">Rejected</span>}
                     </td>
-                    <td className="px-[16px] py-[10px] text-[12px] text-[#475467] border-b border-[#F2F4F7] align-middle">
-                      <div className="flex gap-[6px] items-center">
-                        <button onClick={() => router.push(`/dashboard/admin/registrations/${app.postulant_id}?jobId=${app.job_id}`)} className="w-[28px] h-[28px] rounded-[6px] border border-[#D0D5DD] bg-white flex items-center justify-center cursor-pointer text-[13px] hover:border-[#7c3aed]">
-                          👁
+                    <td className="px-6 py-4 border-b border-[#eaecf0]">
+                      <div className="flex gap-[8px] items-center">
+                        <button 
+                          onClick={() => router.push(`/dashboard/admin/registrations/${app.postulant_id}?jobId=${app.job_id}`)} 
+                          className="w-[36px] h-[36px] rounded-[8px] border border-[#d0d5dd] bg-white flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-all shadow-sm"
+                        >
+                          <img src="/assets/eye.svg" className="w-[17px] h-[13px]" alt="view" />
                         </button>
                         {app.status === 'pending' && (
                           <>
@@ -259,18 +279,18 @@ export default function RegistrationsPage() {
                                 setAppToApprove(app)
                                 setIsModalVisible(true)
                               }}
-                              className="w-[28px] h-[28px] rounded-[6px] border border-[#D0D5DD] bg-white flex items-center justify-center cursor-pointer text-[13px] hover:border-[#12B76A] hover:text-[#12B76A]"
+                              className="w-[36px] h-[36px] rounded-[8px] border border-[#d0d5dd] bg-white flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-all shadow-sm"
                             >
-                              ✓
+                              <img src="/assets/check-mark.svg" className="w-[17px] h-[13px]" alt="approve" />
                             </button>
                             <button
                               onClick={() => {
                                 setAppToDelete(app)
                                 setIsDeleteModalVisible(true)
                               }}
-                              className="w-[28px] h-[28px] rounded-[6px] border border-[#D0D5DD] bg-white flex items-center justify-center cursor-pointer text-[13px] hover:border-[#F04438] hover:text-[#F04438]"
+                              className="w-[36px] h-[36px] rounded-[8px] border border-[#d0d5dd] bg-white flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-all shadow-sm"
                             >
-                              ✕
+                              <img src="/assets/cross.svg" className="w-[17px] h-[17px]" alt="reject" />
                             </button>
                           </>
                         )}
@@ -283,17 +303,47 @@ export default function RegistrationsPage() {
           </table>
         </div>
 
-        <div className="flex items-center justify-between px-[18px] py-[12px] border-t border-[#E4E7EC]">
-          <button className="px-[12px] py-[6px] border-[1.5px] border-[#D0D5DD] rounded-[6px] bg-white font-['Sora',sans-serif] text-[11px] font-medium cursor-pointer flex items-center gap-[4px] hover:border-[#7c3aed]">← Previous</button>
-          <div className="flex gap-[4px] items-center">
-            <div className="w-[28px] h-[28px] rounded-[6px] flex items-center justify-center text-[11px] cursor-pointer font-medium bg-[#EDE9FE] text-[#7C3AED]">1</div>
-            <div className="w-[28px] h-[28px] rounded-[6px] flex items-center justify-center text-[11px] cursor-pointer font-medium hover:bg-gray-50">2</div>
-            <div className="w-[28px] h-[28px] rounded-[6px] flex items-center justify-center text-[11px] cursor-pointer font-medium hover:bg-gray-50">3</div>
-            <div className="w-[28px] h-[28px] rounded-[6px] flex items-center justify-center text-[11px] cursor-pointer font-medium">…</div>
-            <div className="w-[28px] h-[28px] rounded-[6px] flex items-center justify-center text-[11px] cursor-pointer font-medium hover:bg-gray-50">10</div>
+        {/* ── PAGINATION ── */}
+        {filtered.length > pageSize && (
+          <div className="flex items-center justify-between px-6 py-4 border-t border-[#eaecf0] bg-white">
+            <button 
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className={`h-[40px] px-[14px] border border-[#d0d5dd] rounded-[8px] bg-white font-medium text-[14px] text-[#344054] cursor-pointer flex items-center gap-[8px] hover:bg-gray-50 transition-all shadow-sm ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              <img src="/assets/arrow-left.svg" className="w-[16px] h-[16px]" alt="" /> Previous
+            </button>
+            <div className="flex gap-[2px] items-center">
+              {Array.from({ length: totalPages }).map((_, i) => {
+                const pageNum = i + 1;
+                const isActive = currentPage === pageNum;
+                // Simple logic to show only nearby pages if there are many
+                if (totalPages > 7 && (pageNum > 1 && pageNum < totalPages && Math.abs(pageNum - currentPage) > 2)) {
+                   if (pageNum === 2 || pageNum === totalPages - 1) return <div key={pageNum} className="w-[40px] h-[40px] flex items-center justify-center text-[#667085]">...</div>
+                   return null;
+                }
+                return (
+                  <div 
+                    key={pageNum}
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={`w-[40px] h-[40px] rounded-[8px] flex items-center justify-center text-[14px] cursor-pointer font-medium transition-all ${
+                      isActive ? 'bg-[#f9f5ff] text-[#7f56d9]' : 'text-[#667085] hover:bg-gray-50'
+                    }`}
+                  >
+                    {pageNum}
+                  </div>
+                );
+              })}
+            </div>
+            <button 
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              className={`h-[40px] px-[14px] border border-[#d0d5dd] rounded-[8px] bg-white font-medium text-[14px] text-[#344054] cursor-pointer flex items-center gap-[8px] hover:bg-gray-50 transition-all shadow-sm ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              Next <img src="/assets/arrow-right.svg" className="w-[16px] h-[16px]" alt="" />
+            </button>
           </div>
-          <button className="px-[12px] py-[6px] border-[1.5px] border-[#D0D5DD] rounded-[6px] bg-white font-['Sora',sans-serif] text-[11px] font-medium cursor-pointer flex items-center gap-[4px] hover:border-[#7c3aed]">Next →</button>
-        </div>
+        )}
       </div>
 
       {/* Approval Confirmation Modal */}
@@ -307,23 +357,22 @@ export default function RegistrationsPage() {
             onClick={e => e.stopPropagation()}
           >
             <div className="flex flex-col items-center">
-              <div className="w-[52px] h-[52px] rounded-[12px] bg-[#DCFCE7] flex items-center justify-center mb-[16px]">
-                <CheckCircleOutlined className="text-[#16A34A] text-[24px]" />
+              <div className="w-[52px] h-[52px] rounded-[12px] bg-[#ecfdf3] flex items-center justify-center mb-[16px] border border-[#abefc6]">
+                <CheckCircleOutlined className="text-[#067647] text-[24px]" />
               </div>
 
-              <h3 className="text-[16px] font-bold text-[#101828] text-center mb-[4px]">
-                Accept {appToApprove.postulant?.user?.user_name || 'this candidate'} for {appToApprove.job?.title || 'this position'}?
+              <h3 className="text-[18px] font-semibold text-[#101828] text-center mb-[8px]">
+                Accept {appToApprove.postulant?.user?.user_name || 'this candidate'}?
               </h3>
 
-              <p className="text-[13px] text-[#475467] text-center leading-[1.6] mb-[20px]">
-                By approving this candidature, the candidate will be accepted for this specific role.
-                They will also be promoted to the Employee role if not already done.
+              <p className="text-[14px] text-[#667085] text-center leading-relaxed mb-[24px]">
+                By approving this candidature, the candidate will be accepted for the role of <b>{appToApprove.job?.title || 'Postulant'}</b>.
               </p>
 
-              <div className="flex gap-[10px] w-full">
+              <div className="flex gap-[12px] w-full">
                 <button
                   onClick={() => setIsModalVisible(false)}
-                  className="flex-1 h-[40px] border-[1.5px] border-[#D0D5DD] rounded-[8px] bg-white text-[#344054] font-medium text-[13px] hover:bg-gray-50 transition-colors"
+                  className="flex-1 h-[44px] border border-[#d0d5dd] rounded-[8px] bg-white text-[#344054] font-semibold text-[14px] hover:bg-gray-50 transition-all shadow-sm"
                 >
                   Cancel
                 </button>
@@ -332,9 +381,9 @@ export default function RegistrationsPage() {
                     setIsModalVisible(false)
                     setIsHiringModal(true)
                   }}
-                  className="flex-1 h-[40px] bg-[#7C3AED] text-white rounded-[8px] font-semibold text-[13px] hover:bg-[#6D28D9] transition-colors"
+                  className="flex-1 h-[44px] bg-[#7f56d9] text-white rounded-[8px] font-semibold text-[14px] hover:bg-[#6941c6] transition-all shadow-sm"
                 >
-                  Approve
+                  Confirm Approve
                 </button>
               </div>
             </div>
@@ -342,7 +391,7 @@ export default function RegistrationsPage() {
         </div>
       )}
 
-      {/* Rejection Confirmation Modal (Delete) */}
+      {/* Rejection Confirmation Modal */}
       {isDeleteModalVisible && appToDelete && (
         <div
           className="fixed inset-0 bg-black/40 flex items-center justify-center z-[1000] p-4"
@@ -353,29 +402,28 @@ export default function RegistrationsPage() {
             onClick={e => e.stopPropagation()}
           >
             <div className="flex flex-col items-center">
-              <div className="w-[52px] h-[52px] rounded-[12px] bg-[#FEF2F2] flex items-center justify-center mb-[16px]">
-                <CloseCircleOutlined className="text-[#DC2626] text-[24px]" />
+              <div className="w-[52px] h-[52px] rounded-[12px] bg-[#fef3f2] flex items-center justify-center mb-[16px] border border-[#fecdca]">
+                <CloseCircleOutlined className="text-[#d92d20] text-[24px]" />
               </div>
 
-              <h3 className="text-[16px] font-bold text-[#101828] text-center mb-[4px]">
-                Reject {appToDelete.postulant?.user?.user_name || 'this candidate'} for {appToDelete.job?.title || 'this position'}?
+              <h3 className="text-[18px] font-semibold text-[#101828] text-center mb-[8px]">
+                Reject {appToDelete.postulant?.user?.user_name || 'this candidate'}?
               </h3>
 
-              <p className="text-[13px] text-[#475467] text-center leading-[1.6] mb-[20px]">
-                By rejecting this candidature, the candidate will be notified of the decision for this specific job.
-                Their other applications will remain active.
+              <p className="text-[14px] text-[#667085] text-center leading-relaxed mb-[24px]">
+                 Their other applications will remain active.
               </p>
 
-              <div className="flex gap-[10px] w-full">
+              <div className="flex gap-[12px] w-full">
                 <button
                   onClick={() => setIsDeleteModalVisible(false)}
-                  className="flex-1 h-[40px] border-[1.5px] border-[#D0D5DD] rounded-[8px] bg-white text-[#344054] font-medium text-[13px] hover:bg-gray-50 transition-colors"
+                  className="flex-1 h-[44px] border border-[#d0d5dd] rounded-[8px] bg-white text-[#344054] font-semibold text-[14px] hover:bg-gray-50 transition-all shadow-sm"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={() => handleAction(appToDelete, 'rejected')}
-                  className="flex-1 h-[40px] bg-[#DC2626] text-white rounded-[8px] font-semibold text-[13px] hover:bg-[#B91C1C] transition-colors"
+                  className="flex-1 h-[44px] bg-[#d92d20] text-white rounded-[8px] font-semibold text-[14px] hover:bg-[#b42318] transition-all shadow-sm"
                 >
                   Reject
                 </button>
@@ -385,7 +433,7 @@ export default function RegistrationsPage() {
         </div>
       )}
 
-      {/* Permanent Delete Confirmation Modal (NEW) */}
+      {/* Permanent Delete Confirmation Modal */}
       {isPermDeleteModalVisible && selectedIds.size > 0 && (
         <div
           className="fixed inset-0 bg-black/40 flex items-center justify-center z-[1001] p-4"
@@ -400,33 +448,34 @@ export default function RegistrationsPage() {
                 <CloseCircleOutlined className="text-[#DC2626] text-[24px]" />
               </div>
 
-              <h3 className="text-[16px] font-bold text-[#101828] text-center mb-[4px]">
-                Supprimer {selectedIds.size} inscription{selectedIds.size > 1 ? 's' : ''} ?
+              <h3 className="text-[18px] font-semibold text-[#101828] text-center mb-[4px]">
+                Archive {selectedIds.size} registration{selectedIds.size > 1 ? 's' : ''}?
               </h3>
 
-              <p className="text-[13px] text-[#475467] text-center leading-[1.6] mb-[24px]">
-                Attention : Cette action supprimera <b>définitivement</b> les comptes sélectionnés de la base de données. Les candidats concernés ne pourront plus se connecter.
+              <p className="text-[14px] text-[#667085] text-center leading-relaxed mb-[24px]">
+                This will move the selected registrations to the archive. They can be restored later.
               </p>
 
               <div className="flex gap-[12px] w-full">
                 <button
                   onClick={() => setIsPermDeleteModalVisible(false)}
-                  className="flex-1 h-[44px] border border-[#D0D5DD] rounded-[10px] bg-white text-[#344054] font-semibold text-[14px] hover:bg-gray-50 transition-all shadow-sm"
+                  className="flex-1 h-[44px] border border-[#d0d5dd] rounded-[8px] bg-white text-[#344054] font-semibold text-[14px] hover:bg-gray-50 transition-all shadow-sm"
                 >
-                  Annuler
+                  Cancel
                 </button>
                 <button
                   onClick={handleArchiveSelected}
-                  className="flex-1 h-[44px] bg-[#7c3aed] text-white rounded-[10px] font-semibold text-[14px] hover:bg-[#6d28d9] transition-all shadow-sm flex items-center justify-center gap-[8px]"
+                  className="flex-1 h-[44px] bg-[#7f56d9] text-white rounded-[8px] font-semibold text-[14px] hover:bg-[#6941c6] transition-all shadow-sm flex items-center justify-center gap-[8px]"
                 >
-                  Archiver
+                  Archive
                 </button>
               </div>
             </div>
           </div>
         </div>
       )}
-      {/* Hiring Details Modal (Image 3 style) */}
+
+      {/* Hiring Details Modal */}
       <Modal
         title={
           <div className="pt-4 px-2">
@@ -442,7 +491,6 @@ export default function RegistrationsPage() {
         className="hiring-modal"
       >
         <div className="p-4 space-y-6">
-          {/* Hiring Date */}
           <div className="space-y-2">
             <label className="text-[14px] font-semibold text-[#344054]">Hiring date</label>
             <DatePicker 
@@ -456,7 +504,6 @@ export default function RegistrationsPage() {
             <p className="text-[12px] text-[#667085]">Select the official start date for this employee.</p>
           </div>
 
-          {/* Department */}
           <div className="space-y-2">
             <label className="text-[14px] font-semibold text-[#344054]">Departement</label>
             <Select
@@ -478,7 +525,6 @@ export default function RegistrationsPage() {
             <p className="text-[12px] text-[#667085]">Choose the department this employee will join.</p>
           </div>
 
-          {/* Rate per month */}
           <div className="space-y-2">
             <label className="text-[14px] font-semibold text-[#344054]">Rate per month (TND)</label>
             <Select
@@ -502,17 +548,16 @@ export default function RegistrationsPage() {
             <p className="text-[12px] text-[#667085]">Select the agreed gross monthly salary in TND.</p>
           </div>
 
-          {/* Action Buttons */}
           <div className="flex justify-end gap-3 pt-6 border-t border-gray-100">
             <button 
               onClick={() => setIsHiringModal(false)}
-              className="px-6 py-[10px] rounded-lg border border-[#D0D5DD] font-semibold text-[#344054] hover:bg-gray-50 bg-white"
+              className="px-6 py-[10px] rounded-lg border border-[#D0D5DD] font-semibold text-[#344054] hover:bg-gray-50 bg-white shadow-sm"
             >
               Cancel
             </button>
             <button 
               onClick={handleHiringDone}
-              className="px-8 py-[10px] rounded-lg bg-[#7C3AED] text-white font-semibold hover:bg-[#6D28D9]"
+              className="px-8 py-[10px] rounded-lg bg-[#7f56d9] text-white font-semibold hover:bg-[#6941c6] shadow-sm transition-all"
             >
               Done
             </button>
@@ -527,28 +572,29 @@ export default function RegistrationsPage() {
           overflow: hidden;
         }
         .hiring-modal .ant-modal-header {
-          border-bottom: 1px solid #F2F4F7;
+          border-bottom: 1px solid #eaecf0;
           margin-bottom: 0;
-          padding: 20px 24px;
+          padding: 24px;
         }
         .hiring-modal .ant-modal-body {
           padding: 24px;
         }
         .hiring-modal .ant-select-selector {
-          height: 44px !important;
+          height: 48px !important;
           border-radius: 8px !important;
           display: flex !important;
           align-items: center !important;
-          border-color: #D0D5DD !important;
+          border-color: #d0d5dd !important;
+          font-family: inherit !important;
         }
         .hiring-modal .ant-picker {
-          height: 44px !important;
+          height: 48px !important;
           border-radius: 8px !important;
-          border-color: #D0D5DD !important;
+          border-color: #d0d5dd !important;
           width: 100%;
+          font-family: inherit !important;
         }
       `}</style>
     </div>
-
   )
 }

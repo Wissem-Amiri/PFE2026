@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useAuth } from '@/lib/AuthContext'
+import { useAuth } from '@/api/AuthContext'
 import { Switch, Button, Divider, message } from 'antd'
 import {
   BellOutlined,

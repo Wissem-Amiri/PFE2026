@@ -6,15 +6,23 @@
     box-sizing: border-box;
 }
 
+:root {
+    --primary: #7F56D9;
+    --primary-light: #F9F5FF;
+    --bg-main: #F9FAFB;
+    --bg-sidebar: #FCFCFD;
+    --border: #EAECF0;
+    --text-primary: #101828;
+    --text-secondary: #667085;
+}
+
 body {
     margin: 0;
     padding: 0;
+    font-family: 'Inter', sans-serif;
+    color: var(--text-primary);
 }
 
-:root {
-    --purple: #7c3aed;
-    --purple-dark: #6d28d9;
-}
 
 .auth-root {
     display: flex;

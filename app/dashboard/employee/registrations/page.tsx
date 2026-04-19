@@ -4,10 +4,10 @@ import { SearchOutlined, BankOutlined, EnvironmentOutlined, ClockCircleOutlined,
 import { Input, message } from 'antd'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/lib/AuthContext'
-import { getAllJobs } from '@/lib/jobService'
-import { getUserCandidatures } from '@/lib/candidatureService'
-import type { Job } from '@/lib/database.types'
+import { useAuth } from '@/api/AuthContext'
+import { getAllJobs } from '@/api/job'
+import { getUserCandidatures } from '@/api/candidatures'
+import type { Job } from '@/api/database.types'
 
 export default function EmployeeRegistrationsPage() {
   const { user } = useAuth()

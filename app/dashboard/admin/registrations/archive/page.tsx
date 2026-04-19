@@ -10,7 +10,7 @@ import {
   DeleteOutlined,
   FolderOpenOutlined 
 } from '@ant-design/icons'
-import { getArchivedCandidaturesDetailed, restoreCandidatures, hardDeleteCandidatures } from '@/lib/candidatureService'
+import { getArchivedCandidaturesDetailed, restoreCandidatures, hardDeleteCandidatures } from '@/api/candidatures'
 
 export default function ArchiveRegistrationsPage() {
   const [applications, setApplications] = useState<any[]>([])

@@ -4,7 +4,7 @@ import { ConfigProvider } from 'antd'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
-const PURPLE = '#7c3aed'
+const PURPLE = '#7F56D9'
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -18,9 +18,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         theme={{
           token: {
             colorPrimary: PURPLE,
-            fontFamily: "'Sora', sans-serif",
+            fontFamily: "'Inter', sans-serif",
             borderRadius: 8,
-            colorBorder: '#e2e8f0',
+            colorBorder: '#eaecf0',
             controlHeight: 44,
           },
         }}
@@ -35,19 +35,19 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       theme={{
         token: {
           colorPrimary: PURPLE,
-          fontFamily: "'Sora', sans-serif",
+          fontFamily: "'Inter', sans-serif",
           borderRadius: 8,
-          colorBorder: '#e2e8f0',
+          colorBorder: '#eaecf0',
           controlHeight: 44,
         },
       }}
     >
-      <div className="flex min-h-screen font-['Sora',sans-serif]">
+      <div className="flex min-h-screen font-['Inter',sans-serif]">
         {/* ── LEFT PANEL ── */}
         <div className="flex-1 flex flex-col justify-between py-12 px-14 bg-white min-w-0">
           {/* Logo */}
           <div>
-            <Link href="/" className="text-[26px] font-extrabold text-[#7c3aed] tracking-[-0.5px] mb-10 no-underline inline-block">
+            <Link href="/" className="text-[26px] font-extrabold text-[#7F56D9] tracking-[-0.5px] mb-10 no-underline inline-block">
               Yunr
             </Link>
 

@@ -1,10 +1,10 @@
 'use client'
 
-import { useAuth } from '@/lib/AuthContext'
+import { useAuth } from '@/api/AuthContext'
 import { ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons'
 import { Tag } from 'antd'
 import { useState, useEffect } from 'react'
-import { getUserCandidatures } from '@/lib/candidatureService'
+import { getUserCandidatures } from '@/api/candidatures'
 
 export default function PostulantCandidaturePage() {
   const { user } = useAuth()
@@ -61,7 +61,7 @@ export default function PostulantCandidaturePage() {
                     <span>Postulé le {new Date(cand.applied_at).toLocaleDateString('fr-FR')}</span>
                   </div>
                 </div>
-                
+
                 <div>
                   <Tag
                     color={config.color}

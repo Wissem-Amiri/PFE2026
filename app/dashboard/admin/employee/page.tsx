@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react'
 import { SearchOutlined, TeamOutlined, MailOutlined, BankOutlined, UserOutlined, ArrowLeftOutlined } from '@ant-design/icons'
 import { Input, Avatar, Card, Tag, Spin, Button } from 'antd'
-import { getAllUsers } from '@/lib/profileService'
-import type { FullProfile } from '@/lib/database.types'
+import { getAllUsers } from '@/api/profile'
+import type { FullProfile } from '@/api/database.types'
 import { useRouter } from 'next/navigation'
 
 export default function AdminEmployeeListPage() {
