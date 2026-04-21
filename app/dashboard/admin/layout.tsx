@@ -31,8 +31,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <aside className="w-[243px] min-w-[243px] bg-[#fcfcfd] border-r border-[#eaecf0] flex flex-col h-screen sticky top-0">
 
         {/* Logo */}
-        <div className="pt-[32px] pb-[24px] px-[24px]">
-          <span className="text-[28px] font-black text-[#7F56D9] tracking-[-1px]">Yunr</span>
+        <div className="pt-[10px] pb-[10px] px-[10px] ">
+          <img src="/assets/UnifyRH.png" alt="UnifyRH Logo" className="h-[110px] w-auto object-contain" />
         </div>
 
         {/* Nav Items */}

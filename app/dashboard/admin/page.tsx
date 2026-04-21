@@ -212,9 +212,7 @@ export default function AdminDashboardPage() {
               <div className="bg-white p-[24px] rounded-[8px] border border-[#eaecf0] shadow-sm group-hover:border-[#7f56d9] transition-all cursor-pointer h-full relative overflow-hidden">
                 <div className="flex justify-between items-start mb-[8px]">
                   <span className="text-[14px] font-semibold text-[#101828]">{stat.title}</span>
-                  <button className="bg-transparent border-none p-0 cursor-pointer">
-                    <img src="/assets/dots-vertical.svg" className="w-[16px] h-[16px]" alt="more" />
-                  </button>
+
                 </div>
                 <div className="flex items-end h-[40px]">
                   <span className="text-[36px] font-semibold text-[#101828] leading-none tracking-tight">{stat.count}</span>

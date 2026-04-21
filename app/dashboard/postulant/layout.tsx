@@ -28,9 +28,9 @@ export default function PostulantLayout({ children }: { children: React.ReactNod
     .slice(0, 2)
 
   const navLinks = [
-    { href: '/dashboard/postulant', label: 'Offres d\'emploi', icon: <HomeOutlined />, exact: true },
-    { href: '/dashboard/postulant/candidature', label: 'Mes candidatures', icon: <FileTextOutlined />, exact: false },
-    { href: '/dashboard/postulant/profile', label: 'Paramètres', icon: <SettingOutlined />, exact: false },
+    { href: '/dashboard/postulant', label: 'Job Offers', icon: <HomeOutlined />, exact: true },
+    { href: '/dashboard/postulant/candidature', label: 'My Applications', icon: <FileTextOutlined />, exact: false },
+    { href: '/dashboard/postulant/profile', label: 'Settings', icon: <SettingOutlined />, exact: false },
   ]
 
   const isActive = (href: string, exact: boolean) =>
@@ -48,12 +48,9 @@ export default function PostulantLayout({ children }: { children: React.ReactNod
       <aside className="w-[243px] bg-white border-r border-[#EAECF0] flex flex-col sticky top-0 h-screen shrink-0 z-[100] shadow-[1px_0_0_0_#EAECF0]">
         
         {/* Logo Section */}
-        <div className="pt-[24px] pb-[32px] px-[24px]">
-          <Link href="/dashboard/postulant" className="no-underline flex items-center gap-[12px] group">
-            <div className="w-[32px] h-[32px] bg-[#7C3AED] rounded-[8px] flex items-center justify-center text-white font-bold text-[18px] italic shadow-sm group-hover:scale-105 transition-transform">
-              Y
-            </div>
-            <span className="text-[20px] font-bold text-[#101828] tracking-[-0.5px]">Yunr</span>
+        <div className="pt-[10px] pb-[10px] px-[10px]">
+          <Link href="/dashboard/postulant" className="no-underline flex items-center group">
+            <img src="/assets/UnifyRH.png" alt="UnifyRH Logo" className="h-[110px] w-auto object-contain group-hover:scale-105 transition-transform" />
           </Link>
         </div>
 
@@ -96,14 +93,14 @@ export default function PostulantLayout({ children }: { children: React.ReactNod
             className="flex items-center gap-[12px] px-[12px] h-[40px] w-full rounded-[8px] text-[14px] font-bold text-[#667085] hover:text-[#B42318] hover:bg-[#FEF3F2] transition-all border-none bg-transparent cursor-pointer"
           >
             <LogoutOutlined className="text-[18px] shrink-0" />
-            <span className="truncate">Déconnexion</span>
+            <span className="truncate">Sign out</span>
           </button>
         </div>
       </aside>
 
       {/* ── MAIN CONTENT AREA ── */}
       <main className="flex-1 min-w-0 h-screen overflow-y-auto bg-[#F9FAFB]">
-        <div className="w-full">
+        <div className="w-full px-8 py-8">
           {children}
         </div>
       </main>

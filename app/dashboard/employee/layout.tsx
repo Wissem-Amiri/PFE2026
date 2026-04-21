@@ -11,7 +11,6 @@ const navItems = [
   { href: '/dashboard/employee', label: 'Home', icon: '🏠', badge: '10' },
   { href: '/dashboard/employee/registrations', label: 'Registrations', icon: '📋' },
   { href: '/dashboard/employee/employee-list', label: 'Employee', icon: '👥' },
-  { href: '/dashboard/employee/profile', label: 'Mon profil', icon: '👤' },
 ]
 
 export default function EmployeeLayout({ children }: { children: React.ReactNode }) {
@@ -28,9 +27,9 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
       <aside className="w-[180px] min-w-[180px] bg-white border-r border-[#E4E7EC] flex flex-col h-screen sticky top-0">
 
         {/* Logo */}
-        <div className="py-[18px] px-[18px] pb-[16px] border-b border-[#E4E7EC]">
-          <span className="text-[24px] font-bold text-[#7c3aed] italic tracking-[-1px]">Yunr</span>
-          <span className="ml-2 text-[8px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full uppercase tracking-tighter">
+        <div className="pt-[10px] pb-[10px] px-[10px] border-b border-[#E4E7EC] flex items-center justify-between">
+          <img src="/assets/UnifyRH.png" alt="UnifyRH Logo" className="h-[110px] w-auto object-contain" />
+          <span className="text-[8px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full uppercase tracking-tighter">
             Employé
           </span>
         </div>
@@ -63,10 +62,13 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
 
         {/* Sidebar Footer (Settings + User) */}
         <div className="px-[10px] py-[14px] border-t border-[#E4E7EC]">
-          <div className="flex items-center gap-[9px] px-[10px] py-[8px] rounded-[8px] text-[12px] font-medium text-[#475467] hover:text-[#7C3AED] cursor-pointer mb-[10px]">
+          <Link 
+            href="/dashboard/employee/settings"
+            className="flex items-center gap-[9px] px-[10px] py-[8px] rounded-[8px] text-[12px] font-medium text-[#475467] hover:text-[#7C3AED] hover:bg-[#F9FAFB] cursor-pointer mb-[10px] no-underline"
+          >
             <span className="text-[14px] w-[18px] text-center">⚙️</span>
             Settings
-          </div>
+          </Link>
 
           <div className="flex items-center gap-[8px] px-[2px] cursor-pointer" onClick={signout}>
             <div className="w-[32px] h-[32px] rounded-full bg-[#EDE9FE] flex items-center justify-center text-[11px] font-bold text-[#7C3AED] overflow-hidden shrink-0">

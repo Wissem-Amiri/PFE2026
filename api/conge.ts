@@ -75,3 +75,25 @@ export async function updateLeaveStatus(leaveId: string, status: 'approved' | 'r
   
   return { data: data?.[0] as Conge | null| undefined, error }
 }
+
+/** Adjust an employee's leave balance manually (Admin) */
+export async function adjustEmployeeBalance(employeeId: string, adjustment: number) {
+  // 1. Get current balance
+  const { data: employee, error: fetchError } = await supabase
+    .from('employee')
+    .select('vacation_balance')
+    .eq('id', employeeId)
+    .single()
+  
+  if (fetchError || !employee) return { data: null, error: fetchError }
+
+  // 2. Update balance
+  const newBalance = (Number(employee.vacation_balance) || 0) + adjustment
+  const { data, error } = await supabase
+    .from('employee')
+    .update({ vacation_balance: newBalance })
+    .eq('id', employeeId)
+    .select()
+  
+  return { data, error }
+}

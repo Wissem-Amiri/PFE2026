@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/api/AuthContext'
 import { getDashboardByRole } from '@/api/AuthContext'
@@ -23,6 +23,8 @@ type LoginFormInputs = yup.InferType<typeof loginSchema>
 
 export default function LoginPage() {
     const router = useRouter()
+    const searchParams = useSearchParams()
+    const applyTo = searchParams.get('applyTo')
     const [loading, setLoading] = useState(false)
     const [errorMsg, setErrorMsg] = useState('')
     const { signIn, signInWithOAuth } = useAuth()
@@ -41,7 +43,14 @@ export default function LoginPage() {
         // Read role from utilisateur table (source of truth)
         const { data: profile } = await getProfile(data.user?.id)
         const fallbackRole = data.user?.user_metadata?.role
-        router.push(getDashboardByRole(profile?.role || fallbackRole))
+        const role = profile?.role || fallbackRole
+        
+        const dashboardPath = getDashboardByRole(role)
+        if (applyTo && (role === 'postulant' || !role)) {
+            router.push(`${dashboardPath}/profile?applyTo=${applyTo}`)
+        } else {
+            router.push(dashboardPath)
+        }
     }
 
     const handleGoogleLogin = async () => {

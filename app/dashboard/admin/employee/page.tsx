@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { SearchOutlined, TeamOutlined, MailOutlined, BankOutlined, UserOutlined, ArrowLeftOutlined } from '@ant-design/icons'
-import { Input, Avatar, Card, Tag, Spin, Button } from 'antd'
+import { Input, Avatar, Card, Tag, Spin, Button, Modal, InputNumber, message } from 'antd'
 import { getAllUsers } from '@/api/profile'
+import { adjustEmployeeBalance } from '@/api/conge'
 import type { FullProfile } from '@/api/database.types'
 import { useRouter } from 'next/navigation'
 
@@ -12,18 +13,40 @@ export default function AdminEmployeeListPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const router = useRouter()
+  const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false)
+  const [selectedEmployee, setSelectedEmployee] = useState<FullProfile | null>(null)
+  const [adjustmentAmount, setAdjustmentAmount] = useState<number>(0)
+  const [isAdjusting, setIsAdjusting] = useState(false)
+
+  const fetchEmployees = async () => {
+    setLoading(true)
+    const { data } = await getAllUsers()
+    // Filter to only show approved employees
+    const employeeList = (data ?? []).filter(u => u.role === 'employee' && u.status === 'approved')
+    setEmployees(employeeList)
+    setLoading(false)
+  }
 
   useEffect(() => {
-    async function fetchEmployees() {
-      setLoading(true)
-      const { data } = await getAllUsers()
-      // Filter to only show approved employees
-      const employeeList = (data ?? []).filter(u => u.role === 'employee' && u.status === 'approved')
-      setEmployees(employeeList)
-      setLoading(false)
-    }
     fetchEmployees()
   }, [])
+
+  const handleAdjustBalance = async () => {
+    if (!selectedEmployee || adjustmentAmount === 0) return
+    
+    setIsAdjusting(true)
+    const { error } = await adjustEmployeeBalance(selectedEmployee.id, adjustmentAmount)
+    setIsAdjusting(false)
+    
+    if (!error) {
+      message.success('Solde mis à jour avec succès')
+      setIsAdjustModalOpen(false)
+      setAdjustmentAmount(0)
+      fetchEmployees()
+    } else {
+      message.error('Erreur lors de la mise à jour du solde')
+    }
+  }
 
   const filtered = employees.filter(e =>
     (e.user_name ?? '').toLowerCase().includes(search.toLowerCase()) ||
@@ -107,16 +130,78 @@ export default function AdminEmployeeListPage() {
                 </div>
               </div>
 
-              <Button 
-                block 
-                className="mt-6 h-[40px] rounded-xl border-[#eaecf0] font-bold text-[13px] text-[#344054] hover:text-[#7c3aed] hover:border-[#7c3aed] hover:bg-[#f5f3ff]"
-              >
-                View full profile
-              </Button>
+              <div className="grid grid-cols-2 gap-3 w-full mt-6">
+                <Button 
+                  onClick={() => router.push(`/dashboard/admin/employee/${emp.id}`)}
+                  className="h-[40px] rounded-xl border-[#eaecf0] font-bold text-[13px] text-[#344054] hover:text-[#7c3aed] hover:border-[#7c3aed] hover:bg-[#f5f3ff]"
+                >
+                  Détails
+                </Button>
+                <Button 
+                  onClick={() => {
+                    setSelectedEmployee(emp)
+                    setIsAdjustModalOpen(true)
+                  }}
+                  className="h-[40px] rounded-xl bg-[#7c3aed] border-none font-bold text-[13px] text-white hover:bg-[#6d28d9]"
+                >
+                  Ajuster
+                </Button>
+              </div>
             </div>
           ))}
         </div>
       )}
+
+      {/* Adjust Balance Modal */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 rounded-full bg-[#f0fdf4] flex items-center justify-center border border-[#bbf7d0]">
+              <TeamOutlined className="text-[#16a34a] text-[18px]" />
+            </div>
+            <div>
+              <h3 className="text-[18px] font-bold text-[#101828] mb-0">Ajuster le solde de congés</h3>
+              <p className="text-[12px] text-[#667085] font-normal">{selectedEmployee?.user_name}</p>
+            </div>
+          </div>
+        }
+        open={isAdjustModalOpen}
+        onCancel={() => {
+          setIsAdjustModalOpen(false)
+          setAdjustmentAmount(0)
+        }}
+        footer={[
+          <Button key="cancel" onClick={() => setIsAdjustModalOpen(false)} className="h-[44px] px-6 rounded-[8px] font-semibold text-[#344054]">
+            Annuler
+          </Button>,
+          <Button key="save" type="primary" onClick={handleAdjustBalance} loading={isAdjusting} className="h-[44px] px-8 rounded-[8px] font-semibold bg-[#7c3aed] hover:bg-[#6d28d9] border-none">
+            Confirmer
+          </Button>
+        ]}
+        centered
+        width={400}
+      >
+        <div className="py-6 space-y-6">
+          <div className="bg-[#f9fafb] p-4 rounded-xl border border-[#eaecf0] flex justify-between items-center">
+            <span className="text-[14px] text-[#475467] font-medium">Solde actuel</span>
+            <span className="text-[18px] font-bold text-[#101828]">{selectedEmployee?.employee?.vacation_balance || 0} jours</span>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[14px] font-semibold text-[#344054]">Ajustement (jours)</label>
+            <InputNumber 
+              step={0.5} 
+              value={adjustmentAmount} 
+              onChange={(val) => setAdjustmentAmount(val || 0)}
+              className="w-full h-[48px] flex items-center rounded-[8px] border-[#d0d5dd] text-[16px] font-bold"
+              placeholder="Ex: 1 ou -1"
+            />
+            <p className="text-[12px] text-[#667085]">
+              Saisissez une valeur positive pour ajouter des jours, ou négative pour en retirer.
+            </p>
+          </div>
+        </div>
+      </Modal>
 
       <style jsx global>{`
         input::placeholder {

@@ -78,7 +78,7 @@ export default function CheckLayout({ children }: CheckLayoutProps) {
         {/* ── LEFT SIDEBAR ── */}
         <aside className="w-[320px] min-w-[320px] bg-[#fcfcfd] border-r border-[#eaecf0] flex flex-col py-10 px-8 relative">
           <div className="mb-16">
-            <span className="text-[28px] font-bold text-[#7c3aed] italic tracking-[-1px]">Yunr</span>
+            <img src="/assets/UnifyRH.png" alt="UnifyRH Logo" className="h-[110px] w-auto object-contain" />
           </div>
 
           <div className="flex flex-col">

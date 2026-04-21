@@ -3,7 +3,7 @@
 import { Session, User } from "@supabase/supabase-js";
 import { createContext, useEffect, useState, useContext } from "react";
 import { supabase } from "@/api/supabase";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Spin } from "antd";
 import { getProfile } from "@/api/profile";
 import type { FullProfile } from "@/api/database.types";
@@ -127,7 +127,9 @@ export function getDashboardByRole(role: string | null | undefined): string {
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, profile, isLoading } = useAuth()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const router = useRouter()
+  const applyTo = searchParams.get('applyTo')
 
   useEffect(() => {
     if (isLoading) return
@@ -140,8 +142,14 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
     // If authenticated and on an auth page (except new-pass & verify-email) → go to correct dashboard
     if (user && isAuthPage && !isNewPassPage && !isVerifyEmailPage) {
-    
-      router.push(getDashboardByRole(profile?.role || user.user_metadata?.role))
+      const role = profile?.role || user.user_metadata?.role
+      const dashboardPath = getDashboardByRole(role)
+      
+      if (applyTo && (role === 'postulant' || !role)) {
+        router.push(`${dashboardPath}/profile?applyTo=${applyTo}`)
+      } else {
+        router.push(dashboardPath)
+      }
       return
     }
 

@@ -86,19 +86,13 @@ export async function updateUserStatus(
 
   // 2. If approved, create/update Employee record
   if (status === 'approved') {
-    // Calculate initial vacation balance
-    const hireDate = hiringDetails?.hire_date ? new Date(hiringDetails.hire_date) : new Date()
-    const joinMonth = hireDate.getMonth() + 1
-    const monthsRemaining = 12 - joinMonth + 1
-    const initialBalance = (24 / 12) * monthsRemaining
-
     const employeeData: Partial<Employee> = {
       id: userId,
       hire_date: hiringDetails?.hire_date || new Date().toISOString().split('T')[0],
       department: hiringDetails?.department || 'General',
       position: hiringDetails?.position || 'Employee',
       monthly_rate: hiringDetails?.monthly_rate || 0,
-      vacation_balance: initialBalance,
+      vacation_balance: 0, // Will be accumulated monthly by the cron job (with prorata)
       postulant_id: userId // link back to its postulant self
     }
 

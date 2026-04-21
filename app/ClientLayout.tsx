@@ -47,8 +47,8 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         <div className="flex-1 flex flex-col justify-between py-12 px-14 bg-white min-w-0">
           {/* Logo */}
           <div>
-            <Link href="/" className="text-[26px] font-extrabold text-[#7F56D9] tracking-[-0.5px] mb-10 no-underline inline-block">
-              Yunr
+            <Link href="/" className="mb-10 inline-block -ml-[30px]">
+              <img src="/assets/UnifyRH.png" alt="UnifyRH Logo" className="h-[40px] w-auto object-contain object-left" />
             </Link>
 
             {/* Page content (form, etc.) injected here */}

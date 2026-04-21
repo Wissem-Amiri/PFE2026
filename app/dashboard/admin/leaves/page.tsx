@@ -5,9 +5,9 @@ import type { Conge } from '@/api/database.types'
 import { 
   message, 
   Modal, 
-  Tooltip, 
-  Table 
-} from 'antd'
+  Table, 
+  Tooltip } from 'antd'
+  import { SettingOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 
 export default function AdminLeavesPage() {
@@ -21,6 +21,10 @@ export default function AdminLeavesPage() {
     const { data } = await getAllLeavesDetailed()
     setLeaves(data ?? [])
     setLoading(false)
+  }
+
+  const fetchSettings = async () => {
+    // Supprimé car les paramètres globaux ne sont plus utilisés
   }
 
   useEffect(() => {
@@ -266,13 +270,15 @@ export default function AdminLeavesPage() {
       <div className="bg-white rounded-[12px] border border-[#EAECF0] shadow-[0px_1px_2px_0px_rgba(16,24,40,0.05)] overflow-hidden">
         <div className="px-6 py-5 border-b border-[#EAECF0] flex justify-between items-center">
            <h3 className="text-[18px] font-semibold text-[#101828]">Leaves Requests</h3>
-           <button className="px-4 py-2 text-[14px] font-semibold text-[#344054] bg-white border border-[#D0D5DD] rounded-[8px] shadow-sm hover:bg-gray-50 transition-all flex items-center gap-2">
-             <img src="/assets/export.svg" alt="" className="w-4 h-4" />
-             Export
-           </button>
+           <div className="flex gap-3">
+             <button className="px-4 py-2 text-[14px] font-semibold text-[#344054] bg-white border border-[#D0D5DD] rounded-[8px] shadow-sm hover:bg-gray-50 transition-all flex items-center gap-2">
+               <img src="/assets/export.svg" alt="" className="w-4 h-4" />
+               Export
+             </button>
+           </div>
         </div>
         
-        <Table 
+        <Table
           columns={columns} 
           dataSource={filteredLeaves} 
           pagination={{ 

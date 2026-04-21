@@ -23,6 +23,27 @@ body {
     color: var(--text-primary);
 }
 
+@layer components {
+    .nav-link {
+        @apply relative pb-1 text-[14px] font-semibold transition-colors text-[#1d1a22];
+    }
+    
+    .nav-link::after {
+        @apply absolute -bottom-1 left-0 h-[2px] bg-[#7f56d9] transition-all duration-300 content-[''] w-0;
+    }
+    
+    .nav-link:hover {
+        @apply text-[#7f56d9];
+    }
+    
+    .nav-link.active {
+        @apply text-[#7f56d9];
+    }
+    
+    .nav-link.active::after {
+        @apply w-full;
+    }
+}
 
 .auth-root {
     display: flex;
