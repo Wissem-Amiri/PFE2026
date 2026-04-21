@@ -31,14 +31,17 @@ import { getAllCandidaturesDetailed, updateCandidatureStatus, archiveCandidature
 import { getAllJobs, decrementJobSeats } from '@/api/job'
 import type { FullProfile } from '@/api/database.types'
 
+import { useCandidatures, queryKeys } from '@/api/hooks'
+import { useQueryClient } from '@tanstack/react-query'
+
 export default function RegistrationsPage() {
-  const [applications, setApplications] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const queryClient = useQueryClient()
+  const { data: applications = [], isLoading: loading } = useCandidatures()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('All Status')
   const [dateFilter, setDateFilter] = useState('All Time')
   const [currentPage, setCurrentPage] = useState(1)
-  const pageSize = 10 // Increased for better UX, will keep it dynamic if needed
+  const pageSize = 10 
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [appToApprove, setAppToApprove] = useState<any | null>(null)
 
@@ -57,15 +60,6 @@ export default function RegistrationsPage() {
 
   const router = useRouter()
 
-  const fetchApplications = async () => {
-    setLoading(true)
-    const { data } = await getAllCandidaturesDetailed()
-    setApplications(data ?? [])
-    setLoading(false)
-  }
-
-  useEffect(() => { fetchApplications() }, [])
-
   const handleArchiveSelected = async () => {
     const ids = Array.from(selectedIds)
     const { error } = await archiveCandidatures(ids)
@@ -73,7 +67,7 @@ export default function RegistrationsPage() {
       setIsPermDeleteModalVisible(false)
       setSelectedIds(new Set())
       message.success(`${ids.length} registration(s) archived successfully`)
-      fetchApplications()
+      queryClient.invalidateQueries({ queryKey: queryKeys.candidatures })
     } else {
       message.error('Failed to archive registrations')
     }
@@ -116,7 +110,7 @@ export default function RegistrationsPage() {
       setIsHiringModal(false)
       setIsDeleteModalVisible(false)
       message.success(`Application ${status === 'accepted' ? 'accepted' : 'rejected'} successfully`)
-      fetchApplications()
+      queryClient.invalidateQueries({ queryKey: queryKeys.candidatures })
     } else {
       message.error('Failed to update application status')
     }
@@ -189,86 +183,93 @@ export default function RegistrationsPage() {
   }, [search])
 
   return (
-    <div className="flex-1 p-[32px] h-full overflow-y-auto bg-transparent">
+    <div className="flex-1 bg-[#f8fafc] flex flex-col font-['Inter',sans-serif]">
       {/* ── HEADER ── */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-        <div>
-          <h1 className="text-[28px] font-bold text-[#101828] tracking-tight">Registrations</h1>
-          <p className="text-[15px] text-[#667085] mt-1 font-medium italic opacity-80">Track and manage incoming candidate registrations.</p>
-        </div>
-        <div className="flex flex-wrap gap-3 items-center">
-          <button
+      <div className="bg-white px-[27px] py-[24px] border-b border-[#e2e8f0] flex justify-between items-center shrink-0">
+        <h1 className="text-[20px] font-bold text-[#0f172a]">Registrations</h1>
+        <div className="flex gap-[8px]">
+          <button 
             onClick={() => router.push('/dashboard/admin/registrations/archive')}
-            className="h-[42px] px-4 border border-[#d0d5dd] rounded-[10px] bg-white font-semibold text-[14px] text-[#344054] cursor-pointer flex items-center gap-2 hover:bg-gray-50 transition-all shadow-sm active:scale-95"
+            className="flex items-center gap-[8px] px-[17px] py-[9px] border border-[#e2e8f0] rounded-[8px] bg-white text-[#334155] text-[14px] font-semibold hover:bg-gray-50 transition-all shadow-sm"
           >
-            <FolderOpenOutlined className="text-[17px] opacity-70" />
+            <FolderOpenOutlined className="text-[16px] text-gray-500" />
             Archive
           </button>
-
-          <button onClick={handleExport} className="h-[42px] px-4 border border-[#d0d5dd] rounded-[10px] bg-white font-semibold text-[14px] text-[#344054] cursor-pointer flex items-center gap-2 hover:bg-gray-50 transition-all shadow-sm active:scale-95">
-            <BiExport className="text-[20px] text-[#475467]" />
+          <button 
+            onClick={handleExport}
+            className="flex items-center gap-[8px] px-[17px] py-[9px] border border-[#e2e8f0] rounded-[8px] bg-white text-[#334155] text-[14px] font-semibold hover:bg-gray-50 transition-all shadow-sm"
+          >
+            <div className="w-[16px] h-[16px] flex items-center justify-center">
+              <img src="/assets/export.svg" alt="" className="w-full h-full" />
+            </div>
             Export
           </button>
-
-
         </div>
       </div>
 
-      <div className="bg-white border border-[#eaecf0] rounded-[12px] shadow-sm overflow-hidden mb-[40px]">
-        {/* ── TABLE HEADER SECTION ── */}
-        <div className="px-6 py-5 border-b border-[#eaecf0] flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 bg-white">
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-4 w-full xl:w-auto">
-            {/* Search */}
-            <div className="relative group w-full md:w-[320px]">
-              <HiOutlineSearch className="absolute left-[14px] top-1/2 -translate-y-1/2 text-[18px] text-[#667085]" />
-              <input
-                placeholder="Search candidates..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                className="pl-[42px] pr-[14px] py-[10px] border border-[#d0d5dd] rounded-[8px] bg-white text-[14px] text-[#101828] w-full focus:outline-none focus:ring-4 focus:ring-[#7f56d9]/10 focus:border-[#7f56d9] transition-all placeholder:text-[#667085] font-medium shadow-sm"
-              />
-            </div>
+      <div className="flex-1 overflow-y-auto px-[32px] pb-[32px]">
+        {/* ── DESCRIPTION ── */}
+        <div className="mt-[32px] mb-[16px]">
+          <p className="text-[14px] text-[#64748b] leading-[20px]">
+            Keep track of the most recent member registrations in your platform.
+          </p>
+        </div>
 
-            {/* Status Filter Dropdown */}
-            <div className="relative group w-full md:w-auto">
-              <div className="flex items-center gap-2 h-[42px] px-3.5 border border-[#d0d5dd] rounded-[8px] bg-white cursor-pointer hover:bg-gray-50 shadow-sm transition-all">
-                <HiOutlineFilter className="text-[18px] text-[#667085]" />
-                <span className="text-[14px] font-semibold text-[#344054] whitespace-nowrap">Status: {statusFilter}</span>
-                <select
-                  className="absolute inset-0 opacity-0 cursor-pointer w-full"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                >
-                  <option value="All Status">All Status</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Approved">Approved</option>
-                  <option value="Rejected">Rejected</option>
-                </select>
+        {/* ── SEARCH & FILTERS BAR ── */}
+        <div className="bg-[rgba(248,248,248,0.31)] border border-[rgba(203,195,213,0.1)] rounded-[16px] h-[76px] px-[16px] mb-[16px] flex items-center justify-between">
+          <div className="flex-1 max-w-[550px] relative">
+            <div className="absolute left-[12px] top-1/2 -translate-y-1/2 w-[15px] h-[15px]">
+              <img src="/assets/search.svg" alt="" className="w-full h-full opacity-60" />
+            </div>
+            <input 
+              placeholder="Search ..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full bg-white border border-[rgba(203,195,213,0.2)] rounded-[12px] pl-[41px] pr-[17px] py-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-1 focus:ring-[#7f56d9]/20 transition-all placeholder:text-[#6b7280]"
+            />
+          </div>
+
+          <div className="flex gap-[16px] items-center">
+            <div className="relative w-[160px]">
+              <select 
+                value={statusFilter}
+                onChange={e => setStatusFilter(e.target.value)}
+                className="w-full bg-white border border-[rgba(203,195,213,0.2)] rounded-[12px] px-[17px] py-[11px] text-[14px] font-medium text-[#494453] appearance-none focus:outline-none transition-all cursor-pointer"
+              >
+                <option value="All Status">Filter by Status</option>
+                <option value="Pending">Pending</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
+              </select>
+              <div className="absolute right-[12px] top-1/2 -translate-y-1/2 pointer-events-none">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M3 4.5L6 7.5L9 4.5" stroke="#667085" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
               </div>
             </div>
 
-            {/* Date Filter Dropdown */}
-            <div className="relative group w-full md:w-auto">
-              <div className="flex items-center gap-2 h-[42px] px-3.5 border border-[#d0d5dd] rounded-[8px] bg-white cursor-pointer hover:bg-gray-50 shadow-sm transition-all">
-                <HiOutlineCalendar className="text-[18px] text-[#667085]" />
-                <span className="text-[14px] font-semibold text-[#344054] whitespace-nowrap">Date: {dateFilter}</span>
-                <select
-                  className="absolute inset-0 opacity-0 cursor-pointer w-full"
-                  value={dateFilter}
-                  onChange={(e) => setDateFilter(e.target.value)}
-                >
-                  <option value="All Time">All Time</option>
-                  <option value="Last 7 Days">Last 7 Days</option>
-                  <option value="Last 30 Days">Last 30 Days</option>
-                </select>
+            <div className="relative w-[160px]">
+              <select 
+                value={dateFilter}
+                onChange={e => setDateFilter(e.target.value)}
+                className="w-full bg-white border border-[rgba(203,195,213,0.2)] rounded-[12px] px-[17px] py-[11px] text-[14px] font-medium text-[#494453] appearance-none focus:outline-none transition-all cursor-pointer"
+              >
+                <option value="All Time">Filter by Date</option>
+                <option value="Last 7 Days">Last 7 Days</option>
+                <option value="Last 30 Days">Last 30 Days</option>
+              </select>
+              <div className="absolute right-[12px] top-1/2 -translate-y-1/2 pointer-events-none">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M3 4.5L6 7.5L9 4.5" stroke="#667085" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
               </div>
             </div>
           </div>
         </div>
 
-        {/* ── BULK ACTION TOOLBAR (Figma Style) ── */}
+        {/* ── BULK ACTION TOOLBAR ── */}
         {selectedIds.size > 0 && (
-          <div className="px-6 py-4 bg-[#f9fafb] border-b border-[#eaecf0] flex items-center justify-between animate-in slide-in-from-top-4 fade-in duration-300">
+          <div className="px-6 py-4 bg-[#f9fafb] border border-[#eaecf0] rounded-[12px] mb-[16px] flex items-center justify-between animate-in slide-in-from-top-4 duration-300">
             <div className="flex items-center gap-[12px]">
               <span className="text-[14px] font-bold text-[#101828]">
                 {selectedIds.size} registration{selectedIds.size > 1 ? 's' : ''} selected
@@ -276,146 +277,131 @@ export default function RegistrationsPage() {
               <div className="w-[1px] h-[16px] bg-[#d0d5dd] mx-2"></div>
               <button 
                 onClick={toggleSelectAll}
-                className="text-[14px] font-bold text-[#7f56d9] hover:underline cursor-pointer bg-transparent border-none"
+                className="text-[14px] font-bold text-[#7f56d9] hover:underline bg-transparent border-none"
               >
                 {selectedIds.size === filtered.length ? 'Deselect All' : 'Select All'}
-              </button>
-              <button 
-                onClick={() => setSelectedIds(new Set())}
-                className="text-[14px] font-bold text-[#667085] hover:underline cursor-pointer bg-transparent border-none"
-              >
-                Clear Selection
               </button>
             </div>
             
             <button
               onClick={() => setIsPermDeleteModalVisible(true)}
-              className="h-[40px] px-[14px] bg-[#fef2f2] border border-[#fecaca] rounded-[8px] flex items-center gap-2 text-[#d92d20] font-bold text-[14px] hover:bg-[#fee2e2] transition-all shadow-sm active:scale-95"
+              className="h-[40px] px-[14px] bg-[#fef2f2] border border-[#fecaca] rounded-[8px] flex items-center gap-2 text-[#d92d20] font-bold text-[14px] hover:bg-[#fee2e2] transition-all"
             >
-              <HiOutlineTrash className="text-[18px]" />
-              Archive Selected
+              <HiOutlineTrash /> Archive Selected
             </button>
           </div>
         )}
 
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
+        {/* ── DATA TABLE CARD ── */}
+        <div className="bg-white border border-[#e2e8f0] rounded-[16px] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] overflow-hidden">
+          <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-[#f9fafb]">
-                <th className="px-6 py-3 text-left border-b border-[#eaecf0] w-[40px]">
+              <tr className="bg-[rgba(248,250,252,0.5)]">
+                <th className="px-[23px] py-[15px] w-[64px] border-b border-[#f1f5f9]">
                   <input
                     type="checkbox"
-                    className="w-4 h-4 rounded-md border-[#d0d5dd] cursor-pointer accent-[#7f56d9] focus:ring-[#7f56d9] transition-all"
                     checked={filtered.length > 0 && selectedIds.size === filtered.length}
                     onChange={toggleSelectAll}
+                    className="w-[16px] h-[16px] rounded-[4px] border-[#cbd5e1] checked:accent-[#7f56d9]"
                   />
                 </th>
-                <th className="px-6 py-3 text-left text-[12px] text-[#667085] font-semibold border-b border-[#eaecf0] uppercase tracking-wider bg-[#f9fafb]">Name</th>
-                <th className="px-6 py-3 text-left text-[12px] text-[#667085] font-semibold border-b border-[#eaecf0] uppercase tracking-wider bg-[#f9fafb]">Email address</th>
-                <th className="px-6 py-3 text-left text-[12px] text-[#667085] font-semibold border-b border-[#eaecf0] uppercase tracking-wider bg-[#f9fafb]">Phone Number</th>
-                <th className="px-6 py-3 text-left text-[12px] text-[#667085] font-semibold border-b border-[#eaecf0] uppercase tracking-wider bg-[#f9fafb]">Submission Date</th>
-                <th className="px-6 py-3 text-left text-[12px] text-[#667085] font-semibold border-b border-[#eaecf0] uppercase tracking-wider bg-[#f9fafb]">Status</th>
-                <th className="px-6 py-3 text-left text-[12px] text-[#667085] font-semibold border-b border-[#eaecf0] uppercase tracking-wider bg-[#f9fafb]">Actions</th>
+                <th className="px-[24px] py-[16px] border-b border-[#f1f5f9] text-[12px] font-semibold text-[#64748b] tracking-[0.6px] uppercase">NAME</th>
+                <th className="px-[24px] py-[16px] border-b border-[#f1f5f9] text-[12px] font-semibold text-[#64748b] tracking-[0.6px] uppercase text-nowrap">EMAIL ADDRESS</th>
+                <th className="px-[24px] py-[16px] border-b border-[#f1f5f9] text-[12px] font-semibold text-[#64748b] tracking-[0.6px] uppercase text-nowrap">PHONE NUMBER</th>
+                <th className="px-[24px] py-[16px] border-b border-[#f1f5f9] text-[12px] font-semibold text-[#64748b] tracking-[0.6px] uppercase text-nowrap">SUBMISSION DATE</th>
+                <th className="px-[24px] py-[16px] border-b border-[#f1f5f9] text-[12px] font-semibold text-[#64748b] tracking-[0.6px] uppercase">STATUS</th>
+                <th className="px-[24px] py-[16px] border-b border-[#f1f5f9] text-[12px] font-semibold text-[#64748b] tracking-[0.6px] uppercase text-right">ACTIONS</th>
               </tr>
             </thead>
-            <tbody className="bg-white">
+            <tbody className="divide-y divide-[#f1f5f9]">
               {loading ? (
-                <tr><td colSpan={6} className="text-center py-16 text-slate-400 text-[14px]">Loading registrations...</td></tr>
+                <tr><td colSpan={7} className="text-center py-[60px] text-[#64748b]">Loading registries...</td></tr>
               ) : paginatedData.length === 0 ? (
-                <tr><td colSpan={6} className="text-center py-16 text-slate-400 text-[14px]">No registrations found.</td></tr>
+                <tr><td colSpan={7} className="text-center py-[60px] text-[#64748b]">No registrations found.</td></tr>
               ) : (
                 paginatedData.map((app) => (
-                  <tr key={app.id} className="hover:bg-[#f9fafb] transition-colors border-b border-[#eaecf0] h-[74px]">
-                    <td className="px-6 py-4">
+                  <tr key={app.id} className="hover:bg-[#f8fafc]/50 transition-colors h-[74px]">
+                    <td className="px-[24px] py-[16px]">
                       <input
                         type="checkbox"
-                        className="w-4 h-4 rounded-md border-[#d0d5dd] cursor-pointer accent-[#7f56d9] transition-all"
                         checked={selectedIds.has(app.id)}
                         onChange={() => toggleSelectRow(app.id)}
+                        className="w-[16px] h-[16px] rounded-[4px] border-[#cbd5e1] checked:accent-[#7f56d9]"
                       />
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-[24px] py-[16px]">
                       <div className="flex items-center gap-[12px]">
-                        <div className="relative group">
-                          <Avatar
-                            size={44}
-                            src={app.postulant?.user?.avatar_url}
-                            className="bg-[#f9f5ff] text-[#7f56d9] font-bold text-[15px] border-2 border-white shadow-sm"
-                          >
-                            {app.postulant?.user?.user_name?.substring(0, 2).toUpperCase() || 'UN'}
-                          </Avatar>
-                          <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full"></div>
+                        <div className="w-[40px] h-[40px] rounded-full bg-[#f1f5f9] border border-[#e2e8f0] flex items-center justify-center shrink-0 overflow-hidden">
+                          {app.postulant?.user?.avatar_url ? (
+                            <img src={app.postulant.user.avatar_url} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-[12px] font-bold text-[#64748b]">
+                              {app.postulant?.user?.user_name?.substring(0, 2).toUpperCase() || 'UN'}
+                            </span>
+                          )}
                         </div>
-                        <div className="flex flex-col">
-                          <span className="text-[14px] font-bold text-[#101828] leading-tight hover:text-[#7f56d9] cursor-pointer transition-colors">
-                            {app.postulant?.user?.user_name || 'Anonymous User'}
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-[14px] font-semibold text-[#0f172a] truncate">
+                            {app.postulant?.user?.user_name || 'Anonymous'}
                           </span>
-                          <span className="text-[13px] text-[#667085] mt-0.5 font-medium">
-                            {app.job?.title || 'Applied Position'}
+                          <span className="text-[12px] text-[#64748b] truncate leading-[16px]">
+                            {app.job?.title || 'Candidate'}
                           </span>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-[14px] text-[#475467] font-medium">
-                      {app.postulant?.user?.email || '—'}
+                    <td className="px-[24px] py-[26px] text-[14px] text-[#475569]">{app.postulant?.user?.email || '—'}</td>
+                    <td className="px-[24px] py-[26px] text-[14px] text-[#475569]">{app.postulant?.user?.phone || '—'}</td>
+                    <td className="px-[24px] py-[26px] text-[14px] text-[#475569]">
+                      {new Date(app.applied_at || app.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })} {new Date(app.applied_at || app.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                     </td>
-                    <td className="px-6 py-4 text-[14px] text-[#475467] font-semibold tracking-tight">
-                      {app.postulant?.user?.phone || '+216 -- --- ---'}
-                    </td>
-                    <td className="px-6 py-4 text-[14px] text-[#667085]">
-                      {new Date(app.applied_at || app.created_at || '').toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}
-                    </td>
-                    <td className="px-6 py-4">
+                    <td className="px-[24px] py-[26px]">
                       {app.status === 'pending' && (
-                        <div className="inline-flex items-center px-2.5 py-1 rounded-full text-[12px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mr-1.5"></span>
-                          Pending
-                        </div>
+                        <span className="px-[10px] py-[2px] rounded-full bg-[#fef3c7] text-[#b45309] text-[12px] font-medium">Pending</span>
                       )}
                       {app.status === 'accepted' && (
-                        <div className="inline-flex items-center px-2.5 py-1 rounded-full text-[12px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>
-                          Approved
-                        </div>
+                        <span className="px-[10px] py-[2px] rounded-full bg-[#dcfce7] text-[#15803d] text-[12px] font-medium">Approved</span>
                       )}
                       {app.status === 'rejected' && (
-                        <div className="inline-flex items-center px-2.5 py-1 rounded-full text-[12px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
-                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 mr-1.5"></span>
-                          Rejected
-                        </div>
+                        <span className="px-[10px] py-[2px] rounded-full bg-[#fee2e2] text-[#b91c1c] text-[12px] font-medium">Rejected</span>
                       )}
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex gap-[6px] items-center">
+                    <td className="px-[24px] py-[16px]">
+                      <div className="grid grid-cols-[32px_32px_32px] gap-[4px] justify-end">
                         <button
                           onClick={() => router.push(`/dashboard/admin/registrations/${app.postulant_id}?jobId=${app.job_id}`)}
+                          className="p-[6px] rounded-[6px] text-blue-600 hover:bg-blue-50 transition-all font-bold flex items-center justify-center"
                           title="View Details"
-                          className="w-[38px] h-[38px] rounded-[10px] bg-white border border-[#d0d5dd] flex items-center justify-center text-[#475467] hover:bg-gray-50 hover:text-[#7f56d9] transition-all shadow-sm active:scale-90"
                         >
-                          <HiOutlineEye className="text-[19px]" />
+                          <HiOutlineEye size={20} />
                         </button>
-                        {app.status === 'pending' && (
+                        {app.status === 'pending' ? (
                           <>
                             <button
                               onClick={() => {
                                 setAppToApprove(app)
                                 setIsModalVisible(true)
                               }}
+                              className="p-[6px] rounded-[6px] text-emerald-600 hover:bg-emerald-50 transition-all font-bold flex items-center justify-center"
                               title="Approve"
-                              className="w-[38px] h-[38px] rounded-[10px] bg-white border border-[#d0d5dd] flex items-center justify-center text-[#475467] hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 transition-all shadow-sm active:scale-90"
                             >
-                              <HiOutlineCheck className="text-[19px]" />
+                              <HiOutlineCheck size={20} />
                             </button>
                             <button
                               onClick={() => {
                                 setAppToDelete(app)
                                 setIsDeleteModalVisible(true)
                               }}
+                              className="p-[6px] rounded-[6px] text-rose-600 hover:bg-rose-50 transition-all font-bold flex items-center justify-center"
                               title="Reject"
-                              className="w-[38px] h-[38px] rounded-[10px] bg-white border border-[#d0d5dd] flex items-center justify-center text-[#475467] hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-all shadow-sm active:scale-90"
                             >
-                              <HiOutlineX className="text-[19px]" />
+                              <HiOutlineX size={20} />
                             </button>
+                          </>
+                        ) : (
+                          <>
+                            <div className="w-[32px]" />
+                            <div className="w-[32px]" />
                           </>
                         )}
                       </div>
@@ -425,214 +411,163 @@ export default function RegistrationsPage() {
               )}
             </tbody>
           </table>
-        </div>
-
-
-        {/* ── PAGINATION ── */}
-        {filtered.length > pageSize && (
-          <div className="flex items-center justify-between px-6 py-4 border-t border-[#eaecf0] bg-white">
-            <button
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-              disabled={currentPage === 1}
-              className={`h-[40px] px-[14px] border border-[#d0d5dd] rounded-[10px] bg-white font-bold text-[14px] text-[#344054] cursor-pointer flex items-center gap-[8px] hover:bg-gray-50 transition-all shadow-sm active:scale-95 ${currentPage === 1 ? 'opacity-40 cursor-not-allowed' : ''}`}
-            >
-              <HiOutlineChevronLeft className="text-[18px]" /> Previous
-            </button>
-            <div className="flex gap-[4px] items-center">
-              {Array.from({ length: totalPages }).map((_, i) => {
-                const pageNum = i + 1;
-                const isActive = currentPage === pageNum;
-                if (totalPages > 7 && (pageNum > 1 && pageNum < totalPages && Math.abs(pageNum - currentPage) > 2)) {
-                  if (pageNum === 2 || pageNum === totalPages - 1) return <div key={pageNum} className="w-[36px] h-[36px] flex items-center justify-center text-[#667085] font-bold">...</div>
-                  return null;
-                }
-                return (
-                  <div
-                    key={pageNum}
-                    onClick={() => setCurrentPage(pageNum)}
-                    className={`w-[36px] h-[36px] rounded-[10px] flex items-center justify-center text-[14px] cursor-pointer font-bold transition-all ${isActive ? 'bg-[#f4ebff] text-[#7f56d9] ring-1 ring-[#7f56d9]/30' : 'text-[#667085] hover:bg-gray-100 hover:text-[#101828]'
-                      }`}
+          
+          {/* ── PAGINATION ── */}
+          {filtered.length > pageSize && (
+            <div className="px-6 py-4 flex items-center justify-between border-t border-[#f1f5f9] bg-white">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="flex items-center gap-2 px-3 py-2 border border-[#d0d5dd] rounded-[8px] text-[14px] font-semibold text-[#344054] hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                <HiOutlineChevronLeft /> Previous
+              </button>
+              
+              <div className="flex gap-[4px]">
+                {Array.from({ length: totalPages }).map((_, i) => (
+                  <button
+                    key={i + 1}
+                    onClick={() => setCurrentPage(i + 1)}
+                    className={`w-[40px] h-[40px] rounded-[8px] text-[14px] font-semibold transition-all ${
+                      currentPage === i + 1 
+                      ? 'bg-[#f9f5ff] text-[#7f56d9] ring-1 ring-[#7f56d9]' 
+                      : 'text-[#667085] hover:bg-gray-50'
+                    }`}
                   >
-                    {pageNum}
-                  </div>
-                );
-              })}
+                    {i + 1}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className="flex items-center gap-2 px-3 py-2 border border-[#d0d5dd] rounded-[8px] text-[14px] font-semibold text-[#344054] hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                Next <HiOutlineChevronRight />
+              </button>
             </div>
-            <button
-              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-              disabled={currentPage === totalPages}
-              className={`h-[40px] px-[14px] border border-[#d0d5dd] rounded-[10px] bg-white font-bold text-[14px] text-[#344054] cursor-pointer flex items-center gap-[8px] hover:bg-gray-50 transition-all shadow-sm active:scale-95 ${currentPage === totalPages ? 'opacity-40 cursor-not-allowed' : ''}`}
-            >
-              Next <HiOutlineChevronRight className="text-[18px]" />
-            </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
-      {/* Approval Confirmation Modal */}
+      {/* Confirmation Modals (Styled for Fidelity) */}
+      <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        .hiring-modal .ant-modal-content {
+          border-radius: 20px !important;
+          padding: 0 !important;
+          overflow: hidden;
+        }
+        .hiring-modal .ant-modal-header {
+          border-bottom: 1px solid #eaecf0;
+          margin-bottom: 0;
+          padding: 32px 32px 16px 32px;
+        }
+        .hiring-modal .ant-modal-body {
+          padding: 32px;
+        }
+        .hiring-modal input, .hiring-modal .ant-select-selector, .hiring-modal .ant-picker {
+          height: 44px !important;
+          border-radius: 8px !important;
+          border-color: #d0d5dd !important;
+        }
+      `}</style>
+
+      {/* Re-use existing modal logic but keep them visually consistent with the new style */}
       {isModalVisible && appToApprove && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] p-4 backdrop-blur-[2px]"
-          onClick={() => setIsModalVisible(false)}
-        >
-          <div
-            className="bg-white rounded-[20px] p-[40px] w-full max-w-[607px] shadow-2xl animate-in fade-in zoom-in duration-300"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex flex-col items-center">
-              <div className="w-[64px] h-[64px] rounded-[14px] bg-[#ecfdf5] flex items-center justify-center mb-[24px] border border-[#abefc6]">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[1000] p-4">
+          <div className="bg-white rounded-[20px] p-[40px] w-full max-w-[600px] shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-[64px] h-[64px] rounded-[14px] bg-[#ecfdf5] border border-[#abefc6] flex items-center justify-center mb-6">
                 <HiOutlineCheck className="text-[#10b981] text-[32px]" />
               </div>
-
-              <h3 className="text-[24px] font-bold text-[#101828] text-center mb-[12px] tracking-tight">
-                Are you sure you want to Accept {appToApprove.postulant?.user?.user_name || 'this candidate'}?
-              </h3>
-
-              <p className="text-[16px] text-[#667085] text-center leading-relaxed mb-[36px] max-w-[480px]">
-                By approving this candidature, the candidate will be accepted for the role of <span className="font-bold text-[#101828]">{appToApprove.job?.title || 'the selected position'}</span>.
+              <h3 className="text-[24px] font-bold text-[#101828] mb-3">Accept {appToApprove.postulant?.user?.user_name}?</h3>
+              <p className="text-[16px] text-[#667085] leading-relaxed mb-8 max-w-[440px]">
+                Confirm accepting this registration for the role of <span className="font-bold text-[#101828]">{appToApprove.job?.title}</span>.
               </p>
-
-              <div className="flex gap-[16px] w-full">
-                <button
-                  onClick={() => setIsModalVisible(false)}
-                  className="flex-1 h-[52px] border border-[#d0d5dd] rounded-[10px] bg-white text-[#344054] font-bold text-[16px] hover:bg-gray-50 transition-all shadow-sm active:scale-95"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    setIsModalVisible(false)
-                    setIsHiringModal(true)
-                  }}
-                  className="flex-1 h-[52px] bg-[#7c3aed] text-white rounded-[10px] font-bold text-[16px] hover:bg-[#6d28d9] transition-all shadow-sm active:scale-95 shadow-[#7c3aed]/20"
-                >
-                  Confirm Approve
-                </button>
+              <div className="flex gap-4 w-full">
+                <button onClick={() => setIsModalVisible(false)} className="flex-1 h-[48px] border border-[#d0d5dd] rounded-[10px] font-bold text-[#344054] hover:bg-gray-50 transition-all">Cancel</button>
+                <button onClick={() => { setIsModalVisible(false); setIsHiringModal(true); }} className="flex-1 h-[48px] bg-[#7f56d9] text-white rounded-[10px] font-bold hover:bg-[#6941c6] transition-all shadow-md shadow-[#7f56d9]/20">Confirm Approve</button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Rejection Confirmation Modal */}
       {isDeleteModalVisible && appToDelete && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] p-4 backdrop-blur-[2px]"
-          onClick={() => setIsDeleteModalVisible(false)}
-        >
-          <div
-            className="bg-white rounded-[20px] p-[40px] w-full max-w-[607px] shadow-2xl animate-in fade-in zoom-in duration-300 border-b-4 border-red-500"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex flex-col items-center">
-              <div className="w-[64px] h-[64px] rounded-[14px] bg-[#fef2f2] flex items-center justify-center mb-[24px] border border-[#fecaca]">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[1000] p-4">
+          <div className="bg-white rounded-[20px] p-[40px] w-full max-w-[600px] shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-[64px] h-[64px] rounded-[14px] bg-[#fef2f2] border border-[#fecaca] flex items-center justify-center mb-6">
                 <HiOutlineX className="text-[#dc2626] text-[32px]" />
               </div>
-
-              <h3 className="text-[24px] font-bold text-[#101828] text-center mb-[12px] tracking-tight">
-                Reject Candidate {appToDelete.postulant?.user?.user_name || ''}?
-              </h3>
-
-              <p className="text-[16px] text-[#667085] text-center leading-relaxed mb-[36px] max-w-[480px]">
-                 Are you sure you want to reject this registration? Local data will be preserved but the application status will change to rejected.
+              <h3 className="text-[24px] font-bold text-[#101828] mb-3">Reject Registration?</h3>
+              <p className="text-[16px] text-[#667085] leading-relaxed mb-8 max-w-[400px]">
+                Are you sure you want to reject <span className="font-bold text-[#101828]">{appToDelete.postulant?.user?.user_name}</span>? This action is irreversible.
               </p>
-
-              <div className="flex gap-[16px] w-full">
-                <button
-                  onClick={() => setIsDeleteModalVisible(false)}
-                  className="flex-1 h-[52px] border border-[#d0d5dd] rounded-[10px] bg-white text-[#344054] font-bold text-[16px] hover:bg-gray-50 transition-all shadow-sm active:scale-95"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => handleAction(appToDelete, 'rejected')}
-                  className="flex-1 h-[52px] bg-[#d92d20] text-white rounded-[10px] font-bold text-[16px] hover:bg-[#b42318] transition-all shadow-sm active:scale-95 shadow-red-100"
-                >
-                  Reject Candidate
-                </button>
+              <div className="flex gap-4 w-full">
+                <button onClick={() => setIsDeleteModalVisible(false)} className="flex-1 h-[48px] border border-[#d0d5dd] rounded-[10px] font-bold text-[#344054] hover:bg-gray-50 transition-all">Cancel</button>
+                <button onClick={() => handleAction(appToDelete, 'rejected')} className="flex-1 h-[48px] bg-[#d11010] text-white rounded-[10px] font-bold hover:bg-[#b91c1c] transition-all shadow-md shadow-red-100">Reject Candidate</button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Permanent Delete Confirmation Modal */}
+      {/* Permanent Delete Confirmation for Archive (Re-used for Archive Selected) */}
       {isPermDeleteModalVisible && selectedIds.size > 0 && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1001] p-4 backdrop-blur-[2px]"
-          onClick={() => setIsPermDeleteModalVisible(false)}
-        >
-          <div
-            className="bg-white rounded-[20px] p-[40px] w-full max-w-[607px] shadow-2xl animate-in fade-in zoom-in duration-300 border-2 border-[#FDA29B]"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex flex-col items-center">
-              <div className="w-[64px] h-[64px] rounded-[14px] bg-[#FEF2F2] flex items-center justify-center mb-[24px] shadow-sm">
-                <HiOutlineX className="text-[#DC2626] text-[32px]" />
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[1001] p-4">
+          <div className="bg-white rounded-[20px] p-[40px] w-full max-w-[600px] shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-[64px] h-[64px] rounded-[14px] bg-[#f9fafb] border border-[#eaecf0] flex items-center justify-center mb-6">
+                <HiOutlineTrash className="text-[#667085] text-[32px]" />
               </div>
-
-              <h3 className="text-[24px] font-bold text-[#101828] text-center mb-[12px] tracking-tight">
-                Archive {selectedIds.size} registration{selectedIds.size > 1 ? 's' : ''}?
-              </h3>
-
-              <p className="text-[16px] text-[#667085] text-center leading-relaxed mb-[36px] max-w-[480px]">
-                This will move the selected registrations to the archive. They can be restored later or permanently deleted from the archive view.
+              <h3 className="text-[24px] font-bold text-[#101828] mb-3">Archive {selectedIds.size} Registrations?</h3>
+              <p className="text-[16px] text-[#667085] leading-relaxed mb-8 max-w-[440px]">
+                The selected registrations will be moved to the archive. You can restore them later or delete them permanently from the archive view.
               </p>
-
-              <div className="flex gap-[16px] w-full">
-                <button
-                  onClick={() => setIsPermDeleteModalVisible(false)}
-                  className="flex-1 h-[52px] border border-[#d0d5dd] rounded-[10px] bg-white text-[#344054] font-bold text-[16px] hover:bg-gray-50 transition-all shadow-sm active:scale-95"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleArchiveSelected}
-                  className="flex-1 h-[52px] bg-[#7c3aed] text-white rounded-[10px] font-bold text-[16px] hover:bg-[#6d28d9] transition-all shadow-sm flex items-center justify-center gap-2"
-                >
-                  Confirm Archiving
-                </button>
+              <div className="flex gap-4 w-full">
+                <button onClick={() => setIsPermDeleteModalVisible(false)} className="flex-1 h-[48px] border border-[#d0d5dd] rounded-[10px] font-bold text-[#344054] hover:bg-gray-50 transition-all">Cancel</button>
+                <button onClick={handleArchiveSelected} className="flex-1 h-[48px] bg-[#7f56d9] text-white rounded-[10px] font-bold hover:bg-[#6941c6] transition-all shadow-md shadow-[#7f56d9]/20">Confirm Archiving</button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Hiring Details Modal */}
+      {/* Hiring Details Modal (Ant Design Overridden) */}
       <Modal
         title={
-          <div className="pt-4 px-2">
-            <h2 className="text-[20px] font-bold text-[#101828] mb-1">Hiring Approval</h2>
-            <p className="text-[#475467] text-[14px] font-normal leading-relaxed">Please provide the necessary contract details to finalize the hiring of this candidate.</p>
+          <div className="pt-2">
+            <h2 className="text-[22px] font-bold text-[#101828] mb-1">Contract Information</h2>
+            <p className="text-[#64748b] text-[14px] font-normal">Complete the hiring details to finalize the process.</p>
           </div>
         }
         open={isHiringModal}
         onCancel={() => setIsHiringModal(false)}
         footer={null}
         centered
-        width={600}
+        width={560}
         className="hiring-modal"
       >
-        <div className="p-4 space-y-6">
+        <div className="space-y-6 pt-2">
           <div className="space-y-2">
-            <label className="text-[14px] font-semibold text-[#344054]">Hiring date</label>
+            <label className="text-[14px] font-semibold text-[#344054]">Hiring Date</label>
             <DatePicker
-              className="w-full h-[48px] rounded-lg border-[#D0D5DD]"
+              className="w-full"
               placeholder="Select date..."
-              suffixIcon={<CalendarOutlined className="text-gray-400" />}
-
               value={hiringData.hire_date}
               onChange={(date) => setHiringData({ ...hiringData, hire_date: date as any })}
             />
-            <p className="text-[12px] text-[#667085]">Select the official start date for this employee.</p>
           </div>
 
           <div className="space-y-2">
-            <label className="text-[14px] font-semibold text-[#344054]">Departement</label>
+            <label className="text-[14px] font-semibold text-[#344054]">Department</label>
             <Select
-              className="w-full h-[48px] rounded-lg border-[#D0D5DD]"
+              className="w-full"
               placeholder="Select department..."
-              suffixIcon={<SolutionOutlined className="text-gray-400" />}
               value={hiringData.department}
               onChange={(val) => setHiringData({ ...hiringData, department: val })}
               options={[
@@ -645,68 +580,55 @@ export default function RegistrationsPage() {
                 { value: 'Business', label: 'Business Development' },
               ]}
             />
-            <p className="text-[12px] text-[#667085]">Choose the department this employee will join.</p>
           </div>
 
           <div className="space-y-2">
-            <label className="text-[14px] font-semibold text-[#344054]">Rate per month (jours/mois)</label>
+            <label className="text-[14px] font-semibold text-[#344054]">Vacation Balance Accrual (days/month)</label>
             <Input
-              className="w-full h-[48px] rounded-lg border-[#D0D5DD]"
-              placeholder="Ex: 1.5"
+              className="w-full"
+              placeholder="Ex: 2.1"
               value={hiringData.monthly_rate}
-              onChange={(e) => {
-                const val = e.target.value.replace(',', '.');
-                setHiringData({ ...hiringData, monthly_rate: val as any });
-              }}
+              onChange={(e) => setHiringData({ ...hiringData, monthly_rate: e.target.value.replace(',', '.') as any })}
             />
-            <p className="text-[12px] text-[#667085]">Définissez combien de jours de congés l&apos;employé cumule chaque mois.</p>
           </div>
 
-          <div className="flex justify-end gap-[12px] pt-6 border-t border-[#eaecf0]">
+          <div className="flex justify-end gap-3 pt-8">
             <button
               onClick={() => setIsHiringModal(false)}
-              className="px-6 h-[44px] rounded-[10px] border border-[#d0d5dd] font-bold text-[#344054] hover:bg-gray-50 bg-white shadow-sm transition-all active:scale-95 text-[14px]"
+              className="px-6 h-[44px] rounded-[10px] border border-[#d0d5dd] font-bold text-[#344054] hover:bg-gray-50 transition-all font-bold"
             >
               Cancel
             </button>
             <button
               onClick={handleHiringDone}
-              className="px-8 h-[44px] rounded-[10px] bg-[#7c3aed] text-white font-bold hover:bg-[#6d28d9] shadow-sm shadow-[#7c3aed]/20 transition-all active:scale-95 text-[14px]"
+              className="px-8 h-[44px] rounded-[10px] bg-[#7f56d9] text-white font-bold hover:bg-[#6941c6] shadow-md shadow-[#7f56d9]/20 transition-all font-bold"
             >
-              Done
+              Confirm & Finalize
             </button>
           </div>
         </div>
       </Modal>
 
       <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
         .hiring-modal .ant-modal-content {
-          border-radius: 12px !important;
+          border-radius: 20px !important;
           padding: 0 !important;
           overflow: hidden;
         }
         .hiring-modal .ant-modal-header {
           border-bottom: 1px solid #eaecf0;
           margin-bottom: 0;
-          padding: 24px;
+          padding: 32px 32px 16px 32px;
         }
         .hiring-modal .ant-modal-body {
-          padding: 24px;
+          padding: 32px;
         }
-        .hiring-modal .ant-select-selector {
-          height: 48px !important;
-          border-radius: 8px !important;
-          display: flex !important;
-          align-items: center !important;
-          border-color: #d0d5dd !important;
-          font-family: inherit !important;
-        }
-        .hiring-modal .ant-picker {
-          height: 48px !important;
+        .hiring-modal input, .hiring-modal .ant-select-selector, .hiring-modal .ant-picker {
+          height: 44px !important;
           border-radius: 8px !important;
           border-color: #d0d5dd !important;
-          width: 100%;
-          font-family: inherit !important;
         }
       `}</style>
     </div>

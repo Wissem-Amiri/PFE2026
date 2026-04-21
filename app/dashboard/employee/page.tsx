@@ -4,19 +4,16 @@ import { useAuth } from '@/api/AuthContext'
 import Link from 'next/link'
 import dayjs from 'dayjs'
 import {
-  UserOutlined,
-  SearchOutlined,
-  EllipsisOutlined,
-  LockFilled,
-  MedicineBoxFilled,
-  AlertFilled,
-  SunFilled,
-  BarChartOutlined,
-  InboxOutlined,
-  ArrowDownOutlined,
-  CalendarOutlined,
-  InfoCircleOutlined
-} from '@ant-design/icons'
+  HiOutlineSearch,
+  HiOutlineDotsVertical,
+  HiOutlineSun,
+  HiOutlineBell,
+  HiOutlineLockClosed,
+  HiOutlineHeart,
+  HiOutlineArrowNarrowDown,
+  HiOutlineInbox,
+  HiOutlineScale
+} from 'react-icons/hi'
 import { Button, Table, Tag, Avatar, Modal, Form, DatePicker, Select, Input, message } from 'antd'
 import { getMyLeaves, requestLeave } from '@/api/conge'
 
@@ -43,7 +40,6 @@ export default function EmployeeDashboardPage() {
     loadLeaves()
   }, [user?.id])
 
-  // Helper to calculate days taken per type (Approved or Pending)
   const calculateDaysForType = (type: string) => {
     return leaves
       .filter(l => l.type === type && l.status === 'approved')
@@ -80,227 +76,216 @@ export default function EmployeeDashboardPage() {
     setLoading(false)
   }
 
-  const CustomEmpty = () => (
-    <div className="flex flex-col items-center justify-center py-[80px]">
-      <div className="w-[64px] h-[64px] bg-[#f9fafb] border border-[#f2f4f7] rounded-[18px] flex items-center justify-center mb-4 shadow-sm">
-        <InboxOutlined className="text-[#d0d5dd] text-[28px]" />
-      </div>
-      <span className="text-[14px] text-[#667085] font-medium">No data found</span>
-    </div>
-  )
-
   const stats = [
-    { title: 'Vacation', count: calculateDaysForType('Vacation').toString().padStart(2, '0'), icon: <SunFilled />, color: '#FFF4ED', iconColor: '#F97316' },
-    { title: 'Casual', count: calculateDaysForType('Casual').toString().padStart(2, '0'), icon: <AlertFilled />, color: '#F5F3FF', iconColor: '#7C3AED' },
-    { title: 'Personal', count: calculateDaysForType('Personal').toString().padStart(2, '0'), icon: <LockFilled />, color: '#EFF6FF', iconColor: '#3B82F6' },
-    { title: 'Sick', count: calculateDaysForType('Sick').toString().padStart(2, '0'), icon: <MedicineBoxFilled />, color: '#FEF2F2', iconColor: '#EF4444' },
+    { title: 'Vacation', count: calculateDaysForType('Vacation').toString().padStart(2, '0'), icon: <HiOutlineSun />, bg: '#FFF4ED', color: '#F97316' },
+    { title: 'Casual', count: calculateDaysForType('Casual').toString().padStart(2, '0'), icon: <HiOutlineBell />, bg: '#F5F3FF', color: '#7C3AED' },
+    { title: 'Personal', count: calculateDaysForType('Personal').toString().padStart(2, '0'), icon: <HiOutlineLockClosed />, bg: '#EFF6FF', color: '#3B82F6' },
+    { title: 'Sick', count: calculateDaysForType('Sick').toString().padStart(2, '0'), icon: <HiOutlineHeart />, bg: '#FEF2F2', color: '#EF4444' },
   ]
 
   const columns = [
     {
       title: (
-        <div className="flex items-center gap-1">
-          SUBMISSION DATE <ArrowDownOutlined className="text-[10px]" />
+        <div className="flex items-center gap-1 uppercase tracking-wider text-[11px] font-bold text-[#667085]">
+          Submission Date <HiOutlineArrowNarrowDown className="text-xs" />
         </div>
       ),
       dataIndex: 'created_at',
       key: 'created_at',
       render: (date: string) => (
-        <span className="text-[13px] font-medium text-[#475467]">
-          {new Date(date).toLocaleString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).replace(',', '')}
+        <span className="text-[14px] font-medium text-[#101828]">
+          {dayjs(date).format('MM/DD/YYYY HH:mm')}
         </span>
       )
     },
     {
-      title: 'FROM - TO',
+      title: <span className="uppercase tracking-wider text-[11px] font-bold text-[#667085]">From - to</span>,
       key: 'duration',
       render: (record: any) => (
-        <span className="text-[13px] text-[#475467] font-medium">
-          {new Date(record.start_date).toLocaleDateString('en-US')} to {new Date(record.end_date).toLocaleDateString('en-US')}
+        <span className="text-[14px] text-[#475467] font-medium">
+          {dayjs(record.start_date).format('MM/DD/YYYY')} to {dayjs(record.end_date).format('MM/DD/YYYY')}
         </span>
       )
     },
     {
-      title: 'TYPE',
+      title: <span className="uppercase tracking-wider text-[11px] font-bold text-[#667085]">Type</span>,
       dataIndex: 'type',
       key: 'type',
       render: (type: string) => {
-        let icon = <SunFilled />;
+        let icon = <HiOutlineSun />;
         let color = '#F97316';
-        if (type === 'Casual') { icon = <AlertFilled />; color = '#7C3AED'; }
-        if (type === 'Personal') { icon = <LockFilled />; color = '#3B82F6'; }
-        if (type === 'Sick') { icon = <MedicineBoxFilled />; color = '#EF4444'; }
+        if (type === 'Casual') { icon = <HiOutlineBell />; color = '#7C3AED'; }
+        if (type === 'Personal') { icon = <HiOutlineLockClosed />; color = '#3B82F6'; }
+        if (type === 'Sick') { icon = <HiOutlineHeart />; color = '#EF4444'; }
         return (
-          <div className="flex items-center gap-2">
-            <span className="text-[12px]" style={{ color }}>{icon}</span>
-            <span className="text-[13px] font-bold" style={{ color }}>{type}</span>
+          <div className="flex items-center gap-2 px-2 py-1 rounded-full border w-fit" style={{ borderColor: color + '33', backgroundColor: color + '11' }}>
+            <span className="text-[14px]" style={{ color }}>{icon}</span>
+            <span className="text-[12px] font-bold" style={{ color }}>{type}</span>
           </div>
         )
       }
     },
     {
-      title: 'STATUS',
+      title: <span className="uppercase tracking-wider text-[11px] font-bold text-[#667085]">Status</span>,
       dataIndex: 'status',
       key: 'status',
-      render: (status: string) => {
-        let color = 'orange'
-        if (status === 'approved') color = 'green'
-        if (status === 'rejected') color = 'error'
-        return (
-          <Tag color={color} className="rounded-full px-3 py-0 pb-0.5 font-bold uppercase text-[9px] border-none shadow-sm capitalize">
-            {status}
-          </Tag>
-        )
-      }
+      render: (status: string) => (
+        <Tag color={status === 'approved' ? 'success' : status === 'rejected' ? 'error' : 'warning'} className="rounded-full px-3 py-0.5 font-bold capitalize border-none">
+          {status}
+        </Tag>
+      )
     }
   ]
 
   return (
-    <div className="flex-1 p-[32px] px-[40px] h-full overflow-y-auto bg-[#fcfcfd]">
+    <div className="flex flex-col min-h-screen bg-white">
       {contextHolder}
-      {/* ── HEADER ── */}
-      <div className="flex justify-between items-center mb-[32px]">
-        <h1 className="text-[26px] font-black text-[#101828] mb-0 tracking-tight">Home</h1>
-        <div className="w-[40px] h-[40px] flex items-center justify-center cursor-pointer text-[#667085] hover:bg-slate-50 rounded-full transition-all">
-          <SearchOutlined className="text-[20px]" />
-        </div>
-      </div>
 
-      {/* ── STATS CARDS ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[24px] mb-[32px]">
-        {stats.map((stat, idx) => (
-          <div key={idx} className="bg-white p-[24px] rounded-[16px] border border-[#eaecf0] shadow-sm relative overflow-hidden group hover:border-[#7c3aed] transition-all">
-            <div className="flex justify-between items-start mb-4">
-              <span className="text-[12px] font-extrabold text-[#667085] uppercase tracking-[0.1em]">{stat.title}</span>
-              <EllipsisOutlined className="text-[#d0d5dd] cursor-pointer" />
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-[34px] font-black text-[#101828]">{stat.count}</span>
-              <div
-                className="w-[44px] h-[44px] rounded-full flex items-center justify-center text-[18px]"
-                style={{ backgroundColor: stat.color, color: stat.iconColor }}
-              >
-                {stat.icon}
-              </div>
+      {/* Main Content Wrap */}
+      <div className="flex flex-1 p-8 pt-10 gap-10">
+
+        {/* LEFT COLUMN: Main Dashboard Area */}
+        <div className="flex-1 flex flex-col gap-10 min-w-0">
+
+          {/* Header */}
+          <div className="flex justify-between items-center">
+            <h1 className="text-[32px] font-bold text-[#101828] m-0">Home</h1>
+            <div className="p-2 hover:bg-gray-50 rounded-full cursor-pointer transition-colors">
+              <HiOutlineSearch className="text-2xl text-[#667085]" />
             </div>
           </div>
-        ))}
-      </div>
 
-      <div className="flex flex-col xl:flex-row gap-[32px]">
-        {/* ── MAIN CONTENT (TABLE) ── */}
-        <div className="flex-1 xl:flex-[0.73]">
-          <div className="bg-white rounded-[16px] border border-[#eaecf0] shadow-sm overflow-hidden min-h-[500px] flex flex-col">
-            <div className="px-[24px] py-[22px] border-b border-[#eaecf0]">
-              <h3 className="text-[16px] font-bold text-[#101828] mb-0">Latest Leaves</h3>
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+            {stats.map((stat, idx) => (
+              <div key={idx} className="bg-white p-6 rounded-[12px] border border-[#F2F4F7] shadow-sm flex flex-col gap-4 group hover:shadow-md transition-shadow">
+                <div className="flex justify-between items-center">
+                  <span className="text-[12px] font-bold text-[#667085] uppercase tracking-widest">{stat.title}</span>
+                  <HiOutlineDotsVertical className="text-[#D0D5DD] cursor-pointer" />
+                </div>
+                <div className="flex justify-between items-end">
+                  <span className="text-[36px] font-bold text-[#101828] leading-none">{stat.count}</span>
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center text-xl shadow-sm border border-[#F2F4F7]" style={{ backgroundColor: stat.bg, color: stat.color }}>
+                    {stat.icon}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Table Card */}
+          <div className="bg-white rounded-[24px] border border-[#F2F4F7] shadow-sm flex flex-col overflow-hidden">
+            <div className="px-8 py-6 border-b border-[#F2F4F7]">
+              <h3 className="text-[18px] font-bold text-[#101828] m-0">Latest Leaves</h3>
             </div>
-
             <div className="flex-1">
               <Table
                 columns={columns}
                 dataSource={leaves}
                 pagination={false}
                 loading={loading}
-                className="pixel-perfect-table"
-                rowKey="id"
+                className="custom-table"
                 rowSelection={{ type: 'checkbox' }}
-                locale={{ emptyText: <CustomEmpty /> }}
+                rowKey="id"
+                locale={{
+                  emptyText: (
+                    <div className="py-20 flex flex-col items-center gap-4">
+                      <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                        <HiOutlineInbox className="text-4xl text-gray-300" />
+                      </div>
+                      <span className="text-gray-500 font-medium pb-2">No data found</span>
+                    </div>
+                  )
+                }}
               />
             </div>
           </div>
         </div>
 
-        {/* ── SIDEBAR ── */}
-        <div className="w-full xl:w-[320px] xl:flex-[0.27] flex flex-col gap-[32px]">
+        {/* RIGHT COLUMN: Profile & Actions */}
+        <div className="w-[340px] shrink-0 flex flex-col gap-8">
+
           {/* Profile Card */}
-          <div className="bg-white rounded-[20px] border border-[#eaecf0] shadow-sm p-[32px] flex flex-col items-center">
+          <div className="bg-white rounded-[32px] p-8 border border-[#F2F4F7] shadow-sm flex flex-col items-center">
             <div className="relative mb-6">
               <Avatar
-                size={96}
-                src={profile?.avatar_url ?? undefined}
-                icon={<UserOutlined />}
-                className="border-[4px] border-white shadow-xl shadow-slate-100"
-              />
+                size={120}
+                src={profile?.avatar_url}
+                className="border-8 border-gray-50 shadow-inner"
+              >
+                {dayjs().format('A')}
+              </Avatar>
+              <div className="absolute bottom-2 right-2 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
             </div>
-            <h2 className="text-[20px] font-black text-[#101828] mb-1">{profile?.user_name || 'Farouk Abichou'}</h2>
-            <p className="text-[14px] font-bold text-[#667085] mb-[28px]">{profile?.employee?.position || 'Software Developer'}</p>
 
-            <div className="flex gap-2 w-full">
-              <Link href="/dashboard/employee/settings" className="flex-1">
-                <Button block type="primary" className="h-[44px] rounded-[10px] font-bold bg-[#7C3AED] hover:bg-[#6D28D9] border-none shadow-md shadow-purple-50">Settings</Button>
+            <div className="text-center mb-8">
+              <h2 className="text-[24px] font-bold text-[#101828] mb-1">{profile?.user_name || 'Farouck Abichou'}</h2>
+              <p className="text-[14px] text-[#667085] font-semibold">{profile?.employee?.position || 'Software Developer'}</p>
+            </div>
+
+            <div className="flex w-full gap-3">
+              <Link href="/dashboard/employee/settings" className="flex-1 no-underline">
+                <Button block className="h-[44px] rounded-xl font-bold border-[#D0D5DD] text-[#344054] hover:border-[#7F56D9] hover:text-[#7F56D9]">
+                  Settings
+                </Button>
+              </Link>
+              <Link href="/dashboard/employee/settings" className="flex-1 no-underline">
+                <Button block type="primary" className="h-[44px] rounded-xl font-bold bg-[#7F56D9] hover:bg-[#6941C6] border-none shadow-sm">
+                  View profile
+                </Button>
               </Link>
             </div>
           </div>
 
           {/* Balance Card */}
-          <div className="bg-white rounded-[20px] border border-[#eaecf0] shadow-sm p-[24px]">
+          <div className="bg-white rounded-[24px] p-6 border border-[#F2F4F7] shadow-sm">
             <div className="flex justify-between items-center mb-6">
               <span className="text-[14px] font-bold text-[#101828]">Balance</span>
-              <EllipsisOutlined className="text-[#d0d5dd]" />
+              <HiOutlineDotsVertical className="text-[#D0D5DD]" />
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-[38px] font-black text-[#101828]">{profile?.employee?.vacation_balance ?? 0}</span>
-              <div className="w-[52px] h-[52px] rounded-[14px] bg-[#dcfce7] flex items-center justify-center text-[#16a34a] text-[24px]">
-                <BarChartOutlined className="rotate-90" />
+              <span className="text-[48px] font-bold text-[#101828] leading-none">{profile?.employee?.vacation_balance ?? 0}</span>
+              <div className="w-14 h-14 rounded-2xl bg-[#ECFDF3] flex items-center justify-center text-[#12B76A] text-2xl shadow-sm border border-[#D1FADF]">
+                <HiOutlineScale />
               </div>
             </div>
           </div>
 
-          {/* Action Button */}
-          <button
+          {/* Primary Action Button */}
+          <Button
+            type="primary"
+            size="large"
             onClick={() => setIsModalOpen(true)}
-            className="w-full h-[52px] bg-[#7c3aed] hover:bg-[#6d28d9] text-white rounded-[12px] font-black text-[15px] shadow-lg shadow-purple-100 transition-all flex items-center justify-center gap-2 cursor-pointer border-none"
+            className="h-[60px] rounded-[16px] bg-[#7F56D9] hover:bg-[#6941C6] border-none text-[16px] font-bold shadow-lg shadow-indigo-100 flex items-center justify-center"
           >
             Apply for leave
-          </button>
+          </Button>
         </div>
       </div>
 
-      {/* ── APPLY LEAVE MODAL ── */}
+      {/* Modal - Kept functional but updated styling */}
       <Modal
         open={isModalOpen}
-        onCancel={() => {
-          setIsModalOpen(false)
-          form.resetFields()
-        }}
+        onCancel={() => { setIsModalOpen(false); form.resetFields(); }}
         footer={null}
         width={500}
-        className="apply-leave-modal"
         centered
-        closeIcon={false}
+        closeIcon={null}
+        className="fidelity-modal"
       >
-        <div className="p-4">
-          <div className="mb-6">
-            <h2 className="text-[20px] font-black text-[#101828] mb-1">Apply For Leave</h2>
-            <p className="text-[13px] text-[#667085] font-medium mb-0">Fill in the details below to request your time off.</p>
+        <div className="p-2">
+          <div className="mb-8">
+            <h2 className="text-[24px] font-bold text-[#101828] mb-2">Apply For Leave</h2>
+            <p className="text-gray-500 text-sm">Fill in the details below to request your time off.</p>
           </div>
 
-          <Form
-            form={form}
-            layout="vertical"
-            onFinish={handleApplyLeave}
-            className="high-fidelity-form"
-            requiredMark={false}
-          >
-            <Form.Item
-              label={<span className="text-[13px] font-bold text-[#344054]">Leave Date</span>}
-              name="dates"
-              rules={[{ required: true, message: 'Please select your leave dates' }]}
-              extra={<span className="text-[11px] text-[#667085] flex items-center gap-1 mt-1"><InfoCircleOutlined className="text-[10px]" /> This is a hint text to help user.</span>}
-            >
-              <RangePicker
-                className="w-full h-[44px] rounded-[10px] border-[#d0d5dd]"
-                placeholder={['Start Date', 'End Date']}
-              />
+          <Form form={form} layout="vertical" onFinish={handleApplyLeave} requiredMark={false} className="gap-4 flex flex-col">
+            <Form.Item label={<span className="font-bold text-gray-700">Leave Date</span>} name="dates" rules={[{ required: true }]}>
+              <RangePicker className="w-full h-12 rounded-xl" />
             </Form.Item>
 
-            <Form.Item
-              label={<span className="text-[13px] font-bold text-[#344054]">Type</span>}
-              name="type"
-              rules={[{ required: true, message: 'Please select leave type' }]}
-              extra={<span className="text-[11px] text-[#667085] flex items-center gap-1 mt-1"><InfoCircleOutlined className="text-[10px]" /> This is a hint text to help user.</span>}
-            >
-              <Select placeholder="Select..." className="w-full h-[44px] rounded-[10px] items-center flex" suffixIcon={<ArrowDownOutlined className="text-[12px]" />}>
+            <Form.Item label={<span className="font-bold text-gray-700">Type</span>} name="type" rules={[{ required: true }]}>
+              <Select placeholder="Select type..." className="h-12 w-full rounded-xl custom-select">
                 <Option value="Vacation">Vacation</Option>
                 <Option value="Casual">Casual</Option>
                 <Option value="Personal">Personal</Option>
@@ -308,36 +293,14 @@ export default function EmployeeDashboardPage() {
               </Select>
             </Form.Item>
 
-            <Form.Item
-              label={<span className="text-[13px] font-bold text-[#344054]">Description</span>}
-              name="reason"
-              rules={[{ required: true, message: 'Please provide a reason' }]}
-              help={<span className="text-red-500 text-[11px] hidden">This is a error message.</span>}
-            >
-              <Input.TextArea
-                placeholder="Type..."
-                rows={4}
-                className="rounded-[10px] border-[#d0d5dd] p-3 text-[14px]"
-              />
+            <Form.Item label={<span className="font-bold text-gray-700">Description</span>} name="reason" rules={[{ required: true }]}>
+              <Input.TextArea placeholder="Enter reason..." rows={4} className="rounded-xl p-4" />
             </Form.Item>
 
-            <div className="flex gap-3 mt-8">
-              <Button
-                onClick={() => {
-                  setIsModalOpen(false)
-                  form.resetFields()
-                }}
-                className="flex-1 h-[48px] rounded-[12px] font-black text-[#344054] border-[#d0d5dd] hover:border-[#7c3aed] hover:text-[#7c3aed]"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="primary"
-                htmlType="submit"
-                loading={loading}
-                className="flex-1 h-[48px] rounded-[12px] font-black bg-[#7C3AED] hover:bg-[#6D28D9] border-none shadow-md shadow-purple-100"
-              >
-                Apply For Leave
+            <div className="flex gap-4 mt-4">
+              <Button onClick={() => setIsModalOpen(false)} className="flex-1 h-12 rounded-xl font-bold border-gray-200">Cancel</Button>
+              <Button type="primary" htmlType="submit" loading={loading} className="flex-1 h-12 rounded-xl font-bold bg-[#7F56D9] hover:bg-[#6941C6] border-none">
+                Submit Request
               </Button>
             </div>
           </Form>
@@ -345,47 +308,32 @@ export default function EmployeeDashboardPage() {
       </Modal>
 
       <style jsx global>{`
-        .pixel-perfect-table .ant-table-thead > tr > th {
-          background: #fcfcfd !important;
-          color: #667085 !important;
-          font-size: 11px !important;
-          text-transform: uppercase !important;
-          font-weight: 800 !important;
-          letter-spacing: 0.1em !important;
-          padding: 18px 24px !important;
-          border-bottom: 2px solid #f2f4f7 !important;
+        .custom-table .ant-table-thead > tr > th {
+          background: #F9FAFB !important;
+          padding: 16px 32px !important;
+          border-bottom: 1px solid #F2F4F7 !important;
         }
-        .pixel-perfect-table .ant-table-tbody > tr > td {
-          padding: 20px 24px !important;
-          border-bottom: 1px solid #f2f4f7 !important;
+        .custom-table .ant-table-tbody > tr > td {
+          padding: 24px 32px !important;
+          border-bottom: 1px solid #F2F4F7 !important;
         }
-        .pixel-perfect-table .ant-table-row:hover > td {
-          background-color: #f9fafb !important;
+        .custom-table .ant-table-row:hover > td {
+          background-color: #F9FAFB !important;
         }
-        .ant-table-placeholder {
-          padding: 0 !important;
-          border: none !important;
+        .fidelity-modal .ant-modal-content {
+          border-radius: 24px !important;
+          padding: 32px !important;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
         }
-
-        /* Modal styling */
-        .apply-leave-modal .ant-modal-content {
-          border-radius: 20px !important;
-          padding: 24px !important;
-          box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1) !important;
-        }
-        .high-fidelity-form .ant-form-item-label > label {
-          height: auto !important;
-        }
-        .ant-select-selector {
-          border-radius: 10px !important;
-          border-color: #d0d5dd !important;
-          height: 44px !important;
+        .custom-select .ant-select-selector {
+          border-radius: 12px !important;
+          height: 48px !important;
           display: flex !important;
           align-items: center !important;
         }
         .ant-picker {
-          border-radius: 10px !important;
-          border-color: #d0d5dd !important;
+          border-radius: 12px !important;
+          padding: 12px 16px !important;
         }
       `}</style>
     </div>

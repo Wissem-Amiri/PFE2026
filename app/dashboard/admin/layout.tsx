@@ -4,25 +4,53 @@ import { useAuth } from '@/api/AuthContext'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
-  DashboardOutlined,
-  TeamOutlined,
-  LogoutOutlined,
-  UserOutlined,
-} from '@ant-design/icons'
+  HiOutlineHome,
+  HiOutlineClipboardList,
+  HiOutlineCalendar,
+  HiOutlineUsers,
+  HiOutlineBriefcase,
+  HiOutlineVideoCamera,
+  HiOutlineCog,
+  HiOutlineLogout
+} from 'react-icons/hi'
 import { Button, Avatar } from 'antd'
 
-const navItems = [
-  { href: '/dashboard/admin', label: 'Home', icon: '/assets/sidebar-home.svg', badge: '10' },
-  { href: '/dashboard/admin/registrations', label: 'Registrations', icon: '/assets/sidebar-registrations.svg' },
-  { href: '/dashboard/admin/leaves', label: 'Leaves', icon: '/assets/sidebar-leaves.svg' },
-  { href: '/dashboard/admin/employee', label: 'Employee', icon: '/assets/sidebar-employees.svg' },
-  { href: '/dashboard/admin/jobs', label: 'Jobs', icon: '/assets/sidebar-jobs.svg' },
-  { href: '/dashboard/admin/recordings', label: 'Recordings', icon: '/assets/sidebar-recordings.svg' },
-]
+import { useLeaves, useCandidatures } from '@/api/hooks'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { profile, user, signout } = useAuth()
   const pathname = usePathname()
+
+  const { data: leaves = [] } = useLeaves()
+  const { data: candidatures = [] } = useCandidatures()
+
+  const pendingLeaves = leaves.filter((l: any) => l.status === 'pending').length
+  const pendingRegistrations = candidatures.filter((c: any) => c.status === 'pending').length
+  const totalApps = candidatures.length
+
+  const navItems = [
+    { 
+      href: '/dashboard/admin', 
+      label: 'Home', 
+      icon: HiOutlineHome, 
+      badge: (pendingLeaves + pendingRegistrations + totalApps).toString() 
+    },
+    { 
+      href: '/dashboard/admin/registrations', 
+      label: 'Registrations', 
+      icon: HiOutlineClipboardList,
+      badge: pendingRegistrations > 0 ? pendingRegistrations.toString() : undefined
+    },
+    { 
+      href: '/dashboard/admin/leaves', 
+      label: 'Leaves', 
+      icon: HiOutlineCalendar,
+      badge: pendingLeaves > 0 ? pendingLeaves.toString() : undefined
+    },
+    { href: '/dashboard/admin/employee', label: 'Employee', icon: HiOutlineUsers },
+    { href: '/dashboard/admin/jobs', label: 'Jobs', icon: HiOutlineBriefcase },
+    { href: '/dashboard/admin/recordings', label: 'Recordings', icon: HiOutlineVideoCamera },
+  ]
 
   return (
     <div className="flex min-h-screen font-['Inter',sans-serif] bg-[#f9fafb]">
@@ -49,7 +77,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     : 'text-[#344054] hover:bg-[#f9fafb] hover:text-[#101828]'
                   }`}
               >
-                <img src={item.icon} alt="" className={`w-[24px] h-[24px] ${isActive ? '' : 'opacity-70 group-hover:opacity-100'}`} />
+                <item.icon className={`w-[24px] h-[24px] ${isActive ? 'text-[#6941c6]' : 'text-[#344054] opacity-70'}`} />
                 {item.label}
                 {item.badge && (
                   <span className="ml-auto bg-[#f9f5ff] text-[#6941c6] text-[12px] font-bold px-[10px] py-[2px] rounded-full">
@@ -64,8 +92,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {/* Sidebar Footer */}
         <div className="pb-[32px] px-[16px] flex flex-col gap-[24px]">
           <div className="flex flex-col gap-[4px]">
-             <div className="flex items-center gap-[12px] px-[12px] py-[10px] rounded-[6px] text-[16px] font-medium text-[#344054] hover:bg-[#f9fafb] cursor-pointer" onClick={() => {/* Settings */ }}>
-              <img src="/assets/sidebar-settings.svg" className="w-[24px] h-[24px] opacity-70" alt="" />
+             <div 
+               className="flex items-center gap-[12px] px-[12px] py-[10px] rounded-[6px] text-[16px] font-medium text-[#344054] hover:bg-[#f9fafb] cursor-pointer" 
+               onClick={() => {/* Settings */ }}
+             >
+              <HiOutlineCog className="w-[24px] h-[24px] text-[#344054] opacity-70" />
               Settings
             </div>
           </div>
@@ -88,9 +119,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
             <button 
               onClick={signout}
-              className="bg-transparent border-none p-2 cursor-pointer hover:bg-slate-50 rounded-lg flex items-center justify-center transition-all"
+              className="bg-transparent border-none p-2 cursor-pointer hover:bg-slate-50 rounded-lg flex items-center justify-center transition-all text-[#667085] hover:text-[#344054]"
             >
-              <img src="/assets/sidebar-logout.svg" className="w-[20px] h-[20px]" alt="Logout" />
+              <HiOutlineLogout className="w-[24px] h-[24px]" />
             </button>
           </div>
         </div>

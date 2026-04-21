@@ -31,34 +31,24 @@ import {
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 
+import { useLeaves, useCandidatures } from '@/api/hooks'
+
 export default function AdminDashboardPage() {
   const { user } = useAuth()
   const [adminProfile, setAdminProfile] = useState<FullProfile | null>(null)
-  const [users, setUsers] = useState<FullProfile[]>([])
-  const [leaves, setLeaves] = useState<any[]>([])
-  const [candidatures, setCandidatures] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  
+  const { data: leaves = [], isLoading: leavesLoading } = useLeaves()
+  const { data: candidatures = [], isLoading: candidaturesLoading } = useCandidatures()
+  
+  const loading = leavesLoading || candidaturesLoading
   const [search, setSearch] = useState('')
 
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true)
-      const [usersRes, leavesRes, candidaturesRes] = await Promise.all([
-        getAllUsers(),
-        getAllLeavesDetailed(),
-        getAllCandidaturesDetailed()
-      ])
-
-      setUsers(usersRes.data ?? [])
-      setLeaves(leavesRes.data ?? [])
-      setCandidatures(candidaturesRes.data ?? [])
-
       if (user?.id) {
         const { data } = await getProfile(user.id)
         setAdminProfile(data)
       }
-
-      setLoading(false)
     }
     fetchData()
   }, [user?.id])

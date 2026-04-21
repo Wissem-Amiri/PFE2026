@@ -1,16 +1,21 @@
 'use client'
-
 import { useAuth } from '@/api/AuthContext'
 import Link from 'next/link'
+
+import Image from 'next/image'
+import { 
+  HiOutlineCog, 
+  HiOutlineLogout,
+  HiOutlineHome,
+  HiOutlineClipboardList,
+  HiOutlineUserGroup
+} from 'react-icons/hi'
 import { usePathname } from 'next/navigation'
-import {
-  LogoutOutlined,
-} from '@ant-design/icons'
 
 const navItems = [
-  { href: '/dashboard/employee', label: 'Home', icon: '🏠', badge: '10' },
-  { href: '/dashboard/employee/registrations', label: 'Registrations', icon: '📋' },
-  { href: '/dashboard/employee/employee-list', label: 'Employee', icon: '👥' },
+  { href: '/dashboard/employee', label: 'Home', icon: <HiOutlineHome />, badge: '10' },
+  { href: '/dashboard/employee/registrations', label: 'Registrations', icon: <HiOutlineClipboardList /> },
+  { href: '/dashboard/employee/employee-list', label: 'Employee', icon: <HiOutlineUserGroup /> },
 ]
 
 export default function EmployeeLayout({ children }: { children: React.ReactNode }) {
@@ -21,39 +26,52 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
   const initials = profile?.user_name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'EM'
 
   return (
-    <div className="flex min-h-screen font-['Sora',sans-serif] bg-[#f8f7ff]">
+    <div className="flex min-h-screen font-['Inter',sans-serif] bg-white">
 
-      {/* ── SIDEBAR (Aligned with Admin style) ── */}
-      <aside className="w-[180px] min-w-[180px] bg-white border-r border-[#E4E7EC] flex flex-col h-screen sticky top-0">
+      {/* ── SIDEBAR (Figma Fidelity) ── */}
+      <aside className="w-[243px] min-w-[243px] bg-[#FCFCFD] border-r border-[#EAECF0] flex flex-col h-screen sticky top-0 overflow-clip">
 
-        {/* Logo */}
-        <div className="pt-[10px] pb-[10px] px-[10px] border-b border-[#E4E7EC] flex items-center justify-between">
-          <img src="/assets/UnifyRH.png" alt="UnifyRH Logo" className="h-[110px] w-auto object-contain" />
-          <span className="text-[8px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full uppercase tracking-tighter">
-            Employé
-          </span>
+        {/* Logo Section (UnifyRH) */}
+        <div className="pt-[32px] pb-[24px] pl-[16px]">
+          <Link href="/dashboard/employee" className="block no-underline">
+            <div className="flex items-center">
+              <Image
+                src="/assets/UnifyRH.png"
+                alt="UnifyRH Logo"
+                width={83}
+                height={32}
+                className="h-[32px] w-auto"
+              />
+            </div>
+          </Link>
         </div>
 
         {/* Nav Items */}
-        <nav className="flex-1 px-[10px] py-[14px] flex flex-col gap-[2px] overflow-y-auto">
+        <nav className="flex-1 px-[8px] flex flex-col gap-[4px] overflow-y-auto">
           {navItems.map(item => {
             const isActive = pathname === item.href
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-[9px] px-[10px] py-[8px] rounded-[8px] text-[12px] font-medium transition-all no-underline
+                className={`flex items-center justify-between px-[12px] py-[8px] rounded-[6px] text-[14px] font-medium transition-all no-underline
                     ${isActive
-                    ? 'bg-[#EDE9FE] text-[#7C3AED]'
-                    : 'text-[#475467] hover:bg-[#F9FAFB] hover:text-[#101828]'
+                    ? 'bg-[#F9F5FF] text-[#6941C6]'
+                    : 'bg-transparent text-[#344054] hover:bg-[#F9FAFB]'
                   }`}
               >
-                <span className="text-[14px] w-[18px] text-center">{item.icon}</span>
-                {item.label}
-                {item.badge && item.label === 'Home' && (
-                  <span className="ml-auto bg-[#7C3AED] text-white text-[9px] font-bold px-[6px] py-[2px] rounded-full">
-                    {item.badge}
+                <div className="flex items-center gap-[12px]">
+                  <span className={`text-[20px] ${isActive ? 'text-[#6941C6]' : 'text-[#344054]'}`}>
+                    {item.icon}
                   </span>
+                  {item.label}
+                </div>
+                {item.badge && item.label === 'Home' && (
+                  <div className="bg-[#F9F5FF] mix-blend-multiply flex items-center justify-center px-[10px] py-[2px] rounded-[16px]">
+                    <span className="text-[#6941C6] text-[14px] font-medium leading-[20px]">
+                      {item.badge}
+                    </span>
+                  </div>
                 )}
               </Link>
             )
@@ -61,23 +79,42 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
         </nav>
 
         {/* Sidebar Footer (Settings + User) */}
-        <div className="px-[10px] py-[14px] border-t border-[#E4E7EC]">
-          <Link 
+        <div className="px-[16px] py-[24px]">
+          <Link
             href="/dashboard/employee/settings"
-            className="flex items-center gap-[9px] px-[10px] py-[8px] rounded-[8px] text-[12px] font-medium text-[#475467] hover:text-[#7C3AED] hover:bg-[#F9FAFB] cursor-pointer mb-[10px] no-underline"
+            className={`flex items-center gap-[12px] px-[12px] py-[10px] rounded-[8px] text-[14px] font-semibold transition-all no-underline mb-[24px]
+              ${pathname === '/dashboard/employee/settings'
+                ? 'bg-[#F9F5FF] text-[#7F56D9]'
+                : 'text-[#667085] hover:bg-[#F9FAFB]'
+              }`}
           >
-            <span className="text-[14px] w-[18px] text-center">⚙️</span>
+            <span className="text-[20px]">
+              <HiOutlineCog />
+            </span>
             Settings
           </Link>
 
-          <div className="flex items-center gap-[8px] px-[2px] cursor-pointer" onClick={signout}>
-            <div className="w-[32px] h-[32px] rounded-full bg-[#EDE9FE] flex items-center justify-center text-[11px] font-bold text-[#7C3AED] overflow-hidden shrink-0">
-              {initials}
+          <div className="pt-[24px] border-t border-[#F2F4F7] flex items-center justify-between group">
+            <div className="flex items-center gap-[12px] overflow-hidden">
+              <div className="w-[40px] h-[40px] rounded-full bg-[#F9F5FF] flex items-center justify-center text-[14px] font-bold text-[#7F56D9] overflow-hidden shrink-0 border border-[#F2F4F7]">
+                {profile?.avatar_url ? (
+                  <img src={profile.avatar_url} alt="User avatar" className="w-full h-full object-cover" />
+                ) : (
+                  initials
+                )}
+              </div>
+              <div className="overflow-hidden">
+                <h5 className="text-[14px] font-bold text-[#101828] mb-0 truncate">{profile?.user_name ?? 'Farouck'}</h5>
+                <p className="text-[12px] text-[#667085] mb-0 truncate font-medium" title={user?.email}>{user?.email || 'farouck@gmail.com'}</p>
+              </div>
             </div>
-            <div className="overflow-hidden">
-              <h5 className="text-[11px] font-semibold text-[#101828] mb-0 truncate">{profile?.user_name ?? 'Employé'}</h5>
-              <p className="text-[10px] text-[#98A2B3] mb-0 truncate" title={user?.email}>{user?.email}</p>
-            </div>
+            <button
+              onClick={signout}
+              className="text-[#667085] hover:text-[#7F56D9] transition-colors p-1 rounded-md hover:bg-[#F9F5FF] border-none bg-transparent cursor-pointer"
+              title="Logout"
+            >
+              <HiOutlineLogout className="text-[20px]" />
+            </button>
           </div>
         </div>
       </aside>
@@ -89,3 +126,4 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
     </div>
   )
 }
+
