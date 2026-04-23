@@ -29,6 +29,14 @@ import {
   FileSearchOutlined,
   CheckCircleOutlined
 } from '@ant-design/icons'
+import {
+  HiOutlineSun,
+  HiOutlineBriefcase,
+  HiOutlineArrowDown,
+  HiOutlineBell,
+  HiOutlineLockClosed,
+  HiOutlineHeart
+} from 'react-icons/hi'
 import dayjs from 'dayjs'
 
 import { useLeaves, useCandidatures } from '@/api/hooks'
@@ -98,76 +106,7 @@ export default function AdminDashboardPage() {
     },
   ]
 
-  const columns = [
-    {
-      title: 'SUBMISSION DATE',
-      dataIndex: 'date',
-      key: 'date',
-      render: (date: string) => (
-        <div className="flex flex-col">
-          <span className="text-[14px] font-medium text-[#101828] uppercase">{dayjs(date).format('MM/DD/YYYY')}</span>
-          <span className="text-[12px] text-[#667085]">{dayjs(date).format('HH:mm')}</span>
-        </div>
-      )
-    },
-    {
-      title: 'APPLICANT',
-      key: 'user',
-      render: (record: any) => (
-        <div className="flex items-center gap-[12px]">
-          <Avatar
-            size={40}
-            src={record.user?.avatar_url}
-            className="bg-[#c7b9da]"
-          >
-            {record.user?.user_name?.substring(0, 2).toUpperCase() || 'U'}
-          </Avatar>
-          <div className="text-[14px] font-medium text-[#101828]">{record.user?.user_name || 'Unknown'}</div>
-        </div>
-      )
-    },
-    {
-      title: 'ACTIVITY',
-      key: 'activity',
-      render: (record: any) => {
-        let label = record.details;
 
-        return (
-          <div className="flex items-center gap-2.5">
-            <div className="bg-[#fffaeb] px-[8px] py-[2px] rounded-full flex items-center gap-1.5 border border-transparent shadow-sm">
-                <img src="/assets/activity-check.svg" className="w-[14px] h-[14px]" alt="" />
-                <span className="text-[12px] font-medium text-[#b54708] whitespace-nowrap">{label}</span>
-            </div>
-          </div>
-        )
-      }
-    },
-    {
-      title: 'STATUS',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status: string) => {
-        let color = '#B54708'
-        let bgColor = '#FFFAEB'
-        if (status === 'approved' || status === 'accepted') {
-            color = '#067647'
-            bgColor = '#ECFDF3'
-        }
-        if (status === 'rejected') {
-            color = '#B42318'
-            bgColor = '#FEF3F2'
-        }
-        return (
-          <div 
-            style={{ backgroundColor: bgColor, color: color }}
-            className="rounded-full px-2.5 py-0.5 font-medium text-[12px] capitalize inline-block border border-transparent"
-          >
-            {status}
-          </div>
-        )
-      }
-    }
-  ]
 
   const CustomEmpty = () => (
     <div className="flex flex-col items-center justify-center py-[60px]">
@@ -179,26 +118,36 @@ export default function AdminDashboardPage() {
   )
 
   return (
-    <div className="flex flex-col lg:flex-row min-h-screen bg-[#F9FAFB]">
+    <div className="flex flex-col lg:flex-row min-h-screen bg-[#FCFCFD]">
       {/* Sidebar Placeholder (Space reserved to match Figma's x=243) */}
       
       {/* ── MAIN CONTENT ── */}
-      <div className="flex-1 bg-white rounded-tl-[40px] pt-[32px] pb-[48px] overflow-y-auto">
+      <div className="flex-1 bg-[#FCFCFD] rounded-tl-[40px] pt-[32px] pb-[48px] overflow-y-auto">
         {/* Header section (3024:10913) */}
         <div className="px-[24px] flex justify-between items-center mb-[32px]">
           <h1 className="text-[30px] font-medium text-[#101828] leading-[38px] font-['Inter']">Home</h1>
           <div className="flex items-center gap-[12px]">
-             <button className="p-[10px] rounded-[8px] hover:bg-gray-50 flex items-center justify-center transition-all">
-                <img src="/assets/search.svg" className="w-[20px] h-[20px] opacity-70" alt="Search" />
-             </button>
+            <div className="relative flex items-center group">
+              <div className={`flex items-center bg-white border border-[#eaecf0] rounded-[8px] px-[12px] py-[8px] transition-all duration-300 shadow-sm
+                ${search ? 'w-[280px] border-[#7f56d9] ring-2 ring-[#7f56d9]/10' : 'w-[40px] hover:w-[280px] hover:border-[#7f56d9]'}`}>
+                <img src="/assets/search.svg" className="w-[18px] h-[18px] opacity-70 shrink-0" alt="Search" />
+                <input
+                  type="text"
+                  placeholder="Search activities..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="ml-3 w-full bg-transparent border-none outline-none text-[14px] text-[#101828] placeholder:text-[#667085] font-['Inter']"
+                />
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
 
         {/* ── STATS (Strict Figma Structure 3024:10912) ── */}
         <div className="px-[24px] grid grid-cols-1 md:grid-cols-3 gap-[16px] mb-[32px]">
           {stats.map((stat, idx) => (
             <Link key={idx} href={stat.href} className="no-underline block group">
-              <div className="bg-white p-[14.87px] h-[96.8px] rounded-[16px] border border-[#eaecf0] shadow-[0px_8px_16px_-4px_rgba(16,24,40,0.04)] group-hover:border-[#7f56d9] transition-all cursor-pointer relative flex flex-col justify-between overflow-hidden">
+              <div className="bg-white p-[14.87px] h-[96.8px] rounded-[16px] border border-[#eaecf0] shadow-[0px_8px_16px_-4px_rgba(16,24,40,0.04)] hover:shadow-[0px_12px_24px_-4px_rgba(16,24,40,0.1)] group-hover:border-[#7f56d9] hover:-translate-y-1 transition-all duration-300 cursor-pointer relative flex flex-col justify-between overflow-hidden">
                 <div className="flex justify-between items-start">
                   <span className="text-[10px] font-semibold text-[#101828] leading-[14.8px] font-['Inter'] uppercase tracking-wider">{stat.title}</span>
                 </div>
@@ -213,7 +162,7 @@ export default function AdminDashboardPage() {
         {/* ── TABLE (Strict Figma Activity 3024:10940) ── */}
         <div className="ml-[24px] mr-[24px] bg-white rounded-[16px] border border-[#eaecf0] shadow-[0px_8px_16px_-4px_rgba(16,24,40,0.04)] overflow-hidden mb-[48px]">
           <div className="px-6 py-5 border-b border-[#eaecf0] flex justify-between items-center">
-            <h3 className="text-[18px] font-bold text-[#101828] font-['Inter'] mb-0 leading-[28px]">Recent activity</h3>
+            <h3 className="text-[18px] font-medium text-[#101828] font-['Inter'] mb-0 leading-[28px]">Recent activity</h3>
           </div>
 
           <div className="overflow-x-auto">
@@ -229,7 +178,7 @@ export default function AdminDashboardPage() {
                   title: (
                     <div className="flex items-center gap-[4px] group cursor-pointer">
                       <span className="text-[12px] font-medium text-[#667085] font-['Inter'] uppercase">Submission Date</span>
-                      <img src="/assets/arrow-left.svg" className="w-[12px] h-[12px] rotate-[270deg] opacity-60" alt="Sort" />
+                      <HiOutlineArrowDown className="w-[14px] h-[14px] text-[#667085] opacity-60" />
                     </div>
                   ),
                   key: 'applicant',
@@ -262,12 +211,43 @@ export default function AdminDashboardPage() {
                   key: 'activity',
                   render: (record: any) => {
                     const isLeave = record.type === 'leave';
+                    
+                    let config = {
+                      icon: <HiOutlineBriefcase className="w-[14px] h-[14px]" />,
+                      color: '#3CB50D',
+                      bg: '#3CB50D11',
+                      border: '#3CB50D33'
+                    };
+
+                    if (isLeave) {
+                      const type = record.leaveType;
+                      if (type === 'Vacation') {
+                        config = { icon: <HiOutlineSun className="w-[14px] h-[14px]" />, color: '#F97316', bg: '#F9731611', border: '#F9731633' };
+                      } else if (type === 'Casual') {
+                        config = { icon: <HiOutlineBell className="w-[14px] h-[14px]" />, color: '#7C3AED', bg: '#7C3AED11', border: '#7C3AED33' };
+                      } else if (type === 'Personal') {
+                        config = { icon: <HiOutlineLockClosed className="w-[14px] h-[14px]" />, color: '#3B82F6', bg: '#3B82F611', border: '#3B82F633' };
+                      } else if (type === 'Sick') {
+                        config = { icon: <HiOutlineHeart className="w-[14px] h-[14px]" />, color: '#EF4444', bg: '#EF444411', border: '#EF444433' };
+                      } else {
+                        // Default leave color (Orange)
+                        config = { icon: <HiOutlineSun className="w-[14px] h-[14px]" />, color: '#F97316', bg: '#F9731611', border: '#F9731633' };
+                      }
+                    }
+
                     return (
                       <div className="flex items-center">
-                        <div className={`px-[12px] py-[4px] rounded-full flex items-center gap-[6px] border border-transparent ${isLeave ? 'bg-[#fffaeb]' : 'bg-[#f9f5ff]'}`}>
-                            {isLeave && <img src="/assets/vacation.svg" className="w-[14px] h-[14px]" alt="" />}
-                            {!isLeave && <img src="/assets/activity-check.svg" className="w-[14px] h-[14px]" alt="" />}
-                            <span className={`text-[12px] font-medium whitespace-nowrap leading-[18px] font-['Inter'] ${isLeave ? 'text-[#b54708]' : 'text-[#6941c6]'}`}>
+                        <div 
+                          className="px-[12px] py-[4px] rounded-full flex items-center gap-[6px] border"
+                          style={{ backgroundColor: config.bg, borderColor: config.border }}
+                        >
+                            <span style={{ color: config.color, display: 'flex', alignItems: 'center' }}>
+                              {config.icon}
+                            </span>
+                            <span 
+                              className="text-[12px] font-medium whitespace-nowrap leading-[18px] font-['Inter']"
+                              style={{ color: config.color }}
+                            >
                               {record.details}
                             </span>
                         </div>
@@ -319,8 +299,12 @@ export default function AdminDashboardPage() {
             </div>
 
             <div className="flex items-center gap-[12px] w-full justify-center">
-              <button className="h-[40px] px-[16px] rounded-[8px] border border-[#d0d5dd] bg-white text-[14px] font-medium text-[#344054] hover:bg-gray-50 transition-all shadow-sm font-['Inter']">Settings</button>
-              <button className="h-[40px] px-[16px] rounded-[8px] bg-[#7f56d9] text-[14px] font-medium text-white hover:bg-[#6941c6] transition-all shadow-sm font-['Inter']">View profile</button>
+              <Link href="/dashboard/admin/settings?tab=account">
+                <button className="h-[40px] px-[16px] rounded-[8px] border border-[#d0d5dd] bg-white text-[14px] font-medium text-[#344054] hover:bg-gray-50 transition-all shadow-sm font-['Inter']">Settings</button>
+              </Link>
+              <Link href="/dashboard/admin/settings?tab=profile">
+                <button className="h-[40px] px-[16px] rounded-[8px] bg-[#7f56d9] text-[14px] font-medium text-white hover:bg-[#6941c6] transition-all shadow-sm font-['Inter']">View profile</button>
+              </Link>
             </div>
           </div>
         </div>

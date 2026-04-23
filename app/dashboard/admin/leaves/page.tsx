@@ -1,15 +1,16 @@
 'use client'
 import { useState } from 'react'
 import { updateLeaveStatus } from '@/api/conge'
-import { 
-  message, 
-  Modal, 
-  Tooltip } from 'antd'
+import {
+  message,
+  Modal,
+  Tooltip
+} from 'antd'
 import dayjs from 'dayjs'
-import { 
-  HiOutlineSearch, 
-  HiOutlineFilter, 
-  HiOutlineCalendar, 
+import {
+  HiOutlineSearch,
+  HiOutlineFilter,
+  HiOutlineCalendar,
   HiOutlineDownload,
   HiOutlineChevronLeft,
   HiOutlineChevronRight,
@@ -19,15 +20,59 @@ import {
   HiOutlineClock
 } from 'react-icons/hi'
 import { useLeaves, queryKeys } from '@/api/hooks'
+import { archiveLeaves, unarchiveLeaves } from '@/api/conge'
 import { useQueryClient } from '@tanstack/react-query'
+import { 
+  HiOutlineArchive, 
+  HiOutlineRefresh 
+} from 'react-icons/hi'
+import { downloadCSV } from '@/api/export'
 
 export default function AdminLeavesPage() {
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
-  const { data: leaves = [], isLoading: loading } = useLeaves()
+  const [showArchived, setShowArchived] = useState(false)
+  const { data: leaves = [], isLoading: loading } = useLeaves(showArchived)
   const [messageApi, contextHolder] = message.useMessage()
   const [currentPage, setCurrentPage] = useState(1)
   const pageSize = 8
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredLeaves.length && filteredLeaves.length > 0) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(filteredLeaves.map(l => l.id)))
+    }
+  }
+
+  const toggleSelectRow = (id: string) => {
+    const newSelected = new Set(selectedIds)
+    if (newSelected.has(id)) {
+      newSelected.delete(id)
+    } else {
+      newSelected.add(id)
+    }
+    setSelectedIds(newSelected)
+  }
+
+  const handleArchiveSelected = async () => {
+    if (selectedIds.size === 0) return
+    const ids = Array.from(selectedIds)
+    try {
+      if (showArchived) {
+        await unarchiveLeaves(ids)
+        messageApi.success('Selected requests unarchived')
+      } else {
+        await archiveLeaves(ids)
+        messageApi.success('Selected requests archived')
+      }
+      setSelectedIds(new Set())
+      queryClient.invalidateQueries({ queryKey: queryKeys.leaves })
+    } catch (error: any) {
+      messageApi.error(error.message || 'Error updating requests')
+    }
+  }
 
   const [statusFilter, setStatusFilter] = useState('All Status')
   const [dateFilter, setDateFilter] = useState('All Time')
@@ -58,7 +103,7 @@ export default function AdminLeavesPage() {
           )}
           <div className="flex gap-4 w-full mt-8">
             <button className="flex-1 h-[48px] border border-[#d0d5dd] rounded-[10px] font-bold text-[#344054] hover:bg-gray-50 transition-all">Cancel</button>
-            <button 
+            <button
               onClick={async () => {
                 const { error } = await updateLeaveStatus(leave.id, status)
                 if (error) {
@@ -81,6 +126,31 @@ export default function AdminLeavesPage() {
       width: 540,
       className: 'fidelity-modal'
     })
+  }
+
+  const handleExport = () => {
+    const headers = ['Employee', 'Email', 'Type', 'Start Date', 'End Date', 'Days', 'Reason', 'Status', 'Requested At']
+    const rows = filteredLeaves.map(l => {
+      const days = dayjs(l.end_date).diff(dayjs(l.start_date), 'day') + 1
+      return [
+        l.user?.user_name || 'Unknown',
+        l.user?.email || '-',
+        l.type || '-',
+        dayjs(l.start_date).format('YYYY-MM-DD'),
+        dayjs(l.end_date).format('YYYY-MM-DD'),
+        days,
+        l.reason || '-',
+        l.status || '-',
+        dayjs(l.created_at).format('YYYY-MM-DD HH:mm')
+      ]
+    })
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    ].join('\n')
+
+    downloadCSV(csvContent, `leaves_export_${dayjs().format('YYYY-MM-DD')}.csv`)
   }
 
   const showDetails = (record: any) => {
@@ -121,9 +191,9 @@ export default function AdminLeavesPage() {
               <div>
                 <label className="text-[12px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Status</label>
                 <div className="inline-block">
-                   {record.status === 'pending' && <span className="text-amber-600 font-bold capitalize">Pending Approval</span>}
-                   {record.status === 'approved' && <span className="text-emerald-600 font-bold capitalize">Approved</span>}
-                   {record.status === 'rejected' && <span className="text-rose-600 font-bold capitalize">Rejected</span>}
+                  {record.status === 'pending' && <span className="text-amber-600 font-bold capitalize">Pending Approval</span>}
+                  {record.status === 'approved' && <span className="text-emerald-600 font-bold capitalize">Approved</span>}
+                  {record.status === 'rejected' && <span className="text-rose-600 font-bold capitalize">Rejected</span>}
                 </div>
               </div>
             </div>
@@ -146,8 +216,8 @@ export default function AdminLeavesPage() {
       okText: 'Close',
       centered: true,
       width: 500,
-      okButtonProps: { 
-        className: 'bg-gray-900 hover:bg-black border-none h-[44px] px-8 rounded-lg font-bold' 
+      okButtonProps: {
+        className: 'bg-gray-900 hover:bg-black border-none h-[44px] px-8 rounded-lg font-bold'
       }
     })
   }
@@ -157,11 +227,11 @@ export default function AdminLeavesPage() {
       (l.user?.user_name || '').toLowerCase().includes(search.toLowerCase()) ||
       (l.type || '').toLowerCase().includes(search.toLowerCase())
 
-    const matchStatus = 
-       statusFilter === 'All Status' ||
-       (statusFilter === 'Pending' && l.status === 'pending') ||
-       (statusFilter === 'Approved' && l.status === 'approved') ||
-       (statusFilter === 'Rejected' && l.status === 'rejected')
+    const matchStatus =
+      statusFilter === 'All Status' ||
+      (statusFilter === 'Pending' && l.status === 'pending') ||
+      (statusFilter === 'Approved' && l.status === 'approved') ||
+      (statusFilter === 'Rejected' && l.status === 'rejected')
 
     const matchDate = dateFilter === 'All Time' || (() => {
       const appDate = new Date(l.created_at || '')
@@ -195,7 +265,18 @@ export default function AdminLeavesPage() {
             <p className="text-[16px] text-[#667085] font-normal">Keep track of yours and your team's medical and personal leaves.</p>
           </div>
           <div className="flex gap-3">
-            <button className="h-[40px] px-[16px] flex items-center gap-[8px] bg-white border border-[#d0d5dd] rounded-[8px] text-[14px] font-semibold text-[#344054] hover:bg-gray-50 transition-all shadow-sm">
+            <button 
+              onClick={() => setShowArchived(!showArchived)}
+              className={`h-[40px] px-[16px] flex items-center gap-[8px] border rounded-[8px] text-[14px] font-semibold shadow-sm transition-all
+                ${showArchived ? 'bg-[#F9FAFB] text-[#7F56D9] border-[#D6BBFB]' : 'bg-white text-[#344054] border-[#d0d5dd] hover:bg-gray-50'}`}
+            >
+              <HiOutlineArchive className="text-[18px]" />
+              {showArchived ? 'View Active' : 'Archive'}
+            </button>
+            <button 
+              onClick={handleExport}
+              className="h-[40px] px-[16px] flex items-center gap-[8px] bg-white border border-[#d0d5dd] rounded-[8px] text-[14px] font-semibold text-[#344054] hover:bg-gray-50 transition-all shadow-sm"
+            >
               <HiOutlineDownload className="text-[18px]" />
               Export
             </button>
@@ -206,14 +287,14 @@ export default function AdminLeavesPage() {
       {/* ── CONTENT ── */}
       <main className="flex-1 p-[40px] pt-0">
         <div className="max-w-[1400px] mx-auto space-y-[24px]">
-          
+
           {/* ── SEARCH & FILTERS BAR ── */}
           <div className="bg-[rgba(248,248,248,0.31)] border border-[rgba(203,195,213,0.1)] rounded-[16px] h-[76px] px-[16px] mb-[16px] flex items-center justify-between">
             <div className="flex-1 max-w-[550px] relative">
               <div className="absolute left-[12px] top-1/2 -translate-y-1/2 w-[15px] h-[15px]">
                 <img src="/assets/search.svg" alt="" className="w-full h-full opacity-60" />
               </div>
-              <input 
+              <input
                 placeholder="Search ..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
@@ -223,7 +304,7 @@ export default function AdminLeavesPage() {
 
             <div className="flex gap-[16px] items-center">
               <div className="relative w-[160px]">
-                <select 
+                <select
                   value={statusFilter}
                   onChange={e => setStatusFilter(e.target.value)}
                   className="w-full bg-white border border-[rgba(203,195,213,0.2)] rounded-[12px] px-[17px] py-[11px] text-[14px] font-medium text-[#494453] appearance-none focus:outline-none transition-all cursor-pointer"
@@ -235,13 +316,13 @@ export default function AdminLeavesPage() {
                 </select>
                 <div className="absolute right-[12px] top-1/2 -translate-y-1/2 pointer-events-none">
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M3 4.5L6 7.5L9 4.5" stroke="#667085" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M3 4.5L6 7.5L9 4.5" stroke="#667085" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </div>
               </div>
 
               <div className="relative w-[160px]">
-                <select 
+                <select
                   value={dateFilter}
                   onChange={e => setDateFilter(e.target.value)}
                   className="w-full bg-white border border-[rgba(203,195,213,0.2)] rounded-[12px] px-[17px] py-[11px] text-[14px] font-medium text-[#494453] appearance-none focus:outline-none transition-all cursor-pointer"
@@ -252,12 +333,34 @@ export default function AdminLeavesPage() {
                 </select>
                 <div className="absolute right-[12px] top-1/2 -translate-y-1/2 pointer-events-none">
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M3 4.5L6 7.5L9 4.5" stroke="#667085" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M3 4.5L6 7.5L9 4.5" stroke="#667085" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* ── SELECTION BAR ── */}
+          {selectedIds.size > 0 && (
+            <div className="mx-[16px] mb-[16px] p-[12px] bg-[#FFFBFA] border border-[#FDA29B] rounded-[12px] flex justify-between items-center animate-in fade-in slide-in-from-top-4 duration-300">
+              <div className="flex items-center gap-[12px]">
+                <span className="text-[14px] font-semibold text-[#B42318]">{selectedIds.size} {showArchived ? 'archived' : 'request'} selected</span>
+                <button 
+                  onClick={toggleSelectAll}
+                  className="text-[14px] font-semibold text-[#7F56D9] bg-transparent border-0 cursor-pointer hover:underline"
+                >
+                  {selectedIds.size === filteredLeaves.length ? 'Deselect All' : 'Select All'}
+                </button>
+              </div>
+              <button 
+                onClick={handleArchiveSelected}
+                className="h-[40px] px-[16px] rounded-[8px] border border-[#FDA29B] bg-white text-[#B42318] font-semibold flex items-center gap-[8px] hover:bg-[#FFF1F0] hover:border-[#F97066] transition-all cursor-pointer shadow-sm"
+              >
+                {showArchived ? <HiOutlineRefresh className="text-[18px]" /> : <HiOutlineArchive className="text-[18px]" />}
+                {showArchived ? 'Restore Selected' : 'Archive Selected'}
+              </button>
+            </div>
+          )}
 
           {/* Table Container */}
           <div className="bg-white rounded-[12px] border border-[#eaecf0] shadow-[0px_1px_2px_0px_rgba(16,24,40,0.05)] overflow-hidden">
@@ -265,6 +368,14 @@ export default function AdminLeavesPage() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-[#f9fafb] border-b border-[#eaecf0]">
+                    <th className="px-[24px] py-[12px] w-[64px]">
+                      <input
+                        type="checkbox"
+                        checked={filteredLeaves.length > 0 && selectedIds.size === filteredLeaves.length}
+                        onChange={toggleSelectAll}
+                        className="w-[16px] h-[16px] rounded-[4px] border-[#cbd5e1] checked:accent-[#7f56d9] cursor-pointer"
+                      />
+                    </th>
                     <th className="px-[24px] py-[12px] text-[12px] font-medium text-[#667085] uppercase tracking-[0.6px]">Employee</th>
                     <th className="px-[24px] py-[12px] text-[12px] font-medium text-[#667085] uppercase tracking-[0.6px]">Leave Type</th>
                     <th className="px-[24px] py-[12px] text-[12px] font-medium text-[#667085] uppercase tracking-[0.6px]">Duration</th>
@@ -278,8 +389,8 @@ export default function AdminLeavesPage() {
                     <tr>
                       <td colSpan={6} className="px-6 py-[100px] text-center">
                         <div className="flex flex-col items-center gap-3">
-                           <div className="w-10 h-10 border-4 border-[#f4ebff] border-t-[#7f56d9] rounded-full animate-spin" />
-                           <span className="text-[#64748b] text-[14px]">Loading requests...</span>
+                          <div className="w-10 h-10 border-4 border-[#f4ebff] border-t-[#7f56d9] rounded-full animate-spin" />
+                          <span className="text-[#64748b] text-[14px]">Loading requests...</span>
                         </div>
                       </td>
                     </tr>
@@ -287,16 +398,24 @@ export default function AdminLeavesPage() {
                     <tr>
                       <td colSpan={6} className="px-6 py-[100px] text-center">
                         <div className="flex flex-col items-center gap-4">
-                           <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                             <HiOutlineCalendar className="text-3xl text-gray-300" />
-                           </div>
-                           <p className="text-[#64748b] text-[14px] max-w-[200px] mx-auto">No leave requests match your search criteria.</p>
+                          <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                            <HiOutlineCalendar className="text-3xl text-gray-300" />
+                          </div>
+                          <p className="text-[#64748b] text-[14px] max-w-[200px] mx-auto">No leave requests match your search criteria.</p>
                         </div>
                       </td>
                     </tr>
                   ) : (
                     paginatedData.map((leave) => (
                       <tr key={leave.id} className="hover:bg-[#f9fafb] transition-all group">
+                        <td className="px-[24px] py-[16px]">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(leave.id)}
+                            onChange={() => toggleSelectRow(leave.id)}
+                            className="w-[16px] h-[16px] rounded-[4px] border-[#cbd5e1] checked:accent-[#7f56d9] cursor-pointer"
+                          />
+                        </td>
                         <td className="px-[24px] py-[16px]">
                           <div className="flex items-center gap-[12px]">
                             <div className="w-[40px] h-[40px] rounded-full overflow-hidden bg-[#f4ebff] border border-[#eaecf0] shrink-0">
@@ -315,16 +434,26 @@ export default function AdminLeavesPage() {
                           </div>
                         </td>
                         <td className="px-[24px] py-[16px]">
-                           <div className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[12px] font-medium mix-blend-multiply
-                             ${leave.type === 'Vacation' ? 'bg-emerald-50 text-emerald-700' : 
-                               leave.type === 'Sick' ? 'bg-rose-50 text-rose-700' : 
-                               leave.type === 'Casual' ? 'bg-amber-50 text-amber-700' : 'bg-slate-50 text-slate-700'}`}>
-                             <span className="w-1 h-1 rounded-full bg-current" />
-                             {leave.type}
-                           </div>
+                          {(() => {
+                            let config = { color: '#64748b', bg: '#f8fafc', border: '#e2e8f0' };
+                            if (leave.type === 'Vacation') config = { color: '#F97316', bg: '#F9731611', border: '#F9731633' };
+                            if (leave.type === 'Casual') config = { color: '#7C3AED', bg: '#7C3AED11', border: '#7C3AED33' };
+                            if (leave.type === 'Personal') config = { color: '#3B82F6', bg: '#3B82F611', border: '#3B82F633' };
+                            if (leave.type === 'Sick') config = { color: '#EF4444', bg: '#EF444411', border: '#EF444433' };
+
+                            return (
+                              <div 
+                                className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[12px] font-medium border"
+                                style={{ color: config.color, backgroundColor: config.bg, borderColor: config.border }}
+                              >
+                                <span className="w-1 h-1 rounded-full" style={{ backgroundColor: config.color }} />
+                                {leave.type}
+                              </div>
+                            );
+                          })()}
                         </td>
                         <td className="px-[24px] py-[16px] text-[14px] text-[#475569]">
-                           {dayjs(leave.end_date).diff(dayjs(leave.start_date), 'day') + 1} Days
+                          {dayjs(leave.end_date).diff(dayjs(leave.start_date), 'day') + 1} Days
                         </td>
                         <td className="px-[24px] py-[16px]">
                           <div className="flex flex-col">
@@ -333,9 +462,9 @@ export default function AdminLeavesPage() {
                           </div>
                         </td>
                         <td className="px-[24px] py-[16px]">
-                           {leave.status === 'pending' && <span className="px-[10px] py-[2px] rounded-full bg-[#fef3c7] text-[#b45309] text-[12px] font-medium">Pending</span>}
-                           {leave.status === 'approved' && <span className="px-[10px] py-[2px] rounded-full bg-[#dcfce7] text-[#15803d] text-[12px] font-medium">Approved</span>}
-                           {leave.status === 'rejected' && <span className="px-[10px] py-[2px] rounded-full bg-[#fee2e2] text-[#b91c1c] text-[12px] font-medium">Rejected</span>}
+                          {leave.status === 'pending' && <span className="px-[10px] py-[2px] rounded-full bg-[#fef3c7] text-[#b45309] text-[12px] font-medium">Pending</span>}
+                          {leave.status === 'approved' && <span className="px-[10px] py-[2px] rounded-full bg-[#dcfce7] text-[#15803d] text-[12px] font-medium">Approved</span>}
+                          {leave.status === 'rejected' && <span className="px-[10px] py-[2px] rounded-full bg-[#fee2e2] text-[#b91c1c] text-[12px] font-medium">Rejected</span>}
                         </td>
                         <td className="px-[24px] py-[16px]">
                           <div className="grid grid-cols-[32px_32px_32px] gap-[4px] justify-end">
@@ -388,17 +517,16 @@ export default function AdminLeavesPage() {
                 >
                   <HiOutlineChevronLeft /> Previous
                 </button>
-                
+
                 <div className="flex gap-[4px]">
                   {Array.from({ length: totalPages }).map((_, i) => (
                     <button
                       key={i + 1}
                       onClick={() => setCurrentPage(i + 1)}
-                      className={`w-[40px] h-[40px] rounded-[8px] text-[14px] font-semibold transition-all ${
-                        currentPage === i + 1 
-                        ? 'bg-[#f9f5ff] text-[#7f56d9] ring-1 ring-[#7f56d9]' 
-                        : 'text-[#667085] hover:bg-gray-50'
-                      }`}
+                      className={`w-[40px] h-[40px] rounded-[8px] text-[14px] font-semibold transition-all ${currentPage === i + 1
+                          ? 'bg-[#f9f5ff] text-[#7f56d9] ring-1 ring-[#7f56d9]'
+                          : 'text-[#667085] hover:bg-gray-50'
+                        }`}
                     >
                       {i + 1}
                     </button>

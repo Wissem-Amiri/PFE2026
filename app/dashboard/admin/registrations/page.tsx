@@ -23,12 +23,14 @@ import {
   HiOutlineSearch,
   HiOutlineFilter,
   HiOutlineCalendar,
-  HiOutlineTrash
+  HiOutlineTrash,
+  HiOutlineDownload
 } from 'react-icons/hi'
 import { BiExport } from 'react-icons/bi'
 import { getAllUsers, updateUserStatus as updateGlobalUserStatus, exportToCSV, downloadCSV } from '@/api/profile'
-import { getAllCandidaturesDetailed, updateCandidatureStatus, archiveCandidatures, deleteAllOtherCandidatures } from '@/api/candidatures'
+import { getAllCandidaturesDetailed, updateCandidatureStatus, archiveCandidatures, restoreCandidatures, deleteAllOtherCandidatures } from '@/api/candidatures'
 import { getAllJobs, decrementJobSeats } from '@/api/job'
+import { HiOutlineArchive, HiOutlineRefresh } from 'react-icons/hi'
 import type { FullProfile } from '@/api/database.types'
 
 import { useCandidatures, queryKeys } from '@/api/hooks'
@@ -36,7 +38,8 @@ import { useQueryClient } from '@tanstack/react-query'
 
 export default function RegistrationsPage() {
   const queryClient = useQueryClient()
-  const { data: applications = [], isLoading: loading } = useCandidatures()
+  const [showArchived, setShowArchived] = useState(false)
+  const { data: applications = [], isLoading: loading } = useCandidatures(showArchived)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('All Status')
   const [dateFilter, setDateFilter] = useState('All Time')
@@ -54,22 +57,27 @@ export default function RegistrationsPage() {
 
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false)
   const [appToDelete, setAppToDelete] = useState<any | null>(null)
-
-  const [isPermDeleteModalVisible, setIsPermDeleteModalVisible] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   const router = useRouter()
 
   const handleArchiveSelected = async () => {
+    if (selectedIds.size === 0) return
     const ids = Array.from(selectedIds)
-    const { error } = await archiveCandidatures(ids)
-    if (!error) {
-      setIsPermDeleteModalVisible(false)
+    try {
+      if (showArchived) {
+        const { error } = await restoreCandidatures(ids)
+        if (error) throw error
+        message.success(`${ids.length} registration(s) restored successfully`)
+      } else {
+        const { error } = await archiveCandidatures(ids)
+        if (error) throw error
+        message.success(`${ids.length} registration(s) archived successfully`)
+      }
       setSelectedIds(new Set())
-      message.success(`${ids.length} registration(s) archived successfully`)
       queryClient.invalidateQueries({ queryKey: queryKeys.candidatures })
-    } else {
-      message.error('Failed to archive registrations')
+    } catch (error: any) {
+      message.error(error.message || 'Failed to update registrations')
     }
   }
 
@@ -189,19 +197,18 @@ export default function RegistrationsPage() {
         <h1 className="text-[20px] font-bold text-[#0f172a]">Registrations</h1>
         <div className="flex gap-[8px]">
           <button 
-            onClick={() => router.push('/dashboard/admin/registrations/archive')}
-            className="flex items-center gap-[8px] px-[17px] py-[9px] border border-[#e2e8f0] rounded-[8px] bg-white text-[#334155] text-[14px] font-semibold hover:bg-gray-50 transition-all shadow-sm"
+            onClick={() => setShowArchived(!showArchived)}
+            className={`flex items-center gap-[8px] px-[17px] py-[9px] border rounded-[8px] text-[14px] font-semibold shadow-sm transition-all
+              ${showArchived ? 'bg-[#F9FAFB] text-[#7F56D9] border-[#D6BBFB]' : 'bg-white text-[#334155] border-[#e2e8f0] hover:bg-gray-50'}`}
           >
-            <FolderOpenOutlined className="text-[16px] text-gray-500" />
-            Archive
+            <HiOutlineArchive className="text-[18px]" />
+            {showArchived ? 'View Active' : 'Archive'}
           </button>
           <button 
             onClick={handleExport}
             className="flex items-center gap-[8px] px-[17px] py-[9px] border border-[#e2e8f0] rounded-[8px] bg-white text-[#334155] text-[14px] font-semibold hover:bg-gray-50 transition-all shadow-sm"
           >
-            <div className="w-[16px] h-[16px] flex items-center justify-center">
-              <img src="/assets/export.svg" alt="" className="w-full h-full" />
-            </div>
+           <HiOutlineDownload className="text-[18px]" />
             Export
           </button>
         </div>
@@ -267,27 +274,24 @@ export default function RegistrationsPage() {
           </div>
         </div>
 
-        {/* ── BULK ACTION TOOLBAR ── */}
+        {/* ── SELECTION BAR ── */}
         {selectedIds.size > 0 && (
-          <div className="px-6 py-4 bg-[#f9fafb] border border-[#eaecf0] rounded-[12px] mb-[16px] flex items-center justify-between animate-in slide-in-from-top-4 duration-300">
+          <div className="mx-[16px] mb-[16px] p-[12px] bg-[#FFFBFA] border border-[#FDA29B] rounded-[12px] flex justify-between items-center animate-in fade-in slide-in-from-top-4 duration-300">
             <div className="flex items-center gap-[12px]">
-              <span className="text-[14px] font-bold text-[#101828]">
-                {selectedIds.size} registration{selectedIds.size > 1 ? 's' : ''} selected
-              </span>
-              <div className="w-[1px] h-[16px] bg-[#d0d5dd] mx-2"></div>
+              <span className="text-[14px] font-semibold text-[#B42318]">{selectedIds.size} {showArchived ? 'archived' : 'registration'} selected</span>
               <button 
                 onClick={toggleSelectAll}
-                className="text-[14px] font-bold text-[#7f56d9] hover:underline bg-transparent border-none"
+                className="text-[14px] font-semibold text-[#7F56D9] bg-transparent border-0 cursor-pointer hover:underline"
               >
                 {selectedIds.size === filtered.length ? 'Deselect All' : 'Select All'}
               </button>
             </div>
-            
-            <button
-              onClick={() => setIsPermDeleteModalVisible(true)}
-              className="h-[40px] px-[14px] bg-[#fef2f2] border border-[#fecaca] rounded-[8px] flex items-center gap-2 text-[#d92d20] font-bold text-[14px] hover:bg-[#fee2e2] transition-all"
+            <button 
+              onClick={handleArchiveSelected}
+              className="h-[40px] px-[16px] rounded-[8px] border border-[#FDA29B] bg-white text-[#B42318] font-semibold flex items-center gap-[8px] hover:bg-[#FFF1F0] hover:border-[#F97066] transition-all cursor-pointer shadow-sm"
             >
-              <HiOutlineTrash /> Archive Selected
+              {showArchived ? <HiOutlineRefresh className="text-[18px]" /> : <HiOutlineArchive className="text-[18px]" />}
+              {showArchived ? 'Restore Selected' : 'Archive Selected'}
             </button>
           </div>
         )}
@@ -510,27 +514,6 @@ export default function RegistrationsPage() {
               <div className="flex gap-4 w-full">
                 <button onClick={() => setIsDeleteModalVisible(false)} className="flex-1 h-[48px] border border-[#d0d5dd] rounded-[10px] font-bold text-[#344054] hover:bg-gray-50 transition-all">Cancel</button>
                 <button onClick={() => handleAction(appToDelete, 'rejected')} className="flex-1 h-[48px] bg-[#d11010] text-white rounded-[10px] font-bold hover:bg-[#b91c1c] transition-all shadow-md shadow-red-100">Reject Candidate</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Permanent Delete Confirmation for Archive (Re-used for Archive Selected) */}
-      {isPermDeleteModalVisible && selectedIds.size > 0 && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[1001] p-4">
-          <div className="bg-white rounded-[20px] p-[40px] w-full max-w-[600px] shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="flex flex-col items-center text-center">
-              <div className="w-[64px] h-[64px] rounded-[14px] bg-[#f9fafb] border border-[#eaecf0] flex items-center justify-center mb-6">
-                <HiOutlineTrash className="text-[#667085] text-[32px]" />
-              </div>
-              <h3 className="text-[24px] font-bold text-[#101828] mb-3">Archive {selectedIds.size} Registrations?</h3>
-              <p className="text-[16px] text-[#667085] leading-relaxed mb-8 max-w-[440px]">
-                The selected registrations will be moved to the archive. You can restore them later or delete them permanently from the archive view.
-              </p>
-              <div className="flex gap-4 w-full">
-                <button onClick={() => setIsPermDeleteModalVisible(false)} className="flex-1 h-[48px] border border-[#d0d5dd] rounded-[10px] font-bold text-[#344054] hover:bg-gray-50 transition-all">Cancel</button>
-                <button onClick={handleArchiveSelected} className="flex-1 h-[48px] bg-[#7f56d9] text-white rounded-[10px] font-bold hover:bg-[#6941c6] transition-all shadow-md shadow-[#7f56d9]/20">Confirm Archiving</button>
               </div>
             </div>
           </div>

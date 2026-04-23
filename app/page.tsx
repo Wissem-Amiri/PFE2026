@@ -76,9 +76,11 @@ export default function LandingPage() {
                 Dashboard
               </Link>
             )}
-            <button onClick={() => handleApplyClick()} className="bg-[#7F56D9] text-white text-[14px] font-semibold px-6 py-2.5 rounded-full hover:bg-[#663BBE] transition-colors shadow-sm">
-              Apply Now
-            </button>
+            <Link href="/login">
+              <button className="bg-[#7F56D9] text-white text-[14px] font-semibold px-6 py-2.5 rounded-full hover:bg-[#663BBE] transition-colors shadow-sm">
+                Apply Now
+              </button>
+            </Link>
           </div>
         </div>
       </nav>

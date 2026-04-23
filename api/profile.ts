@@ -147,6 +147,27 @@ export async function uploadDocument(file: File) {
   return { publicUrl: data.publicUrl, error: null }
 }
 
+/** Upload user avatar to 'avatars' bucket */
+export async function uploadAvatar(userId: string, file: File) {
+  const fileExt = file.name.split('.').pop()
+  const fileName = `${userId}-${Date.now()}.${fileExt}`
+  const filePath = `${userId}/${fileName}`
+
+  const { error: uploadError } = await supabase.storage
+    .from('avatars')
+    .upload(filePath, file)
+
+  if (uploadError) {
+    return { publicUrl: null, error: uploadError }
+  }
+
+  const { data } = supabase.storage
+    .from('avatars')
+    .getPublicUrl(filePath)
+
+  return { publicUrl: data.publicUrl, error: null }
+}
+
 /**
  * Export a list of users to CSV format
  */

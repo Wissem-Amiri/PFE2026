@@ -68,7 +68,7 @@ export async function updateCandidatureStatus(candidatureId: string, status: 'pe
 }
 
 /** Get all candidatures with user and job info (Admin) */
-export async function getAllCandidaturesDetailed() {
+export async function getAllCandidaturesDetailed(showArchived: boolean = false) {
   const { data, error } = await supabase
     .from('candidatures')
     .select(`
@@ -79,7 +79,7 @@ export async function getAllCandidaturesDetailed() {
       ),
       job:jobs(*)
     `)
-    .eq('is_archived', false)
+    .eq('is_archived', showArchived)
     .order('applied_at', { ascending: false })
   
   return { data: data as any[], error }

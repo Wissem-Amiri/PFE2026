@@ -13,7 +13,7 @@ import {
   HiOutlineCog,
   HiOutlineLogout
 } from 'react-icons/hi'
-import { Button, Avatar } from 'antd'
+import { Avatar } from 'antd'
 
 import { useLeaves, useCandidatures } from '@/api/hooks'
 
@@ -24,28 +24,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { data: leaves = [] } = useLeaves()
   const { data: candidatures = [] } = useCandidatures()
 
-  const pendingLeaves = leaves.filter((l: any) => l.status === 'pending').length
-  const pendingRegistrations = candidatures.filter((c: any) => c.status === 'pending').length
-  const totalApps = candidatures.length
+  const totalLeaves = leaves.length
+  const totalRegistrations = candidatures.length
+  const totalActivities = totalLeaves + totalRegistrations
 
   const navItems = [
     { 
       href: '/dashboard/admin', 
       label: 'Home', 
       icon: HiOutlineHome, 
-      badge: (pendingLeaves + pendingRegistrations + totalApps).toString() 
+      badge: totalActivities > 0 ? totalActivities.toString() : undefined
     },
     { 
       href: '/dashboard/admin/registrations', 
       label: 'Registrations', 
       icon: HiOutlineClipboardList,
-      badge: pendingRegistrations > 0 ? pendingRegistrations.toString() : undefined
+      badge: totalRegistrations > 0 ? totalRegistrations.toString() : undefined
     },
     { 
       href: '/dashboard/admin/leaves', 
       label: 'Leaves', 
       icon: HiOutlineCalendar,
-      badge: pendingLeaves > 0 ? pendingLeaves.toString() : undefined
+      badge: totalLeaves > 0 ? totalLeaves.toString() : undefined
     },
     { href: '/dashboard/admin/employee', label: 'Employee', icon: HiOutlineUsers },
     { href: '/dashboard/admin/jobs', label: 'Jobs', icon: HiOutlineBriefcase },
@@ -53,13 +53,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   ]
 
   return (
-    <div className="flex min-h-screen font-['Inter',sans-serif] bg-[#f9fafb]">
+    <div className="flex min-h-screen font-['Inter',sans-serif] bg-[#fcfcfd]">
 
       {/* ── SIDEBAR ── */}
       <aside className="w-[243px] min-w-[243px] bg-[#fcfcfd] border-r border-[#eaecf0] flex flex-col h-screen sticky top-0">
 
         {/* Logo */}
-        <div className="pt-[10px] pb-[10px] px-[10px] ">
+        <div className="pt-[10px] pb-[10px] px-[10px]">
           <img src="/assets/UnifyRH.png" alt="UnifyRH Logo" className="h-[110px] w-auto object-contain" />
         </div>
 
@@ -73,14 +73,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 href={item.href}
                 className={`flex items-center gap-[12px] px-[12px] py-[10px] rounded-[6px] text-[14px] font-medium transition-all no-underline
                     ${isActive
-                    ? 'bg-[#f9f5ff] text-[#6941c6]'
-                    : 'text-[#344054] hover:bg-[#f9fafb] hover:text-[#101828]'
-                  }`}
+                    ? 'bg-[#f9f5ff] text-[#7f56d9]'
+                    : 'text-[#667085] hover:bg-[#f9fafb] hover:text-[#101828]'
+                  } `}
               >
-                <item.icon className={`w-[24px] h-[24px] ${isActive ? 'text-[#6941c6]' : 'text-[#344054] opacity-70'}`} />
+                <item.icon className={`w-[24px] h-[24px] ${isActive ? 'text-[#7f56d9]' : 'text-[#667085]'}`} />
                 {item.label}
                 {item.badge && (
-                  <span className="ml-auto bg-[#f9f5ff] text-[#6941c6] text-[12px] font-bold px-[10px] py-[2px] rounded-full">
+                  <span className="ml-auto bg-[#f9f5ff] text-[#7f56d9] text-[12px] font-bold px-[10px] py-[2px] rounded-full">
                     {item.badge}
                   </span>
                 )}
@@ -92,13 +92,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {/* Sidebar Footer */}
         <div className="pb-[32px] px-[16px] flex flex-col gap-[24px]">
           <div className="flex flex-col gap-[4px]">
-             <div 
-               className="flex items-center gap-[12px] px-[12px] py-[10px] rounded-[6px] text-[16px] font-medium text-[#344054] hover:bg-[#f9fafb] cursor-pointer" 
-               onClick={() => {/* Settings */ }}
+             <Link 
+               href="/dashboard/admin/settings?tab=account"
+               className="flex items-center gap-[12px] px-[12px] py-[10px] rounded-[6px] text-[16px] font-medium text-[#667085] hover:bg-[#f9fafb] cursor-pointer no-underline" 
              >
-              <HiOutlineCog className="w-[24px] h-[24px] text-[#344054] opacity-70" />
+              <HiOutlineCog className="w-[24px] h-[24px] text-[#667085]" />
               Settings
-            </div>
+            </Link>
           </div>
 
           <div className="h-px bg-[#eaecf0] w-full" />
@@ -134,3 +134,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     </div>
   )
 }
+
+
+

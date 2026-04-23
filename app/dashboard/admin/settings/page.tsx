@@ -3,43 +3,35 @@
 import { useEffect, useState, Suspense, useRef } from 'react'
 import { useAuth } from '@/api/AuthContext'
 import { getProfile, updateProfile, uploadAvatar } from '@/api/profile'
-import { countries } from '@/api/countries'
-import {
-  Form,
-  Input,
-  Button,
-  Tabs,
-  Avatar,
-  message,
+import { 
+  Form, 
+  Input, 
+  Button, 
+  Tabs, 
+  Avatar, 
+  message, 
   Skeleton,
   Tooltip,
-  Spin,
-  Select,
-  DatePicker
+  Spin
 } from 'antd'
-import {
-  UserOutlined,
-  LockOutlined,
-  MailOutlined,
+import { 
+  UserOutlined, 
+  LockOutlined, 
+  MailOutlined, 
   PhoneOutlined,
   SaveOutlined,
   ArrowLeftOutlined,
   CameraOutlined,
-  LoadingOutlined,
-  TeamOutlined,
-  IdcardOutlined,
-  CalendarOutlined
+  LoadingOutlined
 } from '@ant-design/icons'
 import { useRouter, useSearchParams } from 'next/navigation'
 import dayjs from 'dayjs'
 
-const DEPARTMENTS = ['Ressources Humaines', 'Informatique', 'Finance', 'Marketing', 'Commercial', 'Juridique', 'Direction', 'Autre']
-
-function EmployeeSettingsContent() {
+function AdminSettingsContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const defaultTab = searchParams.get('tab') || 'profile'
-
+  
   const { user, updateUser } = useAuth()
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -60,8 +52,6 @@ function EmployeeSettingsContent() {
         form.setFieldsValue({
           user_name: data.user_name,
           phone: data.phone,
-          country: data.employee?.country,
-          bio: data.employee?.bio,
         })
         securityForm.setFieldsValue({
           email: user.email,
@@ -79,9 +69,11 @@ function EmployeeSettingsContent() {
     setUploadingAvatar(true)
 
     try {
+      // 1. Use centralized upload utility
       const { publicUrl, error: uploadError } = await uploadAvatar(user.id, file)
       if (uploadError) throw uploadError
 
+      // 2. Update Profile in DB
       const { error: updateError } = await updateProfile(user.id, {
         avatar_url: publicUrl
       })
@@ -120,12 +112,8 @@ function EmployeeSettingsContent() {
     const { error } = await updateProfile(user.id, {
       user_name: values.user_name,
       phone: values.phone,
-      employee: {
-        country: values.country,
-        bio: values.bio
-      }
     })
-
+    
     if (error) {
       messageApi.error('Failed to update profile.')
     } else {
@@ -138,7 +126,7 @@ function EmployeeSettingsContent() {
   const handleUpdateSecurity = async (values: any) => {
     setSaving(true)
     const updates: any = {}
-
+    
     if (values.email !== user?.email) {
       updates.email = values.email
     }
@@ -152,8 +140,9 @@ function EmployeeSettingsContent() {
       return
     }
 
+    // Use centralized auth update utility
     const { error } = await updateUser(updates)
-
+    
     if (error) {
       messageApi.error(error.message)
     } else {
@@ -170,7 +159,7 @@ function EmployeeSettingsContent() {
           <h3 className="text-[18px] font-semibold text-[#101828] mb-1">Personal Information</h3>
           <p className="text-[14px] text-[#667085] mb-0">Update your photo and personal details here.</p>
         </div>
-
+        
         <div className="p-8">
           <div className="flex items-center gap-8 mb-8 pb-8 border-b border-[#f2f4f7]">
             <input
@@ -181,14 +170,14 @@ function EmployeeSettingsContent() {
               accept="image/*"
             />
             <div className="relative group">
-              <Avatar
-                size={80}
-                src={profile?.avatar_url}
+              <Avatar 
+                size={80} 
+                src={profile?.avatar_url} 
                 className="bg-[#f4ebff] text-[#7f56d9] text-[24px] border-4 border-white shadow-md flex items-center justify-center"
               >
-                {uploadingAvatar ? <Spin indicator={<LoadingOutlined style={{ fontSize: 24, color: '#7f56d9' }} spin />} /> : (profile?.user_name?.substring(0, 2).toUpperCase() || 'U')}
+                {uploadingAvatar ? <Spin indicator={<LoadingOutlined style={{ fontSize: 24, color: '#7f56d9' }} spin />} /> : (profile?.user_name?.substring(0, 2).toUpperCase() || 'AD')}
               </Avatar>
-              <div
+              <div 
                 onClick={() => fileInputRef.current?.click()}
                 className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
               >
@@ -196,20 +185,20 @@ function EmployeeSettingsContent() {
               </div>
             </div>
             <div>
-              <h4 className="text-[16px] font-semibold text-[#101828] mb-1">{profile?.user_name || 'Employee'}</h4>
+              <h4 className="text-[16px] font-semibold text-[#101828] mb-1">{profile?.user_name || 'Admin'}</h4>
               <p className="text-[14px] text-[#667085] mb-3 capitalize">{profile?.role} Account</p>
               <div className="flex gap-2">
-                <Button
-                  size="small"
+                <Button 
+                  size="small" 
                   className="rounded-lg text-[12px] font-medium border-[#d0d5dd]"
                   onClick={() => fileInputRef.current?.click()}
                   loading={uploadingAvatar}
                 >
                   Change photo
                 </Button>
-                <Button
-                  size="small"
-                  type="text"
+                <Button 
+                  size="small" 
+                  type="text" 
                   className="text-[12px] font-medium text-[#d92d20]"
                   onClick={handleRemoveAvatar}
                   disabled={!profile?.avatar_url || uploadingAvatar}
@@ -232,7 +221,7 @@ function EmployeeSettingsContent() {
               name="user_name"
               rules={[{ required: true, message: 'Please enter your name' }]}
             >
-              <Input prefix={<UserOutlined className="text-[#98a2b3] mr-2" />} placeholder="e.g. John Doe" className="h-[44px] rounded-[8px]" />
+              <Input prefix={<UserOutlined className="text-[#98a2b3] mr-2" />} placeholder="e.g. Farouk Abichou" className="h-[44px] rounded-[8px]" />
             </Form.Item>
 
             <Form.Item
@@ -242,41 +231,10 @@ function EmployeeSettingsContent() {
               <Input prefix={<PhoneOutlined className="text-[#98a2b3] mr-2" />} placeholder="+216 -- --- ---" className="h-[44px] rounded-[8px]" />
             </Form.Item>
 
-            <Form.Item
-              label={<span className="text-[14px] font-medium text-[#344054]">Country</span>}
-              name="country"
-            >
-              <Select
-                showSearch
-                placeholder="Select your country"
-                className="w-full h-[44px]"
-                optionFilterProp="children"
-                filterOption={(input, option) =>
-                  (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-                }
-                options={countries.map(c => ({
-                  value: c.name,
-                  label: `${c.emoji} ${c.name}`,
-                }))}
-              />
-            </Form.Item>
-
-            <Form.Item
-              label={<span className="text-[14px] font-medium text-[#344054]">About Me (Bio)</span>}
-              name="bio"
-              className="col-span-full"
-            >
-              <Input.TextArea
-                placeholder="Tell us about yourself, your expertise, and your interests..."
-                rows={4}
-                className="rounded-[8px] p-4"
-              />
-            </Form.Item>
-
             <div className="col-span-full pt-4 flex justify-end">
-              <Button
-                type="primary"
-                htmlType="submit"
+              <Button 
+                type="primary" 
+                htmlType="submit" 
                 loading={saving}
                 icon={<SaveOutlined />}
                 className="h-[44px] px-6 rounded-[8px] bg-[#7f56d9] hover:bg-[#6941c6] border-none shadow-sm font-semibold"
@@ -346,9 +304,9 @@ function EmployeeSettingsContent() {
             </div>
 
             <div className="col-span-full pt-4 flex justify-end">
-              <Button
-                type="primary"
-                htmlType="submit"
+              <Button 
+                type="primary" 
+                htmlType="submit" 
                 loading={saving}
                 className="h-[44px] px-6 rounded-[8px] bg-[#7f56d9] hover:bg-[#6941c6] border-none shadow-sm font-semibold"
               >
@@ -372,7 +330,7 @@ function EmployeeSettingsContent() {
   return (
     <div className="p-[32px] px-[40px] bg-[#fcfcfd] min-h-full font-['Inter',sans-serif]">
       {contextHolder}
-
+      
       <div className="max-w-[1200px] mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
@@ -381,7 +339,7 @@ function EmployeeSettingsContent() {
             <p className="text-[16px] text-[#667085] mb-0">Manage your profile and account settings.</p>
           </div>
           <button
-            onClick={() => router.push('/dashboard/employee')}
+            onClick={() => router.push('/dashboard/admin')}
             className="flex items-center gap-[8px] px-[16px] py-[10px] border border-[#D0D5DD] rounded-[8px] bg-white text-[#344054] font-medium text-[14px] cursor-pointer hover:bg-gray-50 transition-colors shadow-sm"
           >
             <ArrowLeftOutlined /> Back to Home
@@ -433,21 +391,15 @@ function EmployeeSettingsContent() {
           background: #7f56d9 !important;
           height: 2px !important;
         }
-        .ant-select-selector {
-          border-radius: 8px !important;
-          height: 44px !important;
-          display: flex !important;
-          align-items: center !important;
-        }
       `}</style>
     </div>
   )
 }
 
-export default function EmployeeSettingsPage() {
+export default function AdminSettingsPage() {
   return (
     <Suspense fallback={<div className="p-10 bg-[#fcfcfd] min-h-screen"><Skeleton active paragraph={{ rows: 12 }} /></div>}>
-      <EmployeeSettingsContent />
+      <AdminSettingsContent />
     </Suspense>
   )
 }

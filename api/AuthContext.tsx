@@ -21,6 +21,7 @@ type AuthContextType = {
   resend: (params: any) => Promise<{ error: any; data: any }>
   resetPassword: (email: string) => Promise<{ error: any; data: any }>
   signout: () => Promise<void>
+  updateUser: (attributes: any) => Promise<{ error: any; data: any }>
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -105,7 +106,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.push('/login')
   }
 
-  const value = { user, session, profile, isLoading, signIn, signInWithOAuth, signUp, verifyOtp, resend, resetPassword, signout }
+  const updateUser = async (attributes: any) => {
+    const { data, error } = await supabase.auth.updateUser(attributes)
+    return { data, error }
+  }
+
+  const value = { user, session, profile, isLoading, signIn, signInWithOAuth, signUp, verifyOtp, resend, resetPassword, signout, updateUser }
   return (
     <AuthContext.Provider value={value}> {children} </AuthContext.Provider>
   )

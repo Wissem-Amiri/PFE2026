@@ -275,11 +275,6 @@ export default function RegistrationDetailPage() {
           <ArrowLeftOutlined /> Go Back
         </button>
         <div className="flex gap-[12px]">
-           <Tooltip title="Actions">
-             <button className="w-[44px] h-[44px] rounded-[8px] border border-[#D0D5DD] bg-white flex items-center justify-center text-[#344054] cursor-pointer hover:bg-gray-50 transition-colors shadow-sm">
-               <EllipsisOutlined className="text-xl" />
-             </button>
-           </Tooltip>
            <button 
              onClick={() => user.postulant?.resume_url && window.open(user.postulant.resume_url)}
              className="h-[44px] px-[18px] rounded-[8px] bg-[#7F56D9] text-white font-medium text-[14px] flex items-center gap-[8px] cursor-pointer hover:bg-[#6941C6] transition-colors border-none shadow-sm"

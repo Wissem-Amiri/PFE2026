@@ -1,21 +1,23 @@
 import { useQuery } from '@tanstack/react-query'
 import { getAllLeavesDetailed } from './conge'
 import { getAllCandidaturesDetailed } from './candidatures'
+import { getAllRecordings } from './recordings'
 
 export const queryKeys = {
   leaves: ['leaves'] as const,
   candidatures: ['candidatures'] as const,
+  recordings: ['recordings'] as const,
 }
 
-export function useLeaves() {
+export function useLeaves(showArchived: boolean = false) {
   return useQuery({
-    queryKey: queryKeys.leaves,
+    queryKey: [...queryKeys.leaves, showArchived],
     queryFn: async () => {
-      const { data, error } = await getAllLeavesDetailed()
+      const { data, error } = await getAllLeavesDetailed(showArchived)
       if (error) throw error
       return data || []
     },
-    select: (data) => data.map(leave => ({
+    select: (data) => (data as any[]).map(leave => ({
       ...leave,
       user: leave.employee ? {
         ...(leave.employee.user || {}),
@@ -25,11 +27,22 @@ export function useLeaves() {
   })
 }
 
-export function useCandidatures() {
+export function useCandidatures(showArchived: boolean = false) {
   return useQuery({
-    queryKey: queryKeys.candidatures,
+    queryKey: [...queryKeys.candidatures, showArchived],
     queryFn: async () => {
-      const { data, error } = await getAllCandidaturesDetailed()
+      const { data, error } = await getAllCandidaturesDetailed(showArchived)
+      if (error) throw error
+      return data || []
+    }
+  })
+}
+
+export function useRecordings(showArchived: boolean = false) {
+  return useQuery({
+    queryKey: [...queryKeys.recordings, showArchived],
+    queryFn: async () => {
+      const { data, error } = await getAllRecordings(showArchived)
       if (error) throw error
       return data || []
     }

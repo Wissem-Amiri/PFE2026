@@ -224,12 +224,12 @@ export default function EmployeeDashboardPage() {
             </div>
 
             <div className="flex w-full gap-3">
-              <Link href="/dashboard/employee/settings" className="flex-1 no-underline">
+              <Link href="/dashboard/employee/settings?tab=account" className="flex-1 no-underline">
                 <Button block className="h-[44px] rounded-xl font-bold border-[#D0D5DD] text-[#344054] hover:border-[#7F56D9] hover:text-[#7F56D9]">
                   Settings
                 </Button>
               </Link>
-              <Link href="/dashboard/employee/settings" className="flex-1 no-underline">
+              <Link href="/dashboard/employee/settings?tab=profile" className="flex-1 no-underline">
                 <Button block type="primary" className="h-[44px] rounded-xl font-bold bg-[#7F56D9] hover:bg-[#6941C6] border-none shadow-sm">
                   View profile
                 </Button>

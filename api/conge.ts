@@ -10,7 +10,7 @@ export async function requestLeave(leaveData: Omit<Conge, 'id' | 'created_at' | 
   if (profile?.employee) {
     const duration = dayjs(leaveData.end_date).diff(dayjs(leaveData.start_date), 'day') + 1
     const currentBalance = profile.employee.vacation_balance ?? 0
-    
+
     if (duration > currentBalance) {
       return { data: null, error: { message: `Insufficient Balance. You have ${currentBalance} days remaining, but requested ${duration} days.` } }
     }
@@ -20,7 +20,7 @@ export async function requestLeave(leaveData: Omit<Conge, 'id' | 'created_at' | 
     .from('conges')
     .insert([leaveData])
     .select()
-  
+
   return { data: data?.[0] as Conge | null | undefined, error }
 }
 
@@ -31,12 +31,12 @@ export async function getMyLeaves(employeeId: string) {
     .select('*')
     .eq('employee_id', employeeId)
     .order('created_at', { ascending: false })
-  
+
   return { data: data as Conge[], error }
 }
 
 /** Get all leaves with user details (Admin) */
-export async function getAllLeavesDetailed() {
+export async function getAllLeavesDetailed(showArchived: boolean = false) {
   const { data, error } = await supabase
     .from('conges')
     .select(`
@@ -46,9 +46,28 @@ export async function getAllLeavesDetailed() {
         user:utilisateur(*)
       )
     `)
+    .eq('is_archived', showArchived)
     .order('created_at', { ascending: false })
-  
+
   return { data: data as any[], error }
+}
+
+export async function archiveLeaves(ids: string[]) {
+  const { data, error } = await supabase
+    .from('conges')
+    .update({ is_archived: true })
+    .in('id', ids)
+    .select()
+  return { data, error }
+}
+
+export async function unarchiveLeaves(ids: string[]) {
+  const { data, error } = await supabase
+    .from('conges')
+    .update({ is_archived: false })
+    .in('id', ids)
+    .select()
+  return { data, error }
 }
 
 /** Update leave status (Admin) */
@@ -59,7 +78,7 @@ export async function updateLeaveStatus(leaveId: string, status: 'approved' | 'r
     if (leave) {
       const duration = dayjs(leave.end_date).diff(dayjs(leave.start_date), 'day') + 1
       const { data: profile } = await getProfile(leave.employee_id)
-      
+
       if (profile?.employee) {
         const newBalance = (profile.employee.vacation_balance ?? 0) - duration
         await supabase.from('employee').update({ vacation_balance: newBalance }).eq('id', leave.employee_id)
@@ -72,8 +91,8 @@ export async function updateLeaveStatus(leaveId: string, status: 'approved' | 'r
     .update({ status })
     .eq('id', leaveId)
     .select()
-  
-  return { data: data?.[0] as Conge | null| undefined, error }
+
+  return { data: data?.[0] as Conge | null | undefined, error }
 }
 
 /** Adjust an employee's leave balance manually (Admin) */
@@ -84,7 +103,7 @@ export async function adjustEmployeeBalance(employeeId: string, adjustment: numb
     .select('vacation_balance')
     .eq('id', employeeId)
     .single()
-  
+
   if (fetchError || !employee) return { data: null, error: fetchError }
 
   // 2. Update balance
@@ -94,6 +113,6 @@ export async function adjustEmployeeBalance(employeeId: string, adjustment: numb
     .update({ vacation_balance: newBalance })
     .eq('id', employeeId)
     .select()
-  
+
   return { data, error }
 }
