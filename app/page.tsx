@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/api/AuthContext'
-import { getAllJobs } from '@/api/job'
+import { getAllJobs, isJobOpen } from '@/api/job'
 import type { Job } from '@/api/database.types'
 import { Spin } from 'antd'
 import { BiArrowToTop } from "react-icons/bi";
@@ -288,7 +288,7 @@ export default function LandingPage() {
             ) : (() => {
               let finalJobs = jobs
                 .filter(j => j.title.toLowerCase().includes(searchTerm.toLowerCase()))
-                .filter(j => statusFilter === 'Open' ? j.is_open : !j.is_open)
+                .filter(j => statusFilter === 'Open' ? isJobOpen(j) : !isJobOpen(j))
                 .filter(j => categoryFilter === 'All Categories' ? true : j.category === categoryFilter)
                 .sort((a, b) => {
                   const aTime = new Date(a.deadline).getTime();
@@ -314,7 +314,7 @@ export default function LandingPage() {
                 return (
                   <div
                     key={job.id}
-                    className={`bg-[#fef7ff] p-[32px] rounded-[16px] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 hover:-translate-y-0.5 transition-transform ${!job.is_open ? 'opacity-60 grayscale bg-gray-50' : ''}`}
+                    className={`bg-[#fef7ff] p-[32px] rounded-[16px] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 hover:-translate-y-0.5 transition-transform ${!isJobOpen(job) ? 'opacity-60 grayscale bg-gray-50' : ''}`}
                   >
                     <div className="flex flex-col gap-1">
                       <h3 className="font-['Manrope',sans-serif] font-bold text-[20px] text-[#1d1a22] leading-[28px] group-hover:text-[#663bbe] transition-colors">{job.title}</h3>
@@ -323,7 +323,7 @@ export default function LandingPage() {
                         <span className="leading-[20px]">•</span>
                         <span>{job.open_seats} Open seats</span>
                         <span className="leading-[20px]">•</span>
-                        <span className={diffDays < 3 && job.is_open ? "text-red-500" : ""}>{deadlineText}</span>
+                        <span className={diffDays < 3 && isJobOpen(job) ? "text-red-500" : ""}>{deadlineText}</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 w-full sm:w-auto shrink-0 mt-4 sm:mt-0">
@@ -337,7 +337,7 @@ export default function LandingPage() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                         </svg>
                       </button>
-                      {job.is_open ? (
+                      {isJobOpen(job) ? (
                         <button onClick={() => handleApplyClick(job.id)} className="flex-1 sm:flex-none sm:w-auto bg-[#7f56d9] flex flex-col items-center justify-center px-[24px] h-[40px] rounded-full shrink-0 text-white font-['Manrope',sans-serif] font-semibold text-[16px] leading-[24px] hover:bg-[#663bbe] transition-colors shadow-sm">
                           Apply
                         </button>
@@ -400,7 +400,7 @@ export default function LandingPage() {
               >
                 Close
               </button>
-              {previewJob.is_open && (
+              {isJobOpen(previewJob) && (
                 <button
                   onClick={() => { setPreviewJob(null); handleApplyClick(previewJob.id); }}
                   className="w-full sm:w-auto bg-[#7f56d9] text-white font-['Manrope',sans-serif] font-semibold px-8 h-[48px] rounded-full hover:bg-[#663bbe] transition-colors shadow-sm order-1 sm:order-2"

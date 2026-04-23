@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Popconfirm, message, Tooltip } from 'antd'
-import { getAllJobs, deleteJob } from '@/api/job'
+import { getAllJobs, deleteJob, isJobOpen } from '@/api/job'
 import type { Job } from '@/api/database.types'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -172,10 +172,10 @@ export default function JobsPage() {
                   
                   <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[12px] font-medium leading-5" 
                     style={{ 
-                      backgroundColor: job.is_open ? '#ECFDF3' : '#F9FAFB',
-                      color: job.is_open ? '#027A48' : '#344054'
+                      backgroundColor: isJobOpen(job) ? '#ECFDF3' : '#F9FAFB',
+                      color: isJobOpen(job) ? '#027A48' : '#344054'
                     }}>
-                    {job.is_open ? 'Open' : 'Closed'}
+                    {isJobOpen(job) ? 'Open' : 'Closed'}
                   </div>
                 </div>
               </div>

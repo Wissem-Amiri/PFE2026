@@ -5,7 +5,7 @@ import { Input, message } from 'antd'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/api/AuthContext'
-import { getAllJobs } from '@/api/job'
+import { getAllJobs, isJobOpen } from '@/api/job'
 import { getUserCandidatures } from '@/api/candidatures'
 import type { Job } from '@/api/database.types'
 
@@ -27,7 +27,7 @@ export default function PostulantJobsPage() {
     async function loadJobsAndStatus() {
       setLoading(true)
       const { data } = await getAllJobs()
-      const openJobs = (data ?? []).filter(j => j.is_open)
+      const openJobs = (data ?? []).filter(isJobOpen)
       setJobs(openJobs)
 
       if (user) {

@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/api/supabase'
-import { getJobApplications, updateCandidatureStatus } from '@/api/candidatures'
-import { decrementJobSeats } from '@/api/job'
+import { getJobApplications, updateCandidatureStatus, deleteAllOtherCandidatures } from '@/api/candidatures'
+import { updateUserStatus } from '@/api/profile'
+import { decrementJobSeats, isJobOpen } from '@/api/job'
 import type { Job } from '@/api/database.types'
 import { message, Table, Tag, Space, Avatar, Button as AntButton, Modal } from 'antd'
 import { CheckCircleOutlined, CloseCircleOutlined, UserOutlined } from '@ant-design/icons'
@@ -55,17 +56,21 @@ export default function JobOverviewPage() {
     setLoadingApps(false)
   }
 
-  const handleStatusUpdate = async (id: string, status: 'accepted' | 'rejected') => {
+  const handleStatusUpdate = async (application: any, status: 'accepted' | 'rejected') => {
     Modal.confirm({
       title: `${status === 'accepted' ? 'Accept' : 'Reject'} Application?`,
       content: `Are you sure you want to ${status} this candidate for this specific job position?`,
       okText: 'Yes',
       cancelText: 'No',
       onOk: async () => {
-        const { error } = await updateCandidatureStatus(id, status)
+        const { error } = await updateCandidatureStatus(application.id, status)
         if (!error) {
           if (status === 'accepted') {
+            // Simple transition: use defaults for hiring details
+            await updateUserStatus(application.postulant_id, 'approved')
+            await deleteAllOtherCandidatures(application.postulant_id, application.id)
             await decrementJobSeats(jobId)
+            
             // Reload job details to see new available seats
             const { data } = await supabase.from('jobs').select('*').eq('id', jobId).single()
             if (data) setJob(data as Job)
@@ -119,13 +124,13 @@ export default function JobOverviewPage() {
           <AntButton 
             type="text" 
             icon={<CheckCircleOutlined className="text-green-500" />} 
-            onClick={() => handleStatusUpdate(record.id, 'accepted')}
+            onClick={() => handleStatusUpdate(record, 'accepted')}
             disabled={record.status === 'accepted'}
           />
           <AntButton 
             type="text" 
             icon={<CloseCircleOutlined className="text-red-500" />} 
-            onClick={() => handleStatusUpdate(record.id, 'rejected')}
+            onClick={() => handleStatusUpdate(record, 'rejected')}
             disabled={record.status === 'rejected'}
           />
         </Space>
@@ -262,7 +267,7 @@ export default function JobOverviewPage() {
               <ul className="list-disc pl-5 space-y-2">
                 <li>Catégorie du poste : <span className="font-medium text-[#101828]">{job.category}</span></li>
                 <li>Places disponibles : <span className="font-medium text-[#101828]">{job.open_seats}</span></li>
-                <li>Statut de l'offre : {job.is_open ? <span className="text-green-600 font-medium">Ouverte</span> : <span className="text-red-500 font-medium">Fermée</span>}</li>
+                <li>Statut de l'offre : {isJobOpen(job) ? <span className="text-green-600 font-medium">Ouverte</span> : <span className="text-red-500 font-medium">Fermée</span>}</li>
                 <li>Clôture des candidatures : <span className="font-medium text-[#101828]">{new Date(job.deadline).toLocaleDateString()}</span></li>
               </ul>
             </div>

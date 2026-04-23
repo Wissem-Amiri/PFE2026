@@ -86,3 +86,18 @@ export async function decrementJobSeats(jobId: string) {
   const { error: updateError } = await updateJob(jobId, updates)
   return { error: updateError }
 }
+
+/** Determine if a job is effectively open (has seats and deadline is in the future) */
+export function isJobOpen(job: Job): boolean {
+  if (!job.is_open) return false
+  if (job.open_seats <= 0) return false
+  
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  
+  const deadlineDate = new Date(job.deadline)
+  deadlineDate.setHours(0, 0, 0, 0)
+  
+  // Dynamic check: must have seats and deadline must be strictly in the future
+  return deadlineDate > today
+}
