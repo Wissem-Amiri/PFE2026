@@ -37,11 +37,16 @@ const profileSchema = yup.object().shape({
       title: yup.string().required('Title is required'),
       company: yup.string().required('Company is required'),
       startDate: yup.string().required('Start date is required'),
-      endDate: yup.string().nullable().test('date-order', 'End date must be after start date', function (value) {
-        const { startDate } = this.parent
-        if (!startDate || !value) return true
-        return new Date(value) >= new Date(startDate)
-      }),
+      endDate: yup.string().required('End date is required')
+        .test('date-order', 'End date must be after start date', function (value) {
+          const { startDate } = this.parent
+          if (!startDate || !value) return true
+          return new Date(value) >= new Date(startDate)
+        })
+        .test('no-future', 'End date cannot be in the future', function (value) {
+          if (!value) return true
+          return new Date(value) <= new Date()
+        }),
       projectUrl: yup.string().url('Invalid URL format').nullable().transform(v => v === '' ? null : v),
     })
   ),
@@ -70,6 +75,7 @@ export default function CompleteProfilePage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const applyToJobId = searchParams.get('applyTo')
+  const [targetJobTitle, setTargetJobTitle] = useState<string | null>(null)
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -107,7 +113,10 @@ export default function CompleteProfilePage() {
 
         if (applyToJobId) {
           const { data: jobDetails } = await getJobById(applyToJobId)
-          if (jobDetails) resolvedPosition = jobDetails.title
+          if (jobDetails) {
+            resolvedPosition = jobDetails.title
+            setTargetJobTitle(jobDetails.title)
+          }
         } else {
           const { data: candidatures } = await getUserCandidatures(user.id)
           if (candidatures && candidatures.length > 0) {
@@ -236,11 +245,23 @@ export default function CompleteProfilePage() {
           </div>
         </div>
 
+        {applyToJobId && targetJobTitle && (
+          <div className="mb-8 p-4 bg-purple-50 border border-purple-100 rounded-2xl flex items-center gap-4 animate-in fade-in slide-in-from-top-2">
+            <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center text-purple-600">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            </div>
+            <div>
+              <p className="text-[14px] font-bold text-[#101828] m-0">You are applying for: <span className="text-purple-600">{targetJobTitle}</span></p>
+              <p className="text-[12px] text-[#667085] m-0">Complete your profile below to finalize your application.</p>
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit(handleSave)} className="space-y-0">
 
           {/* 1. Profil Personnel */}
           <Section title="Personal Information" subtitle="Update your photo and contact details.">
-            <FormRow label="Full Name">
+            <FormRow label="Full Name" required>
               <div className="flex gap-4">
                 <div className="flex-1">
                   <Controller name="firstName" control={control} render={({ field }) => (
@@ -279,7 +300,7 @@ export default function CompleteProfilePage() {
 
           {/* 2. Profil Professionnel */}
           <Section title="Professional Profile" subtitle="Highlight your skills and background.">
-            <FormRow label="Current / target position">
+            <FormRow label="Current / target position" required>
               <div className="flex flex-col gap-2">
                 <Controller name="position" control={control} render={({ field }) => (
                   <Input {...field} disabled={!!applyToJobId} className="h-11 rounded-lg bg-[#F9FAFB] cursor-not-allowed border-[#EAECF0]" placeholder="Developer, Designer..." />
@@ -291,7 +312,7 @@ export default function CompleteProfilePage() {
               </div>
             </FormRow>
 
-            <FormRow label="Location">
+            <FormRow label="Location" required subtitle="Your country and current timezone.">
               <div className="flex gap-4">
                 <div className="flex-1">
                   <p className="text-[12px] font-semibold text-gray-500 mb-1.5">Country</p>
@@ -313,7 +334,7 @@ export default function CompleteProfilePage() {
             <FormRow label="External links">
               <div className="flex flex-col gap-3">
                 <Controller name="website" control={control} render={({ field }) => (
-                  <Input {...field} placeholder="Website (URL)" className="h-11 rounded-lg" prefix={<GlobalOutlined className="text-gray-400" />} />
+                  <Input  {...field} placeholder="Website (URL)" className="h-11 rounded-lg" prefix={<GlobalOutlined className="text-gray-400" />} />
                 )} />
                 <Controller name="portfolio" control={control} render={({ field }) => (
                   <Input {...field} placeholder="Portfolio (URL)" className="h-11 rounded-lg" prefix={<GlobalOutlined className="text-gray-400" />} />
@@ -362,6 +383,16 @@ export default function CompleteProfilePage() {
             </div>
 
             <div className="space-y-6">
+              {fields.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-10 rounded-2xl border border-dashed border-[#EAECF0] bg-[#FAFBFC] text-center">
+                  <div className="w-12 h-12 rounded-full bg-[#F2F4F7] flex items-center justify-center mb-3">
+                    <span className="text-2xl">💼</span>
+                  </div>
+                  <p className="text-[14px] font-bold text-[#344054] m-0">Aucune expérience ajoutée</p>
+                  <p className="text-[13px] text-[#667085] mt-1 m-0">Ajoutez vos expériences professionnelles pour enrichir votre profil.</p>
+                </div>
+              )}
+
               {fields.map((field, index) => (
                 <div key={field.id} className="p-8 rounded-2xl border border-[#EAECF0] bg-[#FAFBFC] relative group transition-all hover:border-[#D0D5DD] hover:shadow-sm">
                   <button type="button" onClick={() => remove(index)} className="absolute top-5 right-5 text-[#98A2B3] hover:text-red-500 bg-transparent border-none cursor-pointer transition-colors p-1">
@@ -370,30 +401,32 @@ export default function CompleteProfilePage() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                     <div className="space-y-1.5">
-                      <label className="text-[12px] font-bold text-[#344054] tracking-wide uppercase">Job Title</label>
+                      <label className="text-[12px] font-bold text-[#344054] tracking-wide uppercase">Job Title <span className="text-red-500">*</span></label>
                       <Controller name={`experiences.${index}.title`} control={control} render={({ field }) => (
                         <Input {...field} placeholder="e.g. Senior Developer" className="h-11 rounded-lg" />
                       )} />
                       {errors.experiences?.[index]?.title && <span className="text-red-500 text-[11px] font-medium">{errors.experiences[index].title.message}</span>}
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[12px] font-bold text-[#344054] tracking-wide uppercase">Company</label>
+                      <label className="text-[12px] font-bold text-[#344054] tracking-wide uppercase">Company <span className="text-red-500">*</span></label>
                       <Controller name={`experiences.${index}.company`} control={control} render={({ field }) => (
                         <Input {...field} placeholder="e.g. Google" className="h-11 rounded-lg" />
                       )} />
                       {errors.experiences?.[index]?.company && <span className="text-red-500 text-[11px] font-medium">{errors.experiences[index].company.message}</span>}
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[12px] font-bold text-[#344054] tracking-wide uppercase">Start Date</label>
+                      <label className="text-[12px] font-bold text-[#344054] tracking-wide uppercase">Start Date <span className="text-red-500">*</span></label>
                       <Controller name={`experiences.${index}.startDate`} control={control} render={({ field }) => (
                         <Input {...field} type="date" className="h-11 rounded-lg px-3" />
                       )} />
                       {errors.experiences?.[index]?.startDate && <span className="text-red-500 text-[11px] font-medium">{errors.experiences[index].startDate.message}</span>}
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[12px] font-bold text-[#344054] tracking-wide uppercase">End Date</label>
+                      <label className="text-[12px] font-bold text-[#344054] tracking-wide uppercase">
+                        End Date <span className="text-red-500">*</span>
+                      </label>
                       <Controller name={`experiences.${index}.endDate`} control={control} render={({ field }) => (
-                        <Input {...field} type="date" className="h-11 rounded-lg px-3" />
+                        <Input {...field} type="date" className={`h-11 rounded-lg px-3 ${errors.experiences?.[index]?.endDate ? 'border-red-500' : ''}`} />
                       )} />
                       {errors.experiences?.[index]?.endDate && <span className="text-red-500 text-[11px] font-medium">{errors.experiences[index].endDate.message}</span>}
                     </div>
@@ -436,11 +469,14 @@ function Section({ title, subtitle, children }: { title: string, subtitle: strin
   )
 }
 
-function FormRow({ label, subtitle, children }: { label: string, subtitle?: string, children: React.ReactNode }) {
+function FormRow({ label, subtitle, required, children }: { label: string, subtitle?: string, required?: boolean, children: React.ReactNode }) {
   return (
     <div className="flex flex-col md:flex-row gap-4 md:gap-10">
       <div className="w-[280px] shrink-0 pt-1.5 flex flex-col">
-        <span className="text-[14px] font-bold text-[#344054] tracking-tight">{label}</span>
+        <span className="text-[14px] font-bold text-[#344054] tracking-tight">
+          {label}
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </span>
         {subtitle && <span className="text-[13px] text-[#667085] mt-1 m-0 leading-relaxed">{subtitle}</span>}
       </div>
       <div className="flex-1 max-w-[560px]">

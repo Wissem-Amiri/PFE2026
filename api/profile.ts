@@ -1,6 +1,17 @@
 import { supabase } from './supabase'
 import type { BaseUtilisateur, FullProfile, Employee } from './database.types'
 
+/** Check if an email is already in the utilisateur table */
+export async function checkEmailExists(email: string) {
+  const { data, error } = await supabase
+    .from('utilisateur')
+    .select('email')
+    .eq('email', email)
+    .maybeSingle()
+  
+  return { exists: !!data, error }
+}
+
 /** Get a single user profile with all role-specific data using joins */
 export async function getProfile(userId: string) {
   const { data, error } = await supabase

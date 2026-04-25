@@ -189,9 +189,16 @@ export default function JobOverviewPage() {
           </button>
           <button 
             onClick={() => setActiveTab('applications')}
-            className="px-[20px] py-[10px] rounded-[8px] bg-[#7C3AED] text-white font-medium text-[14px] cursor-pointer hover:bg-[#6D28D9] transition-colors border-none shadow-sm flex items-center gap-[8px]"
+            className="px-[20px] py-[10px] rounded-[8px] bg-white border border-[#D0D5DD] text-[#344054] font-medium text-[14px] cursor-pointer hover:bg-gray-50 transition-colors shadow-sm flex items-center gap-[8px]"
           >
             <span>+</span> View Applications
+          </button>
+          <button
+            onClick={() => router.push(`/dashboard/admin/jobs/${jobId}/screening`)}
+            className="px-[20px] py-[10px] rounded-[8px] bg-[#7C3AED] text-white font-medium text-[14px] cursor-pointer hover:bg-[#6D28D9] transition-colors border-none shadow-sm flex items-center gap-[8px]"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+            AI Screening
           </button>
         </div>
       </div>

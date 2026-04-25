@@ -44,10 +44,10 @@ import { useLeaves, useCandidatures } from '@/api/hooks'
 export default function AdminDashboardPage() {
   const { user } = useAuth()
   const [adminProfile, setAdminProfile] = useState<FullProfile | null>(null)
-  
+
   const { data: leaves = [], isLoading: leavesLoading } = useLeaves()
   const { data: candidatures = [], isLoading: candidaturesLoading } = useCandidatures()
-  
+
   const loading = leavesLoading || candidaturesLoading
   const [search, setSearch] = useState('')
 
@@ -120,7 +120,7 @@ export default function AdminDashboardPage() {
   return (
     <div className="flex flex-col lg:flex-row min-h-screen bg-[#FCFCFD]">
       {/* Sidebar Placeholder (Space reserved to match Figma's x=243) */}
-      
+
       {/* ── MAIN CONTENT ── */}
       <div className="flex-1 bg-[#FCFCFD] rounded-tl-[40px] pt-[32px] pb-[48px] overflow-y-auto">
         {/* Header section (3024:10913) */}
@@ -200,8 +200,8 @@ export default function AdminDashboardPage() {
                   key: 'date_range',
                   render: (record: any) => (
                     <span className="text-[14px] text-[#667085] font-['Inter']">
-                      {record.type === 'leave' 
-                        ? `${dayjs(record.date).format('MM/DD/YYYY')} to ${dayjs(record.date).add(2, 'day').format('MM/DD/YYYY')}` 
+                      {record.type === 'leave'
+                        ? `${dayjs(record.date).format('MM/DD/YYYY')} to ${dayjs(record.date).add(2, 'day').format('MM/DD/YYYY')}`
                         : `${dayjs(record.date).format('MM/DD/YYYY')} ${dayjs(record.date).format('HH:mm')}`}
                     </span>
                   )
@@ -211,7 +211,7 @@ export default function AdminDashboardPage() {
                   key: 'activity',
                   render: (record: any) => {
                     const isLeave = record.type === 'leave';
-                    
+
                     let config = {
                       icon: <HiOutlineBriefcase className="w-[14px] h-[14px]" />,
                       color: '#3CB50D',
@@ -237,19 +237,19 @@ export default function AdminDashboardPage() {
 
                     return (
                       <div className="flex items-center">
-                        <div 
+                        <div
                           className="px-[12px] py-[4px] rounded-full flex items-center gap-[6px] border"
                           style={{ backgroundColor: config.bg, borderColor: config.border }}
                         >
-                            <span style={{ color: config.color, display: 'flex', alignItems: 'center' }}>
-                              {config.icon}
-                            </span>
-                            <span 
-                              className="text-[12px] font-medium whitespace-nowrap leading-[18px] font-['Inter']"
-                              style={{ color: config.color }}
-                            >
-                              {record.details}
-                            </span>
+                          <span style={{ color: config.color, display: 'flex', alignItems: 'center' }}>
+                            {config.icon}
+                          </span>
+                          <span
+                            className="text-[12px] font-medium whitespace-nowrap leading-[18px] font-['Inter']"
+                            style={{ color: config.color }}
+                          >
+                            {record.details}
+                          </span>
                         </div>
                       </div>
                     )
@@ -257,16 +257,16 @@ export default function AdminDashboardPage() {
                 }
               ]}
               dataSource={filteredActivities}
-              pagination={{ 
-                  pageSize: 10, 
-                  hideOnSinglePage: true, 
-                  position: ['bottomCenter'],
-                  className: 'custom-pagination',
-                  itemRender: (page, type, originalElement) => {
-                    if (type === 'prev') return <button className="px-[14px] py-[8px] bg-white border border-[#d0d5dd] rounded-[8px] shadow-sm text-[14px] font-medium text-[#344054] hover:bg-gray-50 flex items-center gap-[8px] mr-4 font-['Inter']"><img src="/assets/arrow-left.svg" className="w-[14px] h-[14px]" alt="" /> Previous</button>
-                    if (type === 'next') return <button className="px-[14px] py-[8px] bg-white border border-[#d0d5dd] rounded-[8px] shadow-sm text-[14px] font-medium text-[#344054] hover:bg-gray-50 flex items-center gap-[8px] ml-4 font-['Inter']">Next <img src="/assets/arrow-right.svg" className="w-[14px] h-[14px]" alt="" /></button>
-                    return originalElement
-                  }
+              pagination={{
+                pageSize: 10,
+                hideOnSinglePage: true,
+                position: ['bottomCenter'],
+                className: 'custom-pagination',
+                itemRender: (page, type, originalElement) => {
+                  if (type === 'prev') return <button className="px-[14px] py-[8px] bg-white border border-[#d0d5dd] rounded-[8px] shadow-sm text-[14px] font-medium text-[#344054] hover:bg-gray-50 flex items-center gap-[8px] mr-4 font-['Inter']"><img src="/assets/arrow-left.svg" className="w-[14px] h-[14px]" alt="" /> Previous</button>
+                  if (type === 'next') return <button className="px-[14px] py-[8px] bg-white border border-[#d0d5dd] rounded-[8px] shadow-sm text-[14px] font-medium text-[#344054] hover:bg-gray-50 flex items-center gap-[8px] ml-4 font-['Inter']">Next <img src="/assets/arrow-right.svg" className="w-[14px] h-[14px]" alt="" /></button>
+                  return originalElement
+                }
               }}
               loading={loading}
               className="figma-dashboard-table decoration-table"
@@ -280,17 +280,17 @@ export default function AdminDashboardPage() {
 
       <div className="w-full lg:w-[296px] bg-transparent pr-[32px] pt-[40px] flex flex-col items-center">
         <div className="sticky top-[40px] w-full flex flex-col items-center gap-[24px]">
-          
+
           <div className="w-full flex flex-col items-center">
             {/* Admin Avatar Section (Figma 3024:10941) */}
             <div className="relative mb-[24px] border-4 border-white shadow-[0px_12px_16px_-4px_rgba(16,24,40,0.08),0px_4px_6px_-2px_rgba(16,24,40,0.03)] rounded-full h-[160px] w-[160px] flex items-center justify-center overflow-hidden">
-                <Avatar
-                  size={160}
-                  src={adminProfile?.avatar_url}
-                  className="bg-[#c7b9da] rounded-full"
-                >
-                    {adminProfile?.user_name?.substring(0, 2).toUpperCase() || 'AD'}
-                </Avatar>
+              <Avatar
+                size={160}
+                src={adminProfile?.avatar_url}
+                className="bg-[#c7b9da] rounded-full"
+              >
+                {adminProfile?.user_name?.substring(0, 2).toUpperCase() || 'AD'}
+              </Avatar>
             </div>
 
             <div className="flex flex-col gap-[4px] items-center mb-[24px]">

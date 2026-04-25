@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/api/AuthContext'
+import { checkEmailExists } from '@/api/profile'
 import { Form, Input, Button, Alert } from 'antd'
 import { UserOutlined, MailOutlined, LockOutlined } from '@ant-design/icons'
 import { useForm, Controller } from 'react-hook-form'
@@ -23,6 +24,8 @@ type RegisterFormInputs = yup.InferType<typeof registerSchema>
 
 export default function RegisterPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const applyTo = searchParams.get('applyTo')
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const { signUp, signInWithOAuth } = useAuth()
@@ -35,6 +38,20 @@ export default function RegisterPage() {
   const handleRegister = async (values: RegisterFormInputs) => {
     setLoading(true)
     setErrorMsg('')
+
+    // Verify if email is already in use (by form or Google)
+    const { exists, error: checkError } = await checkEmailExists(values.email)
+    if (checkError) {
+      setErrorMsg('Error checking email availability.')
+      setLoading(false)
+      return
+    }
+
+    if (exists) {
+      setErrorMsg('This email is already registered. If you previously used Google, please log in with Google.')
+      setLoading(false)
+      return
+    }
 
     const { error } = await signUp(values.email, values.password, {
       data: {
@@ -51,11 +68,13 @@ export default function RegisterPage() {
     }
 
     // Redirect to verify-email page with the email as a query param
-    router.push(`/auth/verify-email?email=${encodeURIComponent(values.email)}`)
+    const verifyUrl = `/auth/verify-email?email=${encodeURIComponent(values.email)}${applyTo ? `&applyTo=${applyTo}` : ''}`
+    router.push(verifyUrl)
   }
 
   const handleGoogleSignup = async () => {
-    await signInWithOAuth('google', { redirectTo: `${window.location.origin}/auth/callback` })
+    const callbackUrl = `${window.location.origin}/auth/callback${applyTo ? `?applyTo=${applyTo}` : ''}`
+    await signInWithOAuth('google', { redirectTo: callbackUrl })
   }
 
   return (
@@ -70,7 +89,7 @@ export default function RegisterPage() {
 
         {/* Name */}
         <Form.Item
-          label={<span className="font-medium text-gray-700">Name<span className="text-[#7F56D9]">*</span></span>}
+          label={<span className="font-medium text-gray-700">Name <span className="text-red-500">*</span></span>}
           validateStatus={errors.name ? 'error' : ''}
           help={errors.name?.message}
         >
@@ -90,7 +109,7 @@ export default function RegisterPage() {
 
         {/* Email */}
         <Form.Item
-          label={<span className="font-medium text-gray-700">Email<span className="text-[#7F56D9]">*</span></span>}
+          label={<span className="font-medium text-gray-700">Email <span className="text-red-500">*</span></span>}
           validateStatus={errors.email ? 'error' : ''}
           help={errors.email?.message}
         >
@@ -110,7 +129,7 @@ export default function RegisterPage() {
 
         {/* Password */}
         <Form.Item
-          label={<span className="font-medium text-gray-700">Password<span className="text-[#7F56D9]">*</span></span>}
+          label={<span className="font-medium text-gray-700">Password <span className="text-red-500">*</span></span>}
           validateStatus={errors.password ? 'error' : ''}
           help={errors.password?.message ?? (
             <span className="text-slate-400 text-[13px]">Must be at least 8 characters.</span>
@@ -158,7 +177,7 @@ export default function RegisterPage() {
       {/* Login link */}
       <p className="mt-6 text-center text-sm text-slate-500">
         Already have an account?{' '}
-        <Link href="/login" className="text-[#7F56D9] font-semibold">Log in</Link>
+        <Link href={`/login${applyTo ? `?applyTo=${applyTo}` : ''}`} className="text-[#7F56D9] font-semibold">Log in</Link>
       </p>
     </>
   )

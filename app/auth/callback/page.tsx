@@ -10,15 +10,19 @@ export default function AuthCallbackPage() {
 
   useEffect(() => {
     const handleAuth = async () => {
+      const searchParams = new URLSearchParams(window.location.search)
+      const applyTo = searchParams.get('applyTo')
+      
       const { data, error } = await supabase.auth.getSession()
       if (error) {
         console.error('Error in auth callback:', error.message)
-        router.push('/login')
+        router.push(`/login${applyTo ? `?applyTo=${applyTo}` : ''}`)
         return
       }
       
       if (data.session) {
-        router.push('/')
+        // Redirection with applyTo preserved
+        router.push(`/${applyTo ? `?applyTo=${applyTo}` : ''}`)
       } else {
         router.push('/login')
       }

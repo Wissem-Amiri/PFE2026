@@ -54,7 +54,8 @@ export default function LoginPage() {
     }
 
     const handleGoogleLogin = async () => {
-        await signInWithOAuth('google', { redirectTo: `${window.location.origin}/auth/callback` })
+        const callbackUrl = `${window.location.origin}/auth/callback${applyTo ? `?applyTo=${applyTo}` : ''}`
+        await signInWithOAuth('google', { redirectTo: callbackUrl })
     }
 
     return (
@@ -69,7 +70,7 @@ export default function LoginPage() {
             <Form layout="vertical" onFinish={handleSubmit(handleLogin)} requiredMark={false}>
                 {/* Email */}
                 <Form.Item
-                    label={<span className="font-medium text-gray-700">Email</span>}
+                    label={<span className="font-medium text-gray-700">Email <span className="text-red-500">*</span></span>}
                     validateStatus={errors.email ? 'error' : ''}
                     help={errors.email?.message}
                 >
@@ -84,7 +85,7 @@ export default function LoginPage() {
 
                 {/* Password */}
                 <Form.Item
-                    label={<span className="font-medium text-gray-700">Password</span>}
+                    label={<span className="font-medium text-gray-700">Password <span className="text-red-500">*</span></span>}
                     validateStatus={errors.password ? 'error' : ''}
                     help={errors.password?.message}
                 >
@@ -131,7 +132,7 @@ export default function LoginPage() {
             {/* Sign up link */}
             <p className="mt-6 text-center text-sm text-slate-500">
                 Don&apos;t have an account?{' '}
-                <Link href="/auth/register" className="text-[#7F56D9] font-semibold">Sign up</Link>
+                <Link href={`/auth/register${applyTo ? `?applyTo=${applyTo}` : ''}`} className="text-[#7F56D9] font-semibold">Sign up</Link>
             </p>
         </>
     )
