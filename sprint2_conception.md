@@ -100,65 +100,72 @@ Afin de détailler la dynamique du système, nous avons modélisé les scénario
 
 ### 3.1. Scénario : Soumettre une demande de congé
 
-Ce diagramme montre comment le système vérifie le solde avant d'enregistrer une nouvelle demande.
+**Diagramme de séquence détaillé du cas d'utilisation « Soumettre une demande de congé »**
+
+Pour la soumission d'une demande de congé, l'employé commence par accéder à l'interface dédiée (Interface Congé). Le système interroge d'abord la base de données (table `employee`) via le service de contrôle pour récupérer et afficher le solde de congés actuel de l'employé. Ensuite, l'employé saisit les détails de sa demande (date debut ,date fin , type de congé, motif) et valide le formulaire. Ces informations sont transmises au service pour vérification. Si le solde est insuffisant par rapport à la durée demandée, le système interrompt le processus et renvoie un message d'erreur. Si la vérification est réussie, le processus continue : la demande est insérée dans la base de données (table `conges`) avec le statut « En attente » (pending), et un message de confirmation est affiché à l'employé.
 
 ```mermaid
 sequenceDiagram
+    autonumber
     actor E as Employé
-    participant I as Interface Utilisateur
-    participant S as Système (Contrôleur)
-    participant B as Base de Données
+    participant I as <<Boundary>> Interface Congé
+    participant S as <<Control>> CongesService
+    participant EmpDB as <<Entity>> employee
+    participant B as <<Entity>> conges
 
-    E->>I: Accède au formulaire de congé
-    I->>S: Requête pour obtenir le solde actuel
-    S->>B: SELECT vacationBalance FROM Employe
-    B-->>S: Retourne le solde
+    E->>I: Accède au formulaire de demande
+    I->>S: getVacationBalance(employe_id)
+    S->>EmpDB: SELECT vacation_balance FROM employee
+    EmpDB-->>S: Retourne le solde
     S-->>I: Affiche le solde
     
-    E->>I: Remplit dates et type, clique "Soumettre"
-    I->>S: soumettreConge(données)
+    E->>I: Saisit les dates, type, raison et "Soumet"
+    I->>S: creerDemandeConge(...)
     
-    S->>S: Vérifie validité (dates, solde suffisant)
+    S->>S: Vérifie validité (dates, solde)
     
-    alt Solde insuffisant (si type = Vacances)
+    alt Solde insuffisant
         S-->>I: Erreur: Solde insuffisant
         I-->>E: Affiche message d'erreur
-    else Solde suffisant ou autre type
-        S->>B: INSERT DemandeConge (statut="En_attente")
+    else Validation réussie
+        S->>B: INSERT INTO conges (status='pending')
         B-->>S: Confirmation création
-        S-->>I: Succès
+        S-->>I: 201 Created
         I-->>E: Affiche "Demande soumise avec succès"
     end
 ```
 
 ### 3.2. Scénario : Gérer une demande de congé (Approbation)
 
-Ce diagramme illustre le processus de traitement par l'administrateur.
+**Diagramme de séquence détaillé du cas d'utilisation « Gérer une demande de congé »**
+
+Pour le traitement des demandes de congé, l'administrateur RH accède à l'interface de gestion (Interface Admin). Le système récupère automatiquement depuis la base de données (table `conges`) toutes les demandes ayant le statut « En attente » (pending) et les affiche sous forme de tableau. L'administrateur sélectionne ensuite une demande spécifique et décide de l'approuver. Le système met alors à jour le statut de la demande à « Approuvé » (approved) dans la base de données. Simultanément, une déduction est appliquée sur le solde de congés de l'employé (table `employee`) en soustrayant le nombre de jours pris. Une fois ces deux opérations enregistrées avec succès en base de données, une notification de confirmation est affichée à l'administrateur pour clôturer le processus.
 
 ```mermaid
 sequenceDiagram
+    autonumber
     actor A as Administrateur
-    participant I as Interface Admin
-    participant S as Système (Contrôleur)
-    participant B as Base de Données
+    participant I as <<Boundary>> Interface Admin
+    participant S as <<Control>> CongesService
+    participant B as <<Entity>> conges
+    participant EmpDB as <<Entity>> employee
 
     A->>I: Accède à la liste des demandes
-    I->>S: getDemandes(statut="En_attente")
-    S->>B: SELECT DemandeConge
+    I->>S: getDemandes(status='pending')
+    S->>B: SELECT * FROM conges WHERE status='pending'
     B-->>S: Liste des demandes
-    S-->>I: Affiche les demandes
+    S-->>I: Retourne la liste
+    I-->>A: Affiche le tableau des demandes
     
     A->>I: Sélectionne une demande et clique "Approuver"
     I->>S: approuverConge(id_demande)
     
-    S->>B: UPDATE DemandeConge SET statut="Approuvee"
+    S->>B: UPDATE conges SET status='approved'
+    B-->>S: Confirmation
     
-    opt Si type == Vacances
-        S->>B: UPDATE Employe SET vacationBalance -= joursPris
-    end
+    S->>EmpDB: UPDATE employee SET vacation_balance -= jours
+    EmpDB-->>S: Confirmation
     
-    B-->>S: Confirmation de mise à jour
     S-->>I: Succès de l'opération
-    I-->>A: Affiche "Demande approuvée"
-    S--)A: (Envoi Notification à l'employé concerné)
+    I-->>A: Notification "Demande approuvée"
 ```
