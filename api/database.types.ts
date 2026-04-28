@@ -11,16 +11,17 @@ export interface BaseUtilisateur {
   id: string
   user_name: string | null
   email: string | null
-  role: 'postulant' | 'employee' | 'admin'
+  role: 'candidat' | 'employee' | 'admin'
   status: 'pending' | 'approved' | 'rejected'
   phone: string | null
   avatar_url: string | null
+  is_archived: boolean
   created_at: string | null
 }
 
 export type Utilisateur = BaseUtilisateur;
 
-export interface Postulant {
+export interface Candidat {
   id: string
   bio: string | null
   country: string | null
@@ -42,7 +43,7 @@ export interface Employee {
   monthly_rate: number | null
   bio: string | null
   country: string | null
-  postulant_id: string | null
+  candidat_id: string | null
 }
 
 export interface Admin {
@@ -52,7 +53,7 @@ export interface Admin {
 
 /** Combined type for convenience in some views */
 export type FullProfile = BaseUtilisateur & {
-  postulant?: Postulant | null
+  candidat?: Candidat | null
   employee?: Employee | null
   admin?: Admin | null
 }
@@ -72,7 +73,7 @@ export interface Job {
 
 export interface Candidature {
   id: string
-  postulant_id: string
+  candidat_id: string
   job_id: string
   status: 'pending' | 'accepted' | 'rejected'
   is_archived: boolean
@@ -87,6 +88,7 @@ export interface Conge {
   end_date: string
   reason: string | null
   status: 'pending' | 'approved' | 'rejected'
+  rejection_reason?: string | null
   created_at: string
 }
 
@@ -99,10 +101,10 @@ export interface Database {
         Update: Partial<BaseUtilisateur>
         Relationships: []
       }
-      postulant: {
-        Row: Postulant
-        Insert: Partial<Postulant> & { id: string }
-        Update: Partial<Postulant>
+      candidat: {
+        Row: Candidat
+        Insert: Partial<Candidat> & { id: string }
+        Update: Partial<Candidat>
         Relationships: []
       }
       employee: {
@@ -137,7 +139,15 @@ export interface Database {
       }
     }
     Views: Record<string, any>
-    Functions: Record<string, any>
+    Functions: {
+      create_admin_notification: {
+        Args: {
+          p_title: string
+          p_message: string
+        }
+        Returns: void
+      }
+    }
     Enums: Record<string, any>
   }
 }

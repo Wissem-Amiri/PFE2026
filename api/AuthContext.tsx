@@ -127,7 +127,7 @@ export function useAuth() {
 export function getDashboardByRole(role: string | null | undefined): string {
   if (role === 'admin') return '/dashboard/admin'
   if (role === 'employee') return '/dashboard/employee'
-  return '/dashboard/postulant'
+  return '/dashboard/candidat'
 }
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -151,7 +151,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       const role = profile?.role || user.user_metadata?.role
       const dashboardPath = getDashboardByRole(role)
       
-      if (applyTo && (role === 'postulant' || !role)) {
+      if (applyTo && (role === 'candidat' || !role)) {
         router.push(`${dashboardPath}/profile?applyTo=${applyTo}`)
       } else {
         router.push(dashboardPath)

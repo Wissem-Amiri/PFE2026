@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/api/AuthContext'
-import { Table, Button, Modal, Form, Select, DatePicker, Input, Tag, message } from 'antd'
+import { Table, Button, Modal, Form, Select, DatePicker, Input, Tag, message, Tooltip } from 'antd'
 import { PlusOutlined, CalendarOutlined, InfoCircleOutlined } from '@ant-design/icons'
 import { getMyLeaves, requestLeave } from '@/api/conge'
 import type { Conge } from '@/api/database.types'
@@ -37,7 +37,7 @@ export default function EmployeeLeavesPage() {
     const [start, end] = dates
 
     const { error } = await requestLeave({
-      user_id: user.id,
+      employee_id: user.id,
       type,
       start_date: start.format('YYYY-MM-DD'),
       end_date: end.format('YYYY-MM-DD'),
@@ -79,14 +79,21 @@ export default function EmployeeLeavesPage() {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
-      render: (status: string) => {
+      render: (status: string, record: Conge) => {
         let color = 'gold'
         if (status === 'approved') color = 'green'
         if (status === 'rejected') color = 'red'
         return (
-          <Tag color={color} className="rounded-full px-3 py-0.5 font-bold uppercase text-[10px]">
-            {status}
-          </Tag>
+          <div className="flex items-center gap-2">
+            <Tag color={color} className="rounded-full px-3 py-0.5 font-bold uppercase text-[10px] m-0">
+              {status}
+            </Tag>
+            {status === 'rejected' && record.rejection_reason && (
+              <Tooltip title={`Motif : ${record.rejection_reason}`}>
+                <InfoCircleOutlined className="text-red-500 cursor-help" />
+              </Tooltip>
+            )}
+          </div>
         )
       },
     },

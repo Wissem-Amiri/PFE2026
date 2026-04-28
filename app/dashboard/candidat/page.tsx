@@ -11,7 +11,7 @@ import type { Job } from '@/api/database.types'
 
 const PAGE_SIZE = 8
 
-export default function PostulantJobsPage() {
+export default function CandidatJobsPage() {
   const { user } = useAuth()
   const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
@@ -46,7 +46,7 @@ export default function PostulantJobsPage() {
 
   const handleApplyClick = (jobId: string) => {
     if (!user) return messageApi.error("You must be logged in to apply.")
-    router.push(`/dashboard/postulant/profile?applyTo=${jobId}`)
+    router.push(`/dashboard/candidat/profile?applyTo=${jobId}`)
   }
 
   // Categories

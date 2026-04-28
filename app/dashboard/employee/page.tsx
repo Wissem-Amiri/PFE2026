@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { Button, Table, Tag, Avatar, Modal, Form, DatePicker, Select, Input, message } from 'antd'
 import { useAuth } from '@/api/AuthContext'
 import Link from 'next/link'
 import dayjs from 'dayjs'
@@ -14,31 +15,27 @@ import {
   HiOutlineInbox,
   HiOutlineScale
 } from 'react-icons/hi'
-import { Button, Table, Tag, Avatar, Modal, Form, DatePicker, Select, Input, message } from 'antd'
-import { getMyLeaves, requestLeave } from '@/api/conge'
+import { requestLeave } from '@/api/conge'
+import { useMyLeaves, queryKeys } from '@/api/hooks'
+import { useQueryClient } from '@tanstack/react-query'
 
 const { RangePicker } = DatePicker
 const { Option } = Select
 
 export default function EmployeeDashboardPage() {
+  const queryClient = useQueryClient()
   const { profile, user } = useAuth()
-  const [leaves, setLeaves] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const pageSize = 5
+  
+  const { data: result, isLoading: loading } = useMyLeaves(user?.id || '', { page: currentPage, pageSize })
+  const leaves = result?.data || []
+  const totalItems = result?.count || 0
   const [form] = Form.useForm()
   const [messageApi, contextHolder] = message.useMessage()
 
-  const loadLeaves = async () => {
-    if (user?.id) {
-      const { data } = await getMyLeaves(user.id)
-      setLeaves(data ?? [])
-    }
-    setLoading(false)
-  }
 
-  useEffect(() => {
-    loadLeaves()
-  }, [user?.id])
 
   const calculateDaysForType = (type: string) => {
     return leaves
@@ -71,7 +68,7 @@ export default function EmployeeDashboardPage() {
       messageApi.success("Leave request submitted successfully!")
       setIsModalOpen(false)
       form.resetFields()
-      loadLeaves()
+      queryClient.invalidateQueries({ queryKey: queryKeys.myLeaves })
     }
     setLoading(false)
   }
@@ -161,7 +158,6 @@ export default function EmployeeDashboardPage() {
               <div key={idx} className="bg-white p-6 rounded-[12px] border border-[#F2F4F7] shadow-sm flex flex-col gap-4 group hover:shadow-md transition-shadow">
                 <div className="flex justify-between items-center">
                   <span className="text-[12px] font-bold text-[#667085] uppercase tracking-widest">{stat.title}</span>
-                  <HiOutlineDotsVertical className="text-[#D0D5DD] cursor-pointer" />
                 </div>
                 <div className="flex justify-between items-end">
                   <span className="text-[36px] font-bold text-[#101828] leading-none">{stat.count}</span>
@@ -182,7 +178,14 @@ export default function EmployeeDashboardPage() {
               <Table
                 columns={columns}
                 dataSource={leaves}
-                pagination={false}
+                pagination={totalItems > pageSize ? {
+                  current: currentPage,
+                  pageSize: pageSize,
+                  total: totalItems,
+                  onChange: (page) => setCurrentPage(page),
+                  size: 'small',
+                  className: 'mt-4'
+                } : false}
                 loading={loading}
                 className="custom-table"
                 rowSelection={{ type: 'checkbox' }}

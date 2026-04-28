@@ -4,10 +4,10 @@ import { useEffect, useState } from 'react'
 import { SearchOutlined, TeamOutlined, MailOutlined, BankOutlined, UserOutlined } from '@ant-design/icons'
 import { Input, Avatar, Card, Tag, Spin } from 'antd'
 import { getAllUsers } from '@/api/profile'
-import type { Utilisateur } from '@/api/database.types'
+import type { FullProfile } from '@/api/database.types'
 
 export default function EmployeeListPage() {
-  const [employees, setEmployees] = useState<Utilisateur[]>([])
+  const [employees, setEmployees] = useState<FullProfile[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
 
@@ -25,8 +25,8 @@ export default function EmployeeListPage() {
 
   const filtered = employees.filter(e =>
     (e.user_name ?? '').toLowerCase().includes(search.toLowerCase()) ||
-    (e.department ?? '').toLowerCase().includes(search.toLowerCase()) ||
-    (e.position ?? '').toLowerCase().includes(search.toLowerCase())
+    (e.employee?.department ?? '').toLowerCase().includes(search.toLowerCase()) ||
+    (e.employee?.position ?? '').toLowerCase().includes(search.toLowerCase())
   )
 
   return (
@@ -80,13 +80,13 @@ export default function EmployeeListPage() {
                 {emp.user_name || 'Anonymous'}
               </h3>
               <p className="text-[#7c3aed] text-[13px] font-bold mb-3 uppercase tracking-wider">
-                {emp.position || 'Colleague'}
+                {emp.employee?.position || 'Colleague'}
               </p>
 
               <div className="space-y-2 w-full mt-auto pt-4 border-t border-slate-50">
                 <div className="flex items-center justify-center gap-2 text-[12px] text-[#475467]">
                   <BankOutlined className="text-[#98A2B3]" />
-                  <span className="font-medium">{emp.department || 'General'}</span>
+                  <span className="font-medium">{emp.employee?.department || 'General'}</span>
                 </div>
                 <div className="flex items-center justify-center gap-2 text-[12px] text-[#475467]">
                   <MailOutlined className="text-[#98A2B3]" />

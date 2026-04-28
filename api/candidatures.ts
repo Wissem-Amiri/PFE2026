@@ -2,22 +2,47 @@ import { supabase } from './supabase'
 import type { Candidature } from './database.types'
 
 /** Apply to a Job */
-export async function applyToJob(postulantId: string, jobId: string) {
+export async function applyToJob(candidatId: string, jobId: string) {
   const { data, error } = await supabase
     .from('candidatures')
-    .insert([{ postulant_id: postulantId, job_id: jobId }])
+    .insert([{ candidat_id: candidatId, job_id: jobId }])
     .select()
     .single()
   
+  if (!error && data) {
+    // 1. Fetch Candidate Name (Candidate has access to their own profile in utilisateur)
+    const { data: userData } = await supabase
+      .from('utilisateur')
+      .select('user_name')
+      .eq('id', candidatId)
+      .single()
+
+    // 2. Fetch Job Title (Jobs are public/readable by all authenticated)
+    const { data: jobData } = await supabase
+      .from('jobs')
+      .select('title')
+      .eq('id', jobId)
+      .single()
+
+    // 3. Send Notification to Admins via RPC
+    if (userData && jobData) {
+      // @ts-ignore - Database types might need a refresh to pick up the RPC
+      await supabase.rpc('create_admin_notification', {
+        p_title: 'Nouvelle candidature',
+        p_message: `${userData.user_name || 'Un candidat'} a postulé pour le poste de "${jobData.title}".`
+      })
+    }
+  }
+
   return { data: data as Candidature | null, error }
 }
 
 /** Check if user applied to a Job */
-export async function checkIfApplied(postulantId: string, jobId: string) {
+export async function checkIfApplied(candidatId: string, jobId: string) {
   const { data, error } = await supabase
     .from('candidatures')
     .select('id')
-    .eq('postulant_id', postulantId)
+    .eq('candidat_id', candidatId)
     .eq('job_id', jobId)
     .maybeSingle()
   
@@ -25,14 +50,14 @@ export async function checkIfApplied(postulantId: string, jobId: string) {
 }
 
 /** Get all candidatures for a user, including job details */
-export async function getUserCandidatures(postulantId: string) {
+export async function getUserCandidatures(candidatId: string) {
   const { data, error } = await supabase
     .from('candidatures')
     .select(`
       *,
       job:jobs(*)
     `)
-    .eq('postulant_id', postulantId)
+    .eq('candidat_id', candidatId)
     .order('applied_at', { ascending: false })
   
   return { data: data as any[], error }
@@ -44,7 +69,7 @@ export async function getJobApplications(jobId: string) {
     .from('candidatures')
     .select(`
       *,
-      postulant:postulant(
+      candidat:candidat(
         *,
         user:utilisateur(*)
       )
@@ -67,22 +92,73 @@ export async function updateCandidatureStatus(candidatureId: string, status: 'pe
   return { data: data as Candidature | null, error }
 }
 
-/** Get all candidatures with user and job info (Admin) */
-export async function getAllCandidaturesDetailed(showArchived: boolean = false) {
-  const { data, error } = await supabase
+/** Get all candidatures with user and job info (Admin) - Server Side Pagination & Filters */
+export async function getAllCandidaturesDetailed(params: {
+  page: number;
+  pageSize: number;
+  showArchived?: boolean;
+  status?: string;
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+}) {
+  const { 
+    page, 
+    pageSize, 
+    showArchived = false, 
+    status, 
+    search, 
+    startDate, 
+    endDate 
+  } = params;
+
+  let query = supabase
     .from('candidatures')
     .select(`
       *,
-      postulant:postulant(
+      candidat:candidat!inner(
         *,
-        user:utilisateur(*)
+        user:utilisateur!inner(*)
       ),
-      job:jobs(*)
-    `)
-    .eq('is_archived', showArchived)
+      job:jobs!inner(*)
+    `, { count: 'exact' })
+    .eq('is_archived', showArchived);
+
+  // Filter by Status
+  if (status && status !== 'All Status') {
+    query = query.eq('status', status.toLowerCase());
+  }
+
+  // Filter by Search (Name or Job Title)
+  if (search) {
+    query = query.or(`job.title.ilike.%${search}%,candidat.user.user_name.ilike.%${search}%`);
+  }
+
+  // Filter by Date Range
+  if (startDate) {
+    query = query.gte('applied_at', startDate);
+  }
+  if (endDate) {
+    query = query.lte('applied_at', endDate);
+  }
+
+  // Note: Search across joined tables (user_name, job_title) 
+  // is best handled via a View or RPC for performance,
+  // but for now we'll handle the basic filters server-side.
+  // If search is present, we might need a more complex query.
+
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  const { data, error, count } = await query
     .order('applied_at', { ascending: false })
+    .range(from, to);
   
-  return { data: data as any[], error }
+  return { 
+    data: data as any[], 
+    count: count || 0, 
+    error 
+  };
 }
 
 /** Get all ARCHIVED candidatures with user and job info (Admin) */
@@ -91,7 +167,7 @@ export async function getArchivedCandidaturesDetailed() {
     .from('candidatures')
     .select(`
       *,
-      postulant:postulant(
+      candidat:candidat(
         *,
         user:utilisateur(*)
       ),
@@ -134,11 +210,11 @@ export async function hardDeleteCandidatures(ids: string[]) {
 }
 
 /** Permanent delete all other candidatures for a user (Maintenance/Cleanup) */
-export async function deleteAllOtherCandidatures(postulantId: string, excludeCandidatureId: string) {
+export async function deleteAllOtherCandidatures(candidatId: string, excludeCandidatureId: string) {
   const { error } = await supabase
     .from('candidatures')
     .delete()
-    .eq('postulant_id', postulantId)
+    .eq('candidat_id', candidatId)
     .neq('id', excludeCandidatureId)
   
   return { error }

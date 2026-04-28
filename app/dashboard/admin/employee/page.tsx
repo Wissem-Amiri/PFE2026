@@ -2,38 +2,133 @@
 
 import { useEffect, useState } from 'react'
 import { SearchOutlined, TeamOutlined, MailOutlined, BankOutlined, UserOutlined, ArrowLeftOutlined } from '@ant-design/icons'
-import { Input, Avatar, Card, Tag, Spin, Button, Modal, InputNumber, message } from 'antd'
-import { getAllUsers } from '@/api/profile'
+import { Input, Avatar, Card, Tag, Spin, Button, Modal, InputNumber, message, DatePicker } from 'antd'
+import { deleteUser, getAllUsers, updateUserStatus, getProfile, createEmployeeAccount, archiveUsers, unarchiveUsers } from '@/api/profile'
 import { adjustEmployeeBalance } from '@/api/conge'
 import type { FullProfile } from '@/api/database.types'
 import { useRouter } from 'next/navigation'
 import { HiOutlineX, HiOutlineTrash } from 'react-icons/hi'
-import { deleteUser } from '@/api/profile'
+import { PlusOutlined } from '@ant-design/icons'
+import dayjs from 'dayjs'
+import { useEmployees, queryKeys } from '@/api/hooks'
+import { useQueryClient } from '@tanstack/react-query'
+import { HiOutlineChevronLeft, HiOutlineChevronRight, HiOutlineArchive, HiOutlineRefresh } from 'react-icons/hi'
 
 export default function AdminEmployeeListPage() {
-  const [employees, setEmployees] = useState<FullProfile[]>([])
-  const [loading, setLoading] = useState(true)
+  const queryClient = useQueryClient()
+  const router = useRouter()
+  const [currentPage, setCurrentPage] = useState(1)
   const [search, setSearch] = useState('')
   const [deptFilter, setDeptFilter] = useState('All Departments')
-  const router = useRouter()
+  const [showArchived, setShowArchived] = useState(false)
+  const pageSize = 12
+
+  const { data: result, isLoading: loading } = useEmployees({
+    page: currentPage,
+    pageSize,
+    search,
+    department: deptFilter,
+    showArchived
+  })
+
+  const employees = result?.data || []
+  const totalItems = result?.count || 0
+  const totalPages = Math.ceil(totalItems / pageSize)
+
   const [isAdjusting, setIsAdjusting] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [selectedEmployee, setSelectedEmployee] = useState<FullProfile | null>(null)
   const [focusedEmployeeId, setFocusedEmployeeId] = useState<string | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  
+  // States for Adding Employee
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [allUsers, setAllUsers] = useState<FullProfile[]>([])
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
+  const [isHiring, setIsHiring] = useState(false)
+  const [hiringForm, setHiringForm] = useState({
+    user_name: '',
+    email: '',
+    password: '',
+    hire_date: dayjs(),
+    department: 'IT',
+    position: '',
+    monthly_rate: 2.0
+  })
 
-  const fetchEmployees = async () => {
-    setLoading(true)
-    const { data } = await getAllUsers()
-    // Filter to only show approved employees
-    const employeeList = (data ?? []).filter(u => u.role === 'employee' && u.status === 'approved')
-    setEmployees(employeeList)
-    setLoading(false)
+  const refreshData = () => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.employees })
   }
 
   useEffect(() => {
-    fetchEmployees()
-  }, [])
+    setCurrentPage(1)
+  }, [search, deptFilter, showArchived])
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === employees.length && employees.length > 0) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(employees.map(e => e.id)))
+    }
+  }
+
+  const toggleSelectRow = (id: string) => {
+    const newSelected = new Set(selectedIds)
+    if (newSelected.has(id)) {
+      newSelected.delete(id)
+    } else {
+      newSelected.add(id)
+    }
+    setSelectedIds(newSelected)
+  }
+
+  const handleArchiveSelected = async () => {
+    if (selectedIds.size === 0) return
+    const ids = Array.from(selectedIds)
+    try {
+      if (showArchived) {
+        await unarchiveUsers(ids)
+        message.success(`${ids.length} employé(s) restauré(s)`)
+      } else {
+        await archiveUsers(ids)
+        message.success(`${ids.length} employé(s) archivé(s)`)
+      }
+      setSelectedIds(new Set())
+      refreshData()
+    } catch (error) {
+      message.error('Erreur lors de l\'archivage')
+    }
+  }
+
+  const handleDeleteSelected = async () => {
+    if (selectedIds.size === 0) return
+    
+    Modal.confirm({
+      title: 'Supprimer les employés ?',
+      content: `Êtes-vous sûr de vouloir supprimer définitivement ces ${selectedIds.size} employé(s) ? Cette action est irréversible.`,
+      okText: 'Supprimer',
+      okType: 'danger',
+      cancelText: 'Annuler',
+      centered: true,
+      onOk: async () => {
+        const ids = Array.from(selectedIds)
+        let successCount = 0
+        for (const id of ids) {
+          const { error } = await deleteUser(id)
+          if (!error) successCount++
+        }
+        
+        if (successCount > 0) {
+          message.success(`${successCount} employé(s) supprimé(s) avec succès`)
+          setSelectedIds(new Set())
+          refreshData()
+        } else {
+          message.error('Erreur lors de la suppression')
+        }
+      }
+    })
+  }
 
 
   const handleDeleteEmployee = async () => {
@@ -47,24 +142,52 @@ export default function AdminEmployeeListPage() {
       message.success('Employé supprimé avec succès')
       setIsDeleteModalOpen(false)
       setSelectedEmployee(null)
-      fetchEmployees()
+      refreshData()
     } else {
       message.error('Erreur lors de la suppression')
     }
   }
 
-  const departments = ['All Departments', ...Array.from(new Set(employees.map(e => e.employee?.department).filter(Boolean)))]
+  const handleAddEmployee = async () => {
+    if (!hiringForm.user_name || !hiringForm.email || !hiringForm.password) {
+      message.warning('Veuillez remplir les informations de base (Nom, Email, Password)')
+      return
+    }
+    if (!hiringForm.position) {
+      message.warning('Veuillez saisir un poste')
+      return
+    }
 
-  const filtered = employees.filter(e => {
-    const matchSearch = 
-      (e.user_name ?? '').toLowerCase().includes(search.toLowerCase()) ||
-      (e.employee?.department ?? '').toLowerCase().includes(search.toLowerCase()) ||
-      (e.employee?.position ?? '').toLowerCase().includes(search.toLowerCase())
+    setIsHiring(true)
     
-    const matchDept = deptFilter === 'All Departments' || e.employee?.department === deptFilter
+    // We use a dedicated function for creating a NEW employee account
+    const { error } = await createEmployeeAccount({
+      user_name: hiringForm.user_name,
+      email: hiringForm.email,
+      password: hiringForm.password,
+      hire_date: hiringForm.hire_date.format('YYYY-MM-DD'),
+      department: hiringForm.department,
+      position: hiringForm.position,
+      monthly_rate: hiringForm.monthly_rate
+    })
+    
+    setIsHiring(false)
 
-    return matchSearch && matchDept
-  })
+    if (!error) {
+      message.success('Employé créé avec succès')
+      setIsAddModalOpen(false)
+      setHiringForm({ 
+        user_name: '', email: '', password: '',
+        hire_date: dayjs(), department: 'IT', position: '', monthly_rate: 2.0 
+      })
+      refreshData()
+    } else {
+      message.error(error.message || 'Erreur lors de la création de l\'employé')
+    }
+  }
+
+  const departmentOptions = ['All Departments', 'IT', 'HR', 'Finance', 'Marketing', 'Operations'];
+  const filtered = employees;
 
   return (
     <div 
@@ -74,17 +197,16 @@ export default function AdminEmployeeListPage() {
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>
-           <div className="flex items-center gap-2 text-[#667085] mb-2 cursor-pointer hover:text-[#7c3aed] transition-colors" onClick={() => router.push('/dashboard/admin')}>
-              <ArrowLeftOutlined className="text-xs" />
+           <div className="flex items-center gap-2 text-[#64748b] mb-2 cursor-pointer hover:text-[#7c3aed] transition-colors" onClick={() => router.push('/dashboard/admin')}>
+              <ArrowLeftOutlined className="text-[10px]" />
               <span className="text-[12px] font-bold uppercase tracking-wider">Back to Dashboard</span>
            </div>
-           <h1 className="text-[26px] font-black text-[#101828] tracking-tight leading-none text-left">Active Employees</h1>
-           <p className="text-[14px] text-[#667085] font-medium mt-2 text-left">Manage and view all registered team members.</p>
+           <h1 className="text-[24px] font-bold text-[#0f172a] tracking-tight">Employees</h1>
         </div>
 
         <div className="flex items-center gap-[16px]">
-          <div className="flex items-center gap-[12px] px-[14px] py-[10px] border border-[#eaecf0] rounded-[12px] bg-white shadow-sm w-[360px] focus-within:ring-2 focus-within:ring-purple-100 transition-all">
-            <SearchOutlined className="text-[#667085]" />
+          <div className="flex items-center gap-[12px] px-[14px] py-[10px] border border-[#e2e8f0] rounded-[12px] bg-white shadow-sm w-[360px] focus-within:ring-2 focus-within:ring-purple-100 transition-all">
+            <SearchOutlined className="text-[#64748b]" />
             <input 
               placeholder="Search by name, position or department..." 
               value={search}
@@ -93,13 +215,13 @@ export default function AdminEmployeeListPage() {
             />
           </div>
 
-          <div className="relative w-[180px]">
+          <div className="relative w-[220px]">
             <select 
               value={deptFilter}
               onChange={e => setDeptFilter(e.target.value)}
-              className="w-full bg-white border border-[#eaecf0] rounded-[12px] px-[16px] py-[10px] text-[14px] font-semibold text-[#344054] appearance-none focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all cursor-pointer shadow-sm"
+              className="w-full bg-white border-[#eaecf0] rounded-[12px] px-[16px] py-[10px] text-[14px] font-semibold text-[#344054] appearance-none focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all cursor-pointer shadow-sm border"
             >
-              {departments.map(dept => (
+              {departmentOptions.map(dept => (
                 <option key={dept} value={dept}>{dept}</option>
               ))}
             </select>
@@ -109,8 +231,56 @@ export default function AdminEmployeeListPage() {
               </svg>
             </div>
           </div>
+
+          <button 
+            onClick={() => setShowArchived(!showArchived)}
+            className={`flex items-center gap-[8px] px-[17px] py-[9px] border rounded-[8px] text-[14px] font-semibold transition-all shadow-sm
+              ${showArchived ? 'bg-[#F9FAFB] text-[#7c3aed] border-[#ddd6fe]' : 'bg-white text-[#334155] border-[#e2e8f0] hover:bg-gray-50'}`}
+          >
+            {showArchived ? <HiOutlineRefresh className="text-[18px]" /> : <HiOutlineArchive className="text-[18px]" />}
+            {showArchived ? 'Active' : 'Archive'}
+          </button>
+
+          <button 
+            onClick={() => setIsAddModalOpen(true)}
+            className="flex items-center gap-[8px] px-[17px] py-[9px] rounded-[8px] bg-[#7c3aed] text-white text-[14px] font-semibold hover:bg-[#6d28d9] transition-all shadow-sm shadow-purple-100"
+          >
+            <PlusOutlined />
+            Ajouter Employé
+          </button>
         </div>
       </div>
+
+      {/* ── SELECTION BAR ── */}
+      {selectedIds.size > 0 && (
+        <div className="mb-6 p-[12px] bg-[#FFFBFA] border border-[#FDA29B] rounded-[12px] flex justify-between items-center animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="flex items-center gap-[12px]">
+            <span className="text-[14px] font-semibold text-[#B42318]">{selectedIds.size} employee(s) selected</span>
+            <button 
+              onClick={toggleSelectAll}
+              className="text-[14px] font-semibold text-[#7F56D9] bg-transparent border-0 cursor-pointer hover:underline"
+            >
+              {selectedIds.size === employees.length ? 'Deselect All' : 'Select All'}
+            </button>
+          </div>
+          <div className="flex gap-[8px]">
+            <button 
+              onClick={handleArchiveSelected}
+              className="h-[40px] px-[16px] rounded-[8px] border border-[#FDA29B] bg-white text-[#B42318] font-semibold flex items-center gap-[8px] hover:bg-[#FFF1F0] hover:border-[#F97066] transition-all cursor-pointer shadow-sm"
+            >
+              {showArchived ? <HiOutlineRefresh className="text-[18px]" /> : <HiOutlineArchive className="text-[18px]" />}
+              {showArchived ? 'Restore Selected' : 'Archive Selected'}
+            </button>
+            <button 
+              onClick={handleDeleteSelected}
+              className="h-[40px] px-[16px] rounded-[8px] border border-[#FDA29B] bg-[#FEF3F2] text-[#B42318] font-semibold flex items-center gap-[8px] hover:bg-[#FEE4E2] hover:border-[#F97066] transition-all cursor-pointer shadow-sm"
+            >
+              <HiOutlineTrash className="text-[18px]" />
+              Delete Selected
+            </button>
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <div className="flex flex-col items-center justify-center py-32 text-slate-400">
@@ -131,19 +301,34 @@ export default function AdminEmployeeListPage() {
             <div
               key={emp.id}
               onClick={(e) => {
-                e.stopPropagation()
-                setFocusedEmployeeId(emp.id)
+                e.stopPropagation();
+                setFocusedEmployeeId(emp.id);
               }}
               className={`bg-white rounded-2xl border p-6 shadow-sm transition-all group flex flex-col items-center text-center relative overflow-hidden cursor-pointer
-                ${focusedEmployeeId === emp.id ? 'border-[#7c3aed] shadow-xl' : 'border-[#E4E7EC] hover:shadow-lg'}`}
+                ${focusedEmployeeId === emp.id || selectedIds.has(emp.id) ? 'border-[#7c3aed] shadow-xl' : 'border-[#E4E7EC] hover:shadow-lg'}
+                ${selectedIds.has(emp.id) ? 'bg-purple-50/30' : ''}`}
             >
+              {/* Checkbox */}
+              <div className="absolute top-4 right-4 z-10">
+                <input 
+                  type="checkbox"
+                  checked={selectedIds.has(emp.id)}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    toggleSelectRow(emp.id);
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-5 h-5 rounded-md border-[#D0D5DD] checked:accent-[#7c3aed] cursor-pointer"
+                />
+              </div>
+
               <div className="absolute top-0 left-0 p-4">
                  {focusedEmployeeId === emp.id && (
                    <button 
                     onClick={(e) => {
-                      e.stopPropagation()
-                      setSelectedEmployee(emp)
-                      setIsDeleteModalOpen(true)
+                      e.stopPropagation();
+                      setSelectedEmployee(emp);
+                      setIsDeleteModalOpen(true);
                     }}
                     className="w-[28px] h-[28px] rounded-full bg-white border border-[#FEE2E2] text-[#F04438] flex items-center justify-center hover:bg-[#FEF3F2] transition-all shadow-sm animate-in fade-in zoom-in duration-200"
                    >
@@ -190,6 +375,43 @@ export default function AdminEmployeeListPage() {
         </div>
       )}
 
+      {/* ── PAGINATION ── */}
+      {totalItems > pageSize && (
+        <div className="mt-12 flex justify-between items-center bg-white border border-[#eaecf0] rounded-2xl p-4 shadow-sm">
+          <button
+            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+            className="flex items-center gap-2 px-4 py-2 border border-[#d0d5dd] rounded-xl text-[14px] font-semibold text-[#344054] hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            <HiOutlineChevronLeft className="text-lg" /> Previous
+          </button>
+
+          <div className="flex gap-2">
+            {Array.from({ length: totalPages }).map((_, i) => (
+              <button
+                key={i + 1}
+                onClick={() => setCurrentPage(i + 1)}
+                className={`w-10 h-10 rounded-xl text-[14px] font-semibold transition-all ${
+                  currentPage === i + 1
+                    ? 'bg-[#7c3aed] text-white shadow-lg shadow-purple-100'
+                    : 'text-[#667085] hover:bg-gray-50'
+                }`}
+              >
+                {i + 1}
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+            disabled={currentPage === totalPages}
+            className="flex items-center gap-2 px-4 py-2 border border-[#d0d5dd] rounded-xl text-[14px] font-semibold text-[#344054] hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            Next <HiOutlineChevronRight className="text-lg" />
+          </button>
+        </div>
+      )}
+
 
       {/* Delete Confirmation Modal */}
       <Modal
@@ -229,6 +451,138 @@ export default function AdminEmployeeListPage() {
         </div>
       </Modal>
 
+      {/* Add Employee Modal */}
+      <Modal
+        title={null}
+        open={isAddModalOpen}
+        onCancel={() => setIsAddModalOpen(false)}
+        footer={null}
+        centered
+        width={560}
+        className="add-employee-modal"
+      >
+        <div className="p-8">
+          <div className="mb-8">
+            <div className="w-[56px] h-[56px] rounded-2xl bg-[#f5f3ff] flex items-center justify-center mb-4 border border-[#ddd6fe]">
+               <TeamOutlined className="text-[#7c3aed] text-2xl" />
+            </div>
+            <h2 className="text-[24px] font-black text-[#101828] mb-1">Ajouter un employé</h2>
+            <p className="text-[#667085] text-[14px] font-medium">Promouvoir un utilisateur existant au rôle d'employé.</p>
+          </div>
+
+          <div className="space-y-5">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-2">
+                <label className="text-[14px] font-bold text-[#344054]">Nom Complet</label>
+                <Input 
+                  placeholder="Ex: Ahmed Ben Ali"
+                  value={hiringForm.user_name}
+                  onChange={e => setHiringForm({...hiringForm, user_name: e.target.value})}
+                  className="h-[48px] rounded-xl border-[#d0d5dd] font-medium"
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-[14px] font-bold text-[#344054]">Email</label>
+                <Input 
+                  type="email"
+                  placeholder="email@entreprise.com"
+                  value={hiringForm.email}
+                  onChange={e => setHiringForm({...hiringForm, email: e.target.value})}
+                  className="h-[48px] rounded-xl border-[#d0d5dd] font-medium"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-[14px] font-bold text-[#344054]">Mot de passe</label>
+              <Input.Password 
+                placeholder="********"
+                value={hiringForm.password}
+                onChange={e => setHiringForm({...hiringForm, password: e.target.value})}
+                className="h-[48px] rounded-xl border-[#d0d5dd] font-medium"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-2">
+                <label className="text-[14px] font-bold text-[#344054]">Département</label>
+                <select 
+                  value={hiringForm.department}
+                  onChange={e => setHiringForm({...hiringForm, department: e.target.value})}
+                  className="h-[48px] bg-white border border-[#d0d5dd] rounded-xl px-4 text-[14px] font-medium outline-none focus:ring-2 focus:ring-purple-100 transition-all cursor-pointer"
+                >
+                  <option value="IT">IT & Développement</option>
+                  <option value="HR">Ressources Humaines</option>
+                  <option value="Finance">Finance</option>
+                  <option value="Marketing">Marketing</option>
+                  <option value="Operations">Opérations</option>
+                </select>
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-[14px] font-bold text-[#344054]">Poste</label>
+                <Input 
+                  placeholder="Ex: Senior Dev"
+                  value={hiringForm.position}
+                  onChange={e => setHiringForm({...hiringForm, position: e.target.value})}
+                  className="h-[48px] rounded-xl border-[#d0d5dd] font-medium"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-2">
+                <label className="text-[14px] font-bold text-[#344054]">Date d'embauche</label>
+                <DatePicker 
+                  className="h-[48px] rounded-xl border-[#d0d5dd] w-full"
+                  value={hiringForm.hire_date}
+                  onChange={val => setHiringForm({...hiringForm, hire_date: val as any})}
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-[14px] font-bold text-[#344054]">Taux Mensuel (Congés)</label>
+                <InputNumber 
+                  step={0.1}
+                  min={0}
+                  className="h-[48px] rounded-xl border-[#d0d5dd] w-full flex items-center"
+                  value={hiringForm.monthly_rate}
+                  onChange={val => setHiringForm({...hiringForm, monthly_rate: val || 2.0})}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-6">
+              <Button 
+                onClick={() => setIsAddModalOpen(false)}
+                className="flex-1 h-[48px] rounded-xl border-[#d0d5dd] font-bold text-[#344054] hover:bg-gray-50"
+              >
+                Annuler
+              </Button>
+              <Button 
+                type="primary"
+                loading={isHiring}
+                onClick={handleAddEmployee}
+                className="flex-1 h-[48px] rounded-xl bg-[#7c3aed] hover:bg-[#6d28d9] border-none font-bold text-white shadow-lg shadow-purple-100"
+              >
+                Confirmer l'ajout
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      <style jsx global>{`
+        .add-employee-modal .ant-modal-content {
+          border-radius: 24px !important;
+          padding: 0 !important;
+          overflow: hidden;
+        }
+        .ant-input-number-input-wrap {
+          height: 100% !important;
+          display: flex !important;
+          align-items: center !important;
+        }
+      `}</style>
+
       <style jsx global>{`
         .delete-modal .ant-modal-content {
           border-radius: 24px !important;
@@ -244,5 +598,5 @@ export default function AdminEmployeeListPage() {
         }
       `}</style>
     </div>
-  )
+  );
 }

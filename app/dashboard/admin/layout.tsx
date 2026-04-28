@@ -14,6 +14,7 @@ import {
   HiOutlineLogout
 } from 'react-icons/hi'
 import { Avatar } from 'antd'
+import NotificationBell from '../../../components/NotificationBell'
 
 import { useLeaves, useCandidatures } from '@/api/hooks'
 
@@ -90,19 +91,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </nav>
 
         {/* Sidebar Footer */}
-        <div className="pb-[32px] px-[16px] flex flex-col gap-[24px]">
-          <div className="flex flex-col gap-[4px]">
+        <div className="pb-[32px] px-[16px] flex flex-col gap-[8px]">
+          
+          <div className="flex items-center justify-between pr-[8px]">
              <Link 
                href="/dashboard/admin/settings?tab=account"
-               className="flex items-center gap-[12px] px-[12px] py-[10px] rounded-[6px] text-[16px] font-medium text-[#667085] hover:bg-[#f9fafb] cursor-pointer no-underline" 
+               className="flex-1 flex items-center gap-[12px] px-[12px] py-[10px] rounded-[6px] text-[16px] font-medium text-[#667085] hover:bg-[#f9fafb] cursor-pointer no-underline" 
              >
               <HiOutlineCog className="w-[24px] h-[24px] text-[#667085]" />
               Settings
             </Link>
+            <NotificationBell />
           </div>
 
-          <div className="h-px bg-[#eaecf0] w-full" />
+          <div className="h-px bg-[#eaecf0] w-full my-2" />
 
+          {/* User Profile Row */}
           <div className="flex items-center justify-between px-[8px]">
             <div className="flex items-center gap-[12px] overflow-hidden">
               <Avatar

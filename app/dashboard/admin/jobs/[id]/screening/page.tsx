@@ -93,23 +93,23 @@ export default function AIScreeningPage() {
         .from('jobs').select('*').eq('id', jobId).single()
       if (jobData) setJob(jobData as Job)
 
-      // 2. Load applications with full postulant data
+      // 2. Load applications with full candidat data
       const { data: apps } = await getJobApplications(jobId)
 
       if (apps && jobData) {
         const mapped: Candidate[] = apps.map((app: any) => {
-          // Real data structure: app.postulant.user (from candidatures API)
-          const postulant = app.postulant || {}
-          const user = postulant.user || {}
-          const experiences = postulant.experiences || []
+          // Real data structure: app.candidat.user (from candidatures API)
+          const candidat = app.candidat || {}
+          const user = candidat.user || {}
+          const experiences = candidat.experiences || []
 
           const scored = scoreCandidate(
             {
-              bio: postulant.bio,
-              position: postulant.position,
+              bio: candidat.bio,
+              position: candidat.position,
               experiences,
-              portfolio: postulant.portfolio,
-              resume_url: postulant.resume_url,
+              portfolio: candidat.portfolio,
+              resume_url: candidat.resume_url,
             },
             {
               title: jobData.title,

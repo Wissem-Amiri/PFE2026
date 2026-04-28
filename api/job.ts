@@ -1,13 +1,31 @@
 import { supabase } from './supabase'
 import type { Database, Job } from './database.types'
 
-export async function getAllJobs() {
-  const { data, error } = await supabase
+export async function getAllJobs(params?: {
+  page: number;
+  pageSize: number;
+  search?: string;
+}) {
+  let query = supabase
     .from('jobs')
-    .select('*')
-    .order('created_at', { ascending: false })
+    .select('*', { count: 'exact' });
 
-  return { data: data as Job[] | null, error }
+  if (params) {
+    const { page, pageSize, search } = params;
+    
+    if (search) {
+      query = query.ilike('title', `%${search}%`);
+    }
+
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+    query = query.range(from, to);
+  }
+
+  const { data, error, count } = await query
+    .order('created_at', { ascending: false });
+
+  return { data: data as Job[] | null, count: count || 0, error };
 }
 
 export async function getJobById(id: string) {

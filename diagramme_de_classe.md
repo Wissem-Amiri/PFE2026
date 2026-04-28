@@ -25,6 +25,7 @@ classDiagram
     }
 
     class Admin {
+        +ajouterEmployee(e: Employe) Boolean
         +rechercherEmployee(critere: String) List~Employe~
         +modifierEmployee(e: Employe) Boolean
         +supprimerEmployee(e: Employe) Boolean
@@ -62,6 +63,7 @@ Spécialisation de l'utilisateur. Il possède des attributs spécifiques à son 
 
 ### 3. Admin
 Spécialisation de l'utilisateur avec des privilèges élevés. Il est responsable des opérations CRUD sur les employés :
+- **ajouterEmployee** : Permet de créer un nouveau profil employé et son compte utilisateur associé.
 - **rechercherEmployee** : Permet de trouver un employé selon certains critères.
 - **modifierEmployee** : Permet de mettre à jour les informations d'un employé.
 - **supprimerEmployee** : Permet de retirer un employé du système.

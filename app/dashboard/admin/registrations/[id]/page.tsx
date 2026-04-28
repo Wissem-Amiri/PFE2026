@@ -83,7 +83,7 @@ export default function RegistrationDetailPage() {
       <div className="flex flex-col gap-[8px]">
         <h2 className="text-[18px] font-semibold text-[#101828] m-0">Experience</h2>
         <p className="text-[14px] text-[#475467] m-0">
-          {user.postulant?.position ? `I specialise in ${user.postulant.position}.` : 'I specialize in UX/UI design, brand strategy, and Webflow development.'}
+          {user.candidat?.position ? `I specialise in ${user.candidat.position}.` : 'I specialize in UX/UI design, brand strategy, and Webflow development.'}
         </p>
       </div>
 
@@ -95,14 +95,14 @@ export default function RegistrationDetailPage() {
         <div className="flex-1 flex flex-col gap-[16px]">
           <h2 className="text-[18px] font-semibold text-[#101828] m-0">About me</h2>
           <div className="text-[14px] text-[#475467] leading-[24px]">
-            {user.postulant?.bio ? (
+            {user.candidat?.bio ? (
               <div className="flex flex-col gap-[12px]">
                 <p className="m-0 whitespace-pre-wrap">
-                  {isBioExpanded || user.postulant.bio.length <= 250
-                    ? user.postulant.bio
-                    : `${user.postulant.bio.substring(0, 250)}...`}
+                  {isBioExpanded || user.candidat.bio.length <= 250
+                    ? user.candidat.bio
+                    : `${user.candidat.bio.substring(0, 250)}...`}
                 </p>
-                {user.postulant.bio.length > 250 && (
+                {user.candidat.bio.length > 250 && (
                   <button
                     onClick={() => setIsBioExpanded(!isBioExpanded)}
                     className="text-[#7F56D9] font-medium text-[14px] bg-transparent border-none p-0 cursor-pointer hover:underline self-start"
@@ -123,7 +123,7 @@ export default function RegistrationDetailPage() {
               <span className="text-[12px] font-medium text-[#667085]">Location</span>
               <div className="flex items-center gap-[8px] text-[14px] font-medium text-[#101828]">
                 <GlobalOutlined className="text-[#667085]" />
-                {user.postulant?.country || 'Remote'}
+                {user.candidat?.country || 'Remote'}
               </div>
            </div>
            <div className="w-1/2 flex flex-col gap-[8px]">
@@ -133,18 +133,18 @@ export default function RegistrationDetailPage() {
                 {user.email}
               </div>
            </div>
-           {user.postulant?.website && (
+           {user.candidat?.website && (
              <div className="w-1/2 flex flex-col gap-[8px]">
                 <span className="text-[12px] font-medium text-[#667085]">Website</span>
-                <a href={user.postulant.website} target="_blank" rel="noreferrer" className="text-[14px] font-medium text-[#7F56D9] hover:underline flex items-center gap-[6px]">
-                  <LinkOutlined /> {new URL(user.postulant.website).hostname}
+                <a href={user.candidat.website} target="_blank" rel="noreferrer" className="text-[14px] font-medium text-[#7F56D9] hover:underline flex items-center gap-[6px]">
+                  <LinkOutlined /> {new URL(user.candidat.website).hostname}
                 </a>
              </div>
            )}
-           {user.postulant?.portfolio && (
+           {user.candidat?.portfolio && (
              <div className="w-1/2 flex flex-col gap-[8px]">
                 <span className="text-[12px] font-medium text-[#667085]">Portfolio</span>
-                <a href={user.postulant.portfolio} target="_blank" rel="noreferrer" className="text-[14px] font-medium text-[#7F56D9] hover:underline flex items-center gap-[6px]">
+                <a href={user.candidat.portfolio} target="_blank" rel="noreferrer" className="text-[14px] font-medium text-[#7F56D9] hover:underline flex items-center gap-[6px]">
                   <FileTextOutlined /> Portfolio ↗
                 </a>
              </div>
@@ -161,7 +161,7 @@ export default function RegistrationDetailPage() {
            {/* Motivational Letter */}
            <div className="flex-1 flex flex-col gap-[12px]">
               <span className="text-[14px] font-medium text-[#344054]">Motivational letter</span>
-              {user.postulant?.motivational_letter_url ? (
+              {user.candidat?.motivational_letter_url ? (
                 <div className="p-[16px] rounded-[12px] border border-[#EAECF0] bg-white flex items-center justify-between hover:border-[#7F56D9] transition-colors shadow-sm">
                   <div className="flex gap-[12px] items-center">
                     <div className="w-[40px] h-[40px] rounded-full bg-[#F9F5FF] flex items-center justify-center text-[#7F56D9]">
@@ -172,7 +172,7 @@ export default function RegistrationDetailPage() {
                       <div className="text-[12px] text-[#667085]">PDF • 1.2 MB</div>
                     </div>
                   </div>
-                  <a href={user.postulant.motivational_letter_url} target="_blank" rel="noreferrer" className="text-[#7F56D9] font-medium text-[14px] hover:underline">View file</a>
+                  <a href={user.candidat.motivational_letter_url} target="_blank" rel="noreferrer" className="text-[#7F56D9] font-medium text-[14px] hover:underline">View file</a>
                 </div>
               ) : (
                 <div className="p-[16px] rounded-[12px] border border-dashed border-[#EAECF0] bg-[#F9FAFB] text-center text-[#667085] text-[14px]">No letter uploaded</div>
@@ -182,7 +182,7 @@ export default function RegistrationDetailPage() {
            {/* Resume */}
            <div className="flex-1 flex flex-col gap-[12px]">
               <span className="text-[14px] font-medium text-[#344054]">Resume</span>
-              {user.postulant?.resume_url ? (
+              {user.candidat?.resume_url ? (
                 <div className="p-[16px] rounded-[12px] border border-[#EAECF0] bg-white flex items-center justify-between hover:border-[#7F56D9] transition-colors shadow-sm">
                   <div className="flex gap-[12px] items-center">
                     <div className="w-[40px] h-[40px] rounded-full bg-[#F9F5FF] flex items-center justify-center text-[#7F56D9]">
@@ -193,7 +193,7 @@ export default function RegistrationDetailPage() {
                       <div className="text-[12px] text-[#667085]">PDF • 2.4 MB</div>
                     </div>
                   </div>
-                  <a href={user.postulant.resume_url} target="_blank" rel="noreferrer" className="text-[#7F56D9] font-medium text-[14px] hover:underline">View file</a>
+                  <a href={user.candidat.resume_url} target="_blank" rel="noreferrer" className="text-[#7F56D9] font-medium text-[14px] hover:underline">View file</a>
                 </div>
               ) : (
                 <div className="p-[16px] rounded-[12px] border border-dashed border-[#EAECF0] bg-[#F9FAFB] text-center text-[#667085] text-[14px]">No resume uploaded</div>
@@ -205,13 +205,13 @@ export default function RegistrationDetailPage() {
       {/* Experience Cards */}
       <div className="flex flex-col gap-[16px]">
         <h2 className="text-[18px] font-semibold text-[#101828] m-0">Experience Timeline</h2>
-        {(!user.postulant?.experiences || user.postulant.experiences.length === 0) ? (
+        {(!user.candidat?.experiences || user.candidat.experiences.length === 0) ? (
           <div className="p-[48px] rounded-[12px] border border-dashed border-[#EAECF0] bg-[#F9FAFB] text-center text-[#667085]">
             No experience history provided.
           </div>
         ) : (
           <div className="flex flex-wrap gap-[16px]">
-            {user.postulant.experiences.map((exp: any, i: number) => (
+            {user.candidat.experiences.map((exp: any, i: number) => (
               <div key={i} className="w-full md:w-[calc(33.33%-11px)] p-[24px] rounded-[12px] border border-[#EAECF0] bg-white shadow-sm flex flex-col justify-between h-[200px] hover:shadow-md transition-shadow">
                 <div>
                   <h3 className="text-[16px] font-semibold text-[#101828] m-0">{exp.title}</h3>
@@ -276,7 +276,7 @@ export default function RegistrationDetailPage() {
         </button>
         <div className="flex gap-[12px]">
            <button 
-             onClick={() => user.postulant?.resume_url && window.open(user.postulant.resume_url)}
+             onClick={() => user.candidat?.resume_url && window.open(user.candidat.resume_url)}
              className="h-[44px] px-[18px] rounded-[8px] bg-[#7F56D9] text-white font-medium text-[14px] flex items-center gap-[8px] cursor-pointer hover:bg-[#6941C6] transition-colors border-none shadow-sm"
            >
              View portfolio

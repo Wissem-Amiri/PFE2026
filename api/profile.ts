@@ -18,7 +18,7 @@ export async function getProfile(userId: string) {
     .from('utilisateur')
     .select(`
       *,
-      postulant(*),
+      candidat(*),
       employee(*),
       admin(*)
     `)
@@ -28,9 +28,12 @@ export async function getProfile(userId: string) {
   return { data: data as FullProfile | null, error }
 }
 
-/** Update user profile. Updates either base utilisateur or child table based on what is provided */
-export async function updateProfile(userId: string, updates: Partial<FullProfile>) {
-  const { postulant, employee, admin, ...baseUpdates } = updates
+export async function updateProfile(userId: string, updates: Partial<BaseUtilisateur> & {
+  candidat?: Partial<Candidat> | null,
+  employee?: Partial<Employee> | null,
+  admin?: Partial<Admin> | null
+}) {
+  const { candidat, employee, admin, ...baseUpdates } = updates
 
   // 1. Update Base utilisateur if there are base fields
   if (Object.keys(baseUpdates).length > 0) {
@@ -43,8 +46,8 @@ export async function updateProfile(userId: string, updates: Partial<FullProfile
   }
 
   // 2. Update Role-specific tables
-  if (postulant) {
-    const { error: pError } = await supabase.from('postulant').upsert({ id: userId, ...postulant })
+  if (candidat) {
+    const { error: pError } = await supabase.from('candidat').upsert({ id: userId, ...candidat })
     if (pError) return { data: null, error: pError }
   }
   
@@ -61,18 +64,75 @@ export async function updateProfile(userId: string, updates: Partial<FullProfile
   return getProfile(userId)
 }
 
-/** Get all users (Admin view) - base info + essential employee/postulant fields */
+/** Get all users (Admin view) - base info + essential employee/candidat fields */
 export async function getAllUsers() {
   const { data, error } = await supabase
     .from('utilisateur')
     .select(`
       *,
-      postulant(id, country),
+      candidat(id, country),
       employee(id, department, position, hire_date, vacation_balance, monthly_rate)
     `)
     .order('created_at', { ascending: false })
   
   return { data: data as FullProfile[], error }
+}
+
+/** Get employees with pagination and filters (Admin) */
+export async function getEmployeesPaginated(params: {
+  page: number;
+  pageSize: number;
+  search?: string;
+  department?: string;
+  showArchived?: boolean;
+}) {
+  const { page, pageSize, search, department, showArchived = false } = params;
+
+  let query = supabase
+    .from('utilisateur')
+    .select(`
+      *,
+      candidat(id, country),
+      employee!inner(id, department, position, hire_date, vacation_balance, monthly_rate)
+    `, { count: 'exact' })
+    .eq('role', 'employee')
+    .eq('status', 'approved')
+    .eq('is_archived', showArchived);
+
+  if (department && department !== 'All Departments') {
+    query = query.eq('employee.department', department);
+  }
+
+  if (search) {
+    query = query.or(`user_name.ilike.%${search}%,email.ilike.%${search}%`);
+  }
+
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  const { data, error, count } = await query
+    .order('created_at', { ascending: false })
+    .range(from, to);
+
+  return { data: data as FullProfile[], count: count || 0, error };
+}
+
+export async function archiveUsers(ids: string[]) {
+  const { data, error } = await supabase
+    .from('utilisateur')
+    .update({ is_archived: true })
+    .in('id', ids)
+    .select()
+  return { data, error }
+}
+
+export async function unarchiveUsers(ids: string[]) {
+  const { data, error } = await supabase
+    .from('utilisateur')
+    .update({ is_archived: false })
+    .in('id', ids)
+    .select()
+  return { data, error }
 }
 
 /** Update user status + role transition (Admin action) */
@@ -102,9 +162,9 @@ export async function updateUserStatus(
       hire_date: hiringDetails?.hire_date || new Date().toISOString().split('T')[0],
       department: hiringDetails?.department || 'General',
       position: hiringDetails?.position || 'Employee',
-      monthly_rate: hiringDetails?.monthly_rate || 0,
+      monthly_rate: Number(hiringDetails?.monthly_rate) || 0,
       vacation_balance: 0, // Will be accumulated monthly by the cron job (with prorata)
-      postulant_id: userId // link back to its postulant self
+      candidat_id: hiringDetails?.candidat_id || null // link back to its candidat self if exists
     }
 
     const { error: empError } = await supabase
@@ -215,4 +275,39 @@ export function downloadCSV(csvContent: string, fileName: string) {
     link.click()
     document.body.removeChild(link)
   }
+}
+/**
+ * Admin creates a brand new employee account from scratch.
+ * Note: In a production environment, this should trigger an Edge Function 
+ * to securely create the Auth user without logging out the Admin.
+ */
+export async function createEmployeeAccount(data: {
+  user_name: string
+  email: string
+  password?: string
+  hire_date: string
+  department: string
+  position: string
+  monthly_rate: number
+}) {
+  console.log('🚀 Calling admin_create_employee RPC with:', data)
+  
+  // @ts-ignore - The RPC function exists in DB but is not yet in generated types
+  const { data: result, error } = await supabase.rpc('admin_create_employee', {
+    email_input: data.email,
+    password_input: data.password || 'TemporaryPassword123!',
+    name_input: data.user_name,
+    dept_input: data.department,
+    pos_input: data.position,
+    date_input: data.hire_date,
+    rate_input: data.monthly_rate
+  })
+
+  if (error) {
+    console.error('❌ RPC Error:', error)
+    return { data: null, error }
+  }
+
+  console.log('✅ RPC Success:', result)
+  return { data: result, error: null }
 }

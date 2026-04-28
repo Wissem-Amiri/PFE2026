@@ -12,7 +12,7 @@ import {
 } from '@ant-design/icons'
 import Link from 'next/link'
 
-export default function PostulantSettingsPage() {
+export default function CandidatSettingsPage() {
   const { user, signout } = useAuth()
   const [messageApi, contextHolder] = message.useMessage()
 

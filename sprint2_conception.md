@@ -19,11 +19,13 @@ usecaseDiagram
         usecase "Gérer les demandes de congés" as UC3
         usecase "Approuver une demande" as UC4
         usecase "Rejeter une demande" as UC5
+        usecase "Consulter les notifications" as UC6
     }
 
     %% Relations Acteurs -> Cas d'utilisation
     emp --> UC1
     emp --> UC2
+    emp --> UC6
     
     %% L'Admin hérite des droits de l'employé (il peut donc demander des congés)
     admin --|> emp
@@ -78,6 +80,14 @@ classDiagram
         +dateDemande: datetime
     }
 
+    class Notification {
+        +id: UUID
+        +titre: string
+        +message: string
+        +is_read: boolean
+        +date_creation: datetime
+    }
+
     %% Héritage
     Utilisateur <|-- Employe
     Employe <|-- Administrateur 
@@ -85,6 +95,7 @@ classDiagram
     %% Associations
     Employe "1" --> "0..*" DemandeConge : soumet
     Administrateur "1" --> "0..*" DemandeConge : gère/traite
+    Utilisateur "1" --> "0..*" Notification : reçoit
 ```
 
 **Justification de la conception :**
@@ -139,7 +150,7 @@ sequenceDiagram
 
 **Diagramme de séquence détaillé du cas d'utilisation « Gérer une demande de congé »**
 
-Pour le traitement des demandes de congé, l'administrateur RH accède à l'interface de gestion (Interface Admin). Le système récupère automatiquement depuis la base de données (table `conges`) toutes les demandes ayant le statut « En attente » (pending) et les affiche sous forme de tableau. L'administrateur sélectionne ensuite une demande spécifique et décide de l'approuver. Le système met alors à jour le statut de la demande à « Approuvé » (approved) dans la base de données. Simultanément, une déduction est appliquée sur le solde de congés de l'employé (table `employee`) en soustrayant le nombre de jours pris. Une fois ces deux opérations enregistrées avec succès en base de données, une notification de confirmation est affichée à l'administrateur pour clôturer le processus.
+Pour le traitement des demandes de congé, l'administrateur RH accède à l'interface de gestion (Interface Admin). Le système récupère automatiquement depuis la base de données (table `conges`) toutes les demandes ayant le statut « En attente » (pending) et les affiche sous forme de tableau. L'administrateur sélectionne ensuite une demande spécifique et décide de l'approuver. Le système met alors à jour le statut de la demande à « Approuvé » (approved) dans la base de données. Simultanément, une déduction est appliquée sur le solde de congés de l'employé (table `employee`) et une notification In-App est générée dans la table `notifications` pour alerter l'employé. Une fois ces opérations enregistrées avec succès en base de données, une notification de confirmation est affichée à l'administrateur pour clôturer le processus.
 
 ```mermaid
 sequenceDiagram
@@ -149,6 +160,7 @@ sequenceDiagram
     participant S as <<Control>> CongesService
     participant B as <<Entity>> conges
     participant EmpDB as <<Entity>> employee
+    participant NotifDB as <<Entity>> notifications
 
     A->>I: Accède à la liste des demandes
     I->>S: getDemandes(status='pending')
@@ -166,6 +178,38 @@ sequenceDiagram
     S->>EmpDB: UPDATE employee SET vacation_balance -= jours
     EmpDB-->>S: Confirmation
     
+    S->>NotifDB: INSERT INTO notifications (user_id, message)
+    NotifDB-->>S: Confirmation création
+    
     S-->>I: Succès de l'opération
     I-->>A: Notification "Demande approuvée"
+```
+
+### 3.3. Scénario : Consulter les notifications In-App
+
+**Diagramme de séquence détaillé du cas d'utilisation « Consulter les notifications »**
+
+Pour être tenu au courant de l'état de ses demandes, l'employé clique sur l'icône de cloche (Alerte) située en haut de son interface. Le système interroge immédiatement la table `notifications` pour récupérer tous les messages non lus associés à cet utilisateur. Une fois la liste retournée et affichée dans un menu déroulant, l'employé clique sur une notification pour la lire. Le système déclenche alors une mise à jour en base de données pour marquer cette notification comme lue (`is_read = true`), afin qu'elle disparaisse du compteur des nouvelles alertes.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor E as Employé
+    participant I as <<Boundary>> Interface Dashboard (Cloche)
+    participant S as <<Control>> NotificationService
+    participant NotifDB as <<Entity>> notifications
+
+    E->>I: Clique sur l'icône "Cloche"
+    I->>S: getUnreadNotifications(employe_id)
+    S->>NotifDB: SELECT * FROM notifications WHERE user_id = X AND is_read = false
+    NotifDB-->>S: Liste des notifications
+    S-->>I: Retourne la liste
+    I-->>E: Affiche le menu déroulant avec les alertes
+    
+    E->>I: Clique sur une notification pour la lire
+    I->>S: markAsRead(notification_id)
+    S->>NotifDB: UPDATE notifications SET is_read = true
+    NotifDB-->>S: Confirmation
+    S-->>I: Succès
+    I-->>E: Décrémente le compteur de la cloche
 ```

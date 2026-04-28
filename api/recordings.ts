@@ -1,7 +1,13 @@
 import { supabase } from './supabase'
 
-export async function getAllRecordings() {
-  const { data, error } = await supabase
+export async function getAllRecordings(params: {
+  page: number;
+  pageSize: number;
+  search?: string;
+}) {
+  const { page, pageSize, search } = params;
+
+  let query = supabase
     .from('recordings')
     .select(`
       *,
@@ -10,9 +16,22 @@ export async function getAllRecordings() {
         email,
         avatar_url
       )
-    `)
+    `, { count: 'exact' });
+
+  // Basic search if needed
+  if (search) {
+    // Search on title if it exists, or just return all
+    // query = query.ilike('title', `%${search}%`);
+  }
+
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  const { data, error, count } = await query
     .order('created_at', { ascending: false })
-  return { data, error }
+    .range(from, to);
+    
+  return { data, count: count || 0, error };
 }
 
 export async function uploadRecording(recording: any) {

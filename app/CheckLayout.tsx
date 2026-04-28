@@ -100,9 +100,7 @@ export default function CheckLayout({ children }: CheckLayoutProps) {
                     <p className={`m-0 font-semibold text-[14px] leading-tight ${status === 'active' ? 'text-[#7c3aed]' : status === 'done' ? 'text-[#344054]' : 'text-[#667085]'}`}>
                       {step.label}
                     </p>
-                    <p className={`m-0 text-[12px] mt-1 ${status === 'active' ? 'text-[#a78bfa]' : 'text-[#98a2b3]'}`}>
-                      {idx === 0 ? 'Lorem Ipsum Lorem Ipsum' : idx === 1 ? 'Lorem Ipsum Lorem' : 'Start collaborating with your team'}
-                    </p>
+
                   </div>
                 </div>
               )
@@ -110,10 +108,7 @@ export default function CheckLayout({ children }: CheckLayoutProps) {
           </div>
 
           <div className="flex-1" />
-          <div className="text-[11px] text-[#98a2b3] flex flex-row justify-between items-center w-full mt-8">
-            <span>© SoftyEducation</span>
-            <span>✉ help@SoftyEducation.com</span>
-          </div>
+
         </aside>
 
         {/* ── MAIN CONTENT ── */}

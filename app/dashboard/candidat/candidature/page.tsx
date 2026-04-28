@@ -6,7 +6,7 @@ import { Tag } from 'antd'
 import { useState, useEffect } from 'react'
 import { getUserCandidatures } from '@/api/candidatures'
 
-export default function PostulantCandidaturePage() {
+export default function CandidatCandidaturePage() {
   const { user } = useAuth()
   const [candidatures, setCandidatures] = useState<any[]>([])
   const [loading, setLoading] = useState(true)

@@ -30,8 +30,8 @@ const profileSchema = yup.object().shape({
   country: yup.string().required('Country is required'),
   timezone: yup.string().required('Timezone is required'),
   bio: yup.string().required('Bio is required').max(500, 'Bio is too long (max 500 chars)'),
-  website: yup.string().url('Invalid URL format').nullable().transform(v => v === '' ? null : v),
-  portfolio: yup.string().url('Invalid URL format').nullable().transform(v => v === '' ? null : v),
+  website: yup.string().url('Invalid URL format').nullable(),
+  portfolio: yup.string().url('Invalid URL format').nullable(),
   experiences: yup.array().of(
     yup.object().shape({
       title: yup.string().required('Title is required'),
@@ -47,9 +47,9 @@ const profileSchema = yup.object().shape({
           if (!value) return true
           return new Date(value) <= new Date()
         }),
-      projectUrl: yup.string().url('Invalid URL format').nullable().transform(v => v === '' ? null : v),
+      projectUrl: yup.string().url('Invalid URL format').nullable(),
     })
-  ),
+  ).default([]),
 })
 
 type ProfileFormInputs = yup.InferType<typeof profileSchema>
@@ -88,7 +88,7 @@ export default function CompleteProfilePage() {
   const [letterUrl, setLetterUrl] = useState<string | null>(null)
   const [uploadingLetter, setUploadingLetter] = useState(false)
 
-  const { control, handleSubmit, reset, formState: { errors } } = useForm<ProfileFormInputs>({
+  const { control, handleSubmit, reset, formState: { errors } } = useForm({
     resolver: yupResolver(profileSchema),
     defaultValues: {
       firstName: '', lastName: '', position: '', country: '', timezone: '', bio: '', website: '', portfolio: '',
@@ -109,7 +109,7 @@ export default function CompleteProfilePage() {
         const firstName = names[0] || ''
         const lastName = names.slice(1).join(' ') || ''
 
-        let resolvedPosition = data.postulant?.position || '';
+        let resolvedPosition = data.candidat?.position || '';
 
         if (applyToJobId) {
           const { data: jobDetails } = await getJobById(applyToJobId)
@@ -128,17 +128,17 @@ export default function CompleteProfilePage() {
           firstName,
           lastName,
           position: resolvedPosition,
-          country: data.postulant?.country || '',
-          timezone: data.postulant?.timezone || '',
-          bio: data.postulant?.bio || '',
-          website: data.postulant?.website || '',
-          portfolio: data.postulant?.portfolio || '',
-          experiences: (data.postulant?.experiences as any[]) || [],
+          country: data.candidat?.country || '',
+          timezone: data.candidat?.timezone || '',
+          bio: data.candidat?.bio || '',
+          website: data.candidat?.website || '',
+          portfolio: data.candidat?.portfolio || '',
+          experiences: (data.candidat?.experiences as any[]) || [],
         })
 
         setAvatarUrl(data.avatar_url || null)
-        setResumeUrl(data.postulant?.resume_url || null)
-        setLetterUrl(data.postulant?.motivational_letter_url || null)
+        setResumeUrl(data.candidat?.resume_url || null)
+        setLetterUrl(data.candidat?.motivational_letter_url || null)
       }
       setLoading(false)
     })
@@ -150,10 +150,10 @@ export default function CompleteProfilePage() {
 
     const fullName = `${values.firstName} ${values.lastName}`.trim()
 
-    const updatePayload: Partial<FullProfile> = {
+    const updatePayload = {
       user_name: fullName,
       avatar_url: avatarUrl,
-      postulant: {
+      candidat: {
         position: values.position,
         country: values.country,
         timezone: values.timezone,
@@ -187,7 +187,7 @@ export default function CompleteProfilePage() {
         }
       } else {
         messageApi.success("Profile saved and application submitted!")
-        setTimeout(() => router.push('/dashboard/postulant'), 1500)
+        setTimeout(() => router.push('/dashboard/candidat'), 1500)
       }
     } else {
       messageApi.success("Profile updated successfully.")
@@ -238,7 +238,7 @@ export default function CompleteProfilePage() {
             <p className="text-[14px] text-[#475467] m-0">Manage your personal and professional information.</p>
           </div>
           <div className="flex gap-3">
-            <Button onClick={() => router.push('/dashboard/postulant')} className="h-10 px-5 rounded-lg font-medium border-[#D0D5DD]">Cancel</Button>
+            <Button onClick={() => router.push('/dashboard/candidat')} className="h-10 px-5 rounded-lg font-medium border-[#D0D5DD]">Cancel</Button>
             <Button type="primary" onClick={handleSubmit(handleSave)} loading={saving} className="h-10 px-5 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] border-none font-medium text-white shadow-sm transition-colors">
               Save {applyToJobId && '& Apply'}
             </Button>
@@ -334,10 +334,10 @@ export default function CompleteProfilePage() {
             <FormRow label="External links">
               <div className="flex flex-col gap-3">
                 <Controller name="website" control={control} render={({ field }) => (
-                  <Input  {...field} placeholder="Website (URL)" className="h-11 rounded-lg" prefix={<GlobalOutlined className="text-gray-400" />} />
+                  <Input {...field} value={field.value || ''} placeholder="Website (URL)" className="h-11 rounded-lg" prefix={<GlobalOutlined className="text-gray-400" />} />
                 )} />
                 <Controller name="portfolio" control={control} render={({ field }) => (
-                  <Input {...field} placeholder="Portfolio (URL)" className="h-11 rounded-lg" prefix={<GlobalOutlined className="text-gray-400" />} />
+                  <Input {...field} value={field.value || ''} placeholder="Portfolio (URL)" className="h-11 rounded-lg" prefix={<GlobalOutlined className="text-gray-400" />} />
                 )} />
               </div>
             </FormRow>
@@ -434,7 +434,7 @@ export default function CompleteProfilePage() {
                 </div>
               ))}
 
-              <Button type="dashed" onClick={() => append({ title: '', company: '', startDate: '', endDate: null, projectUrl: '' })} block className="h-12 rounded-xl border-[#7F56D9] text-[#7F56D9] bg-[#F9F5FF] hover:bg-[#F4EBFF] hover:border-[#7F56D9] font-bold flex items-center justify-center gap-2">
+              <Button type="dashed" onClick={() => append({ title: '', company: '', startDate: '', endDate: '', projectUrl: '' })} block className="h-12 rounded-xl border-[#7F56D9] text-[#7F56D9] bg-[#F9F5FF] hover:bg-[#F4EBFF] hover:border-[#7F56D9] font-bold flex items-center justify-center gap-2">
                 <PlusOutlined /> Add a professional experience
               </Button>
             </div>
@@ -442,7 +442,7 @@ export default function CompleteProfilePage() {
 
           {/* Bottom Actions */}
           <div className="flex justify-end gap-3 pt-10 border-t border-[#EAECF0] mt-10">
-            <Button onClick={() => router.push('/dashboard/postulant')} className="h-11 px-6 rounded-lg font-medium border-[#D0D5DD]">Cancel</Button>
+            <Button onClick={() => router.push('/dashboard/candidat')} className="h-11 px-6 rounded-lg font-medium border-[#D0D5DD]">Cancel</Button>
             <Button type="primary" onClick={handleSubmit(handleSave)} loading={saving} className="h-11 px-6 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] border-none font-medium text-white shadow-md transition-all">
               Save {applyToJobId && '& Apply'}
             </Button>

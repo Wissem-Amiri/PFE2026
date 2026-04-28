@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Input, Button, Avatar, Spin, Empty, message } from 'antd'
 import {
   HiOutlineSearch,
@@ -25,9 +25,20 @@ import { downloadCSV } from '@/api/export'
 export default function RecordingsPage() {
   const { user } = useAuth()
   const queryClient = useQueryClient()
-  const { data: allRecordings = [], isLoading: loading } = useRecordings()
-  const [activeTab, setActiveTab] = useState('View all')
+  const [currentPage, setCurrentPage] = useState(1)
+  const pageSize = 10
   const [search, setSearch] = useState('')
+  const [activeTab, setActiveTab] = useState('View all')
+
+  const { data: result, isLoading: loading } = useRecordings({
+    page: currentPage,
+    pageSize,
+    search: search
+  })
+
+  const allRecordings = result?.data || []
+  const totalItems = result?.count || 0
+  
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -70,17 +81,17 @@ export default function RecordingsPage() {
   }
 
   const filteredFiles = allRecordings.filter(file => {
-    // Tab filter
+    // Tab filter (client side for now since it's simple)
     if (activeTab === 'Your files' && file.uploaded_by !== user?.id) return false
-
-    // Search filter
-    if (search && !file.name.toLowerCase().includes(search.toLowerCase()) &&
-      !file.uploader?.user_name.toLowerCase().includes(search.toLowerCase())) {
-      return false
-    }
-
     return true
   })
+
+  const totalPages = Math.ceil(totalItems / pageSize)
+
+  // Reset page on filter change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, activeTab])
 
   const handleExport = () => {
     const headers = ['File Name', 'Size', 'Date Uploaded', 'Last Updated', 'Uploaded By', 'Uploader Email']
@@ -283,27 +294,41 @@ export default function RecordingsPage() {
         </div>
 
         {/* Pagination Section */}
-        <div className="px-[24px] py-[16px] border-t border-[#EAECF0] flex justify-between items-center bg-white">
-          <Button className="h-[36px] px-[14px] rounded-[8px] border-[#D0D5DD] shadow-sm font-semibold text-[#344054] flex items-center gap-[8px]">
-            <HiOutlineChevronLeft className="w-[20px] h-[20px]" />
-            Previous
-          </Button>
-          <div className="flex gap-[2px]">
-            {[1, 2, 3, '...', 8, 9, 10].map((page, idx) => (
-              <button
-                key={idx}
-                className={`w-[40px] h-[40px] flex items-center justify-center text-[14px] font-medium rounded-[8px] transition-all border-0 cursor-pointer
-                  ${page === 1 ? 'bg-[#F9F5FF] text-[#7F56D9]' : 'bg-transparent text-[#667085] hover:bg-[#F9FAFB]'}`}
-              >
-                {page}
-              </button>
-            ))}
+        {totalItems > pageSize && (
+          <div className="px-[24px] py-[16px] border-t border-[#EAECF0] flex justify-between items-center bg-white">
+            <Button 
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              className="h-[36px] px-[14px] rounded-[8px] border-[#D0D5DD] shadow-sm font-semibold text-[#344054] flex items-center gap-[8px]"
+            >
+              <HiOutlineChevronLeft className="w-[20px] h-[20px]" />
+              Previous
+            </Button>
+            <div className="flex gap-[2px]">
+              {Array.from({ length: totalPages }).map((_, idx) => {
+                const page = idx + 1
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => setCurrentPage(page)}
+                    className={`w-[40px] h-[40px] flex items-center justify-center text-[14px] font-medium rounded-[8px] transition-all border-0 cursor-pointer
+                      ${page === currentPage ? 'bg-[#F9F5FF] text-[#7F56D9]' : 'bg-transparent text-[#667085] hover:bg-[#F9FAFB]'}`}
+                  >
+                    {page}
+                  </button>
+                )
+              })}
+            </div>
+            <Button 
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              className="h-[36px] px-[14px] rounded-[8px] border-[#D0D5DD] shadow-sm font-semibold text-[#344054] flex items-center gap-[8px]"
+            >
+              Next
+              <HiOutlineChevronRight className="w-[20px] h-[20px]" />
+            </Button>
           </div>
-          <Button className="h-[36px] px-[14px] rounded-[8px] border-[#D0D5DD] shadow-sm font-semibold text-[#344054] flex items-center gap-[8px]">
-            Next
-            <HiOutlineChevronRight className="w-[20px] h-[20px]" />
-          </Button>
-        </div>
+        )}
       </div>
     </div>
   )

@@ -4,6 +4,10 @@ import { getAllUsers, getProfile } from '@/api/profile'
 import { getAllLeavesDetailed } from '@/api/conge'
 import { getAllCandidaturesDetailed } from '@/api/candidatures'
 import { useAuth } from '@/api/AuthContext'
+import { archiveLeaves } from '@/api/conge'
+import { archiveCandidatures } from '@/api/candidatures'
+import { useQueryClient } from '@tanstack/react-query'
+import { queryKeys } from '@/api/hooks'
 import Link from 'next/link'
 import type { FullProfile } from '@/api/database.types'
 import {
@@ -35,7 +39,8 @@ import {
   HiOutlineArrowDown,
   HiOutlineBell,
   HiOutlineLockClosed,
-  HiOutlineHeart
+  HiOutlineHeart,
+  HiOutlineTrash
 } from 'react-icons/hi'
 import dayjs from 'dayjs'
 
@@ -45,11 +50,18 @@ export default function AdminDashboardPage() {
   const { user } = useAuth()
   const [adminProfile, setAdminProfile] = useState<FullProfile | null>(null)
 
-  const { data: leaves = [], isLoading: leavesLoading } = useLeaves()
-  const { data: candidatures = [], isLoading: candidaturesLoading } = useCandidatures()
+  const { data: leavesResult, isLoading: leavesLoading } = useLeaves({ page: 1, pageSize: 20 })
+  const { data: candidaturesResult, isLoading: candidaturesLoading } = useCandidatures({ page: 1, pageSize: 20 })
+
+  const leaves = leavesResult?.data || []
+  const candidatures = candidaturesResult?.data || []
 
   const loading = leavesLoading || candidaturesLoading
   const [search, setSearch] = useState('')
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([])
+
+  const queryClient = useQueryClient()
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -76,7 +88,7 @@ export default function AdminDashboardPage() {
       id: c.id,
       date: c.applied_at,
       type: 'candidature',
-      user: c.postulant?.user,
+      user: c.candidat?.user,
       details: `Applied for ${c.job?.title}`,
       status: c.status
     }))
@@ -116,6 +128,37 @@ export default function AdminDashboardPage() {
       <span className="text-[14px] text-[#667085] font-medium">No recent activity</span>
     </div>
   )
+
+  const handleDeleteSelected = async () => {
+    if (selectedRowKeys.length === 0) return
+    setIsDeleting(true)
+    
+    try {
+      const leaveIds = selectedRowKeys
+        .filter(key => String(key).startsWith('leave-'))
+        .map(key => String(key).replace('leave-', ''))
+      
+      const candidatureIds = selectedRowKeys
+        .filter(key => String(key).startsWith('candidature-'))
+        .map(key => String(key).replace('candidature-', ''))
+
+      if (leaveIds.length > 0) {
+        await archiveLeaves(leaveIds)
+      }
+      if (candidatureIds.length > 0) {
+        await archiveCandidatures(candidatureIds)
+      }
+
+      message.success(`${selectedRowKeys.length} activity items archived`)
+      setSelectedRowKeys([])
+      queryClient.invalidateQueries({ queryKey: queryKeys.leaves })
+      queryClient.invalidateQueries({ queryKey: queryKeys.candidatures })
+    } catch (err) {
+      message.error('Failed to archive activities')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   return (
     <div className="flex flex-col lg:flex-row min-h-screen bg-[#FCFCFD]">
@@ -161,26 +204,31 @@ export default function AdminDashboardPage() {
 
         {/* ── TABLE (Strict Figma Activity 3024:10940) ── */}
         <div className="ml-[24px] mr-[24px] bg-white rounded-[16px] border border-[#eaecf0] shadow-[0px_8px_16px_-4px_rgba(16,24,40,0.04)] overflow-hidden mb-[48px]">
-          <div className="px-6 py-5 border-b border-[#eaecf0] flex justify-between items-center">
+          <div className="px-6 py-5 border-b border-[#eaecf0] flex justify-between items-center h-[72px]">
             <h3 className="text-[18px] font-medium text-[#101828] font-['Inter'] mb-0 leading-[28px]">Recent activity</h3>
+            
+            {selectedRowKeys.length > 0 && (
+              <div className="flex items-center gap-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                <span className="text-[14px] text-[#667085] font-medium">{selectedRowKeys.length} selected</span>
+                <button 
+                  onClick={handleDeleteSelected}
+                  disabled={isDeleting}
+                  className="h-[36px] px-4 bg-rose-50 border border-rose-200 text-rose-600 rounded-lg text-[13px] font-semibold flex items-center gap-2 hover:bg-rose-100 transition-all disabled:opacity-50"
+                >
+                  <HiOutlineTrash className="text-[16px]" />
+                  Delete selected
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="overflow-x-auto">
             <Table
               columns={[
+                // The selection column is now handled by Ant Design's rowSelection prop below
+                // We'll keep the custom padding for the first column via styles or by keeping this but with correct selection logic
                 {
-                  title: '',
-                  key: 'selection',
-                  width: 64,
-                  render: () => <div className="pl-6"><input type="checkbox" className="w-5 h-5 rounded-full border-[#d0d5dd] accent-[#7f56d9] cursor-pointer" /></div>,
-                },
-                {
-                  title: (
-                    <div className="flex items-center gap-[4px] group cursor-pointer">
-                      <span className="text-[12px] font-medium text-[#667085] font-['Inter'] uppercase">Submission Date</span>
-                      <HiOutlineArrowDown className="w-[14px] h-[14px] text-[#667085] opacity-60" />
-                    </div>
-                  ),
+                  title: <span className="text-[12px] font-medium text-[#667085] font-['Inter'] uppercase ml-6">Submission Date</span>,
                   key: 'applicant',
                   render: (record: any) => (
                     <div className="flex items-center gap-[12px]">
@@ -260,7 +308,7 @@ export default function AdminDashboardPage() {
               pagination={{
                 pageSize: 10,
                 hideOnSinglePage: true,
-                position: ['bottomCenter'],
+                placement: 'bottomCenter',
                 className: 'custom-pagination',
                 itemRender: (page, type, originalElement) => {
                   if (type === 'prev') return <button className="px-[14px] py-[8px] bg-white border border-[#d0d5dd] rounded-[8px] shadow-sm text-[14px] font-medium text-[#344054] hover:bg-gray-50 flex items-center gap-[8px] mr-4 font-['Inter']"><img src="/assets/arrow-left.svg" className="w-[14px] h-[14px]" alt="" /> Previous</button>
@@ -268,7 +316,12 @@ export default function AdminDashboardPage() {
                   return originalElement
                 }
               }}
-              loading={loading}
+              rowSelection={{
+                type: 'checkbox',
+                selectedRowKeys,
+                onChange: (keys) => setSelectedRowKeys(keys),
+                columnWidth: 64,
+              }}
               className="figma-dashboard-table decoration-table"
               rowKey={(record) => `${record.type}-${record.id}`}
               locale={{ emptyText: <CustomEmpty /> }}

@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Tag, message, Modal, DatePicker, Select, Input, Avatar } from 'antd'
+import dayjs from 'dayjs'
 import {
   CheckCircleOutlined,
   CloseCircleOutlined,
@@ -28,7 +30,7 @@ import {
 } from 'react-icons/hi'
 import { BiExport } from 'react-icons/bi'
 import { getAllUsers, updateUserStatus as updateGlobalUserStatus, exportToCSV, downloadCSV } from '@/api/profile'
-import { getAllCandidaturesDetailed, updateCandidatureStatus, archiveCandidatures, restoreCandidatures, deleteAllOtherCandidatures } from '@/api/candidatures'
+import { getAllCandidaturesDetailed, updateCandidatureStatus, archiveCandidatures, restoreCandidatures, deleteAllOtherCandidatures, hardDeleteCandidatures } from '@/api/candidatures'
 import { getAllJobs, decrementJobSeats } from '@/api/job'
 import { HiOutlineArchive, HiOutlineRefresh } from 'react-icons/hi'
 import type { FullProfile } from '@/api/database.types'
@@ -38,13 +40,25 @@ import { useQueryClient } from '@tanstack/react-query'
 
 export default function RegistrationsPage() {
   const queryClient = useQueryClient()
-  const [showArchived, setShowArchived] = useState(false)
-  const { data: applications = [], isLoading: loading } = useCandidatures(showArchived)
+  const [currentPage, setCurrentPage] = useState(1)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('All Status')
-  const [dateFilter, setDateFilter] = useState('All Time')
-  const [currentPage, setCurrentPage] = useState(1)
-  const pageSize = 10 
+  const [dateRange, setDateRange] = useState<[any, any] | null>(null)
+  const pageSize = 10
+
+  const { data: result, isLoading: loading } = useCandidatures({
+    page: currentPage,
+    pageSize,
+    showArchived: false,
+    status: statusFilter,
+    startDate: dateRange?.[0]?.toISOString(),
+    endDate: dateRange?.[1]?.toISOString(),
+    search: search
+  })
+
+  const applications = result?.data || []
+  const totalItems = result?.count || 0
+
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [appToApprove, setAppToApprove] = useState<any | null>(null)
 
@@ -65,27 +79,47 @@ export default function RegistrationsPage() {
     if (selectedIds.size === 0) return
     const ids = Array.from(selectedIds)
     try {
-      if (showArchived) {
-        const { error } = await restoreCandidatures(ids)
-        if (error) throw error
-        message.success(`${ids.length} registration(s) restored successfully`)
-      } else {
-        const { error } = await archiveCandidatures(ids)
-        if (error) throw error
-        message.success(`${ids.length} registration(s) archived successfully`)
-      }
+      const { error } = await archiveCandidatures(ids)
+      if (error) throw error
+      message.success(`${ids.length} registration(s) archived successfully`)
       setSelectedIds(new Set())
       queryClient.invalidateQueries({ queryKey: queryKeys.candidatures })
     } catch (error: any) {
-      message.error(error.message || 'Failed to update registrations')
+      message.error(error.message || 'Failed to archive registrations')
     }
   }
 
+  const handleDeleteSelected = async () => {
+    if (selectedIds.size === 0) return
+    
+    Modal.confirm({
+      title: 'Delete Registrations?',
+      content: `Are you sure you want to permanently delete these ${selectedIds.size} registration(s)? This action cannot be undone.`,
+      okText: 'Yes, Delete',
+      okType: 'danger',
+      cancelText: 'Cancel',
+      centered: true,
+      onOk: async () => {
+        const ids = Array.from(selectedIds)
+        try {
+          const { error } = await hardDeleteCandidatures(ids)
+          if (error) throw error
+          
+          message.success(`${ids.length} registration(s) deleted permanently`)
+          setSelectedIds(new Set())
+          queryClient.invalidateQueries({ queryKey: queryKeys.candidatures })
+        } catch (error: any) {
+          message.error(error.message || 'Failed to delete registrations')
+        }
+      }
+    })
+  }
+
   const toggleSelectAll = () => {
-    if (selectedIds.size === filtered.length && filtered.length > 0) {
+    if (selectedIds.size === paginatedData.length && paginatedData.length > 0) {
       setSelectedIds(new Set())
     } else {
-      setSelectedIds(new Set(filtered.map(u => u.id)))
+      setSelectedIds(new Set(paginatedData.map(u => u.id)))
     }
   }
 
@@ -104,10 +138,10 @@ export default function RegistrationsPage() {
 
     if (!appError) {
       if (status === 'accepted') {
-        const { error: statusError } = await updateGlobalUserStatus(application.postulant_id, 'approved', hiringDetails)
+        const { error: statusError } = await updateGlobalUserStatus(application.candidat_id, 'approved', hiringDetails)
 
         if (!statusError) {
-          await deleteAllOtherCandidatures(application.postulant_id, application.id)
+          await deleteAllOtherCandidatures(application.candidat_id, application.id)
           if (application.job_id) {
             await decrementJobSeats(application.job_id)
           }
@@ -143,52 +177,20 @@ export default function RegistrationsPage() {
   }
 
   const handleExport = () => {
-    const usersToExport = Array.from(new Set(filtered.map(app => app.postulant?.user)))
+    const usersToExport = Array.from(new Set(applications.map(app => app.candidat?.user)))
     const csv = exportToCSV(usersToExport as any[])
     downloadCSV(csv, 'registrations.csv')
   }
 
-  const filtered = applications.filter(app => {
-    const u = app.postulant?.user
-    const j = app.job
+  // Server-side filtered data is directly available in 'applications'
+  const paginatedData = applications
 
-    const matchSearch =
-      (u?.user_name ?? '').toLowerCase().includes(search.toLowerCase()) ||
-      (u?.email ?? '').toLowerCase().includes(search.toLowerCase()) ||
-      (j?.title ?? '').toLowerCase().includes(search.toLowerCase())
-
-    const matchStatus =
-      statusFilter === 'All Status' ||
-      (statusFilter === 'Pending' && app.status === 'pending') ||
-      (statusFilter === 'Approved' && app.status === 'accepted') ||
-      (statusFilter === 'Rejected' && app.status === 'rejected')
-
-    const matchDate = dateFilter === 'All Time' || (() => {
-      const appDate = new Date(app.applied_at || app.created_at || '')
-      const now = new Date()
-      if (dateFilter === 'Last 7 Days') {
-        const sevenDaysAgo = new Date(now.setDate(now.getDate() - 7))
-        return appDate >= sevenDaysAgo
-      }
-      if (dateFilter === 'Last 30 Days') {
-        const thirtyDaysAgo = new Date(now.setDate(now.getDate() - 30))
-        return appDate >= thirtyDaysAgo
-      }
-      return true
-    })()
-
-    return matchSearch && matchStatus && matchDate
-  })
-
-  // Pagination Logic
-  const totalItems = filtered.length
   const totalPages = Math.ceil(totalItems / pageSize)
-  const paginatedData = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize)
 
-  // Reset to page 1 on search
+  // Reset to page 1 on search or filter change
   useEffect(() => {
     setCurrentPage(1)
-  }, [search])
+  }, [search, statusFilter, dateRange])
 
   return (
     <div className="flex-1 bg-[#f8fafc] flex flex-col font-['Inter',sans-serif]">
@@ -196,14 +198,13 @@ export default function RegistrationsPage() {
       <div className="bg-white px-[27px] py-[24px] border-b border-[#e2e8f0] flex justify-between items-center shrink-0">
         <h1 className="text-[20px] font-bold text-[#0f172a]">Registrations</h1>
         <div className="flex gap-[8px]">
-          <button 
-            onClick={() => setShowArchived(!showArchived)}
-            className={`flex items-center gap-[8px] px-[17px] py-[9px] border rounded-[8px] text-[14px] font-semibold shadow-sm transition-all
-              ${showArchived ? 'bg-[#F9FAFB] text-[#7F56D9] border-[#D6BBFB]' : 'bg-white text-[#334155] border-[#e2e8f0] hover:bg-gray-50'}`}
+          <Link 
+            href="/dashboard/admin/registrations/archive"
+            className="flex items-center gap-[8px] px-[17px] py-[9px] border border-[#e2e8f0] rounded-[8px] text-[14px] font-semibold text-[#334155] bg-white shadow-sm transition-all hover:bg-gray-50"
           >
             <HiOutlineArchive className="text-[18px]" />
-            {showArchived ? 'View Active' : 'Archive'}
-          </button>
+            Archive
+          </Link>
           <button 
             onClick={handleExport}
             className="flex items-center gap-[8px] px-[17px] py-[9px] border border-[#e2e8f0] rounded-[8px] bg-white text-[#334155] text-[14px] font-semibold hover:bg-gray-50 transition-all shadow-sm"
@@ -237,39 +238,33 @@ export default function RegistrationsPage() {
           </div>
 
           <div className="flex gap-[16px] items-center">
-            <div className="relative w-[160px]">
-              <select 
+            <div className="w-[180px]">
+              <Select 
                 value={statusFilter}
-                onChange={e => setStatusFilter(e.target.value)}
-                className="w-full bg-white border border-[rgba(203,195,213,0.2)] rounded-[12px] px-[17px] py-[11px] text-[14px] font-medium text-[#494453] appearance-none focus:outline-none transition-all cursor-pointer"
-              >
-                <option value="All Status">Filter by Status</option>
-                <option value="Pending">Pending</option>
-                <option value="Approved">Approved</option>
-                <option value="Rejected">Rejected</option>
-              </select>
-              <div className="absolute right-[12px] top-1/2 -translate-y-1/2 pointer-events-none">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M3 4.5L6 7.5L9 4.5" stroke="#667085" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
+                onChange={(val) => setStatusFilter(val)}
+                className="w-full !h-[44px] !rounded-[12px] font-['Inter']"
+                variant="outlined"
+                options={[
+                  { value: 'All Status', label: 'Filter by Status' },
+                  { value: 'pending', label: 'Pending' },
+                  { value: 'accepted', label: 'Approved' },
+                  { value: 'rejected', label: 'Rejected' },
+                ]}
+                style={{ 
+                  borderRadius: '12px',
+                  border: '1px solid rgba(203,195,213,0.2)'
+                }}
+              />
             </div>
 
-            <div className="relative w-[160px]">
-              <select 
-                value={dateFilter}
-                onChange={e => setDateFilter(e.target.value)}
-                className="w-full bg-white border border-[rgba(203,195,213,0.2)] rounded-[12px] px-[17px] py-[11px] text-[14px] font-medium text-[#494453] appearance-none focus:outline-none transition-all cursor-pointer"
-              >
-                <option value="All Time">Filter by Date</option>
-                <option value="Last 7 Days">Last 7 Days</option>
-                <option value="Last 30 Days">Last 30 Days</option>
-              </select>
-              <div className="absolute right-[12px] top-1/2 -translate-y-1/2 pointer-events-none">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M3 4.5L6 7.5L9 4.5" stroke="#667085" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
+            <div className="w-[280px]">
+              <DatePicker.RangePicker 
+                value={dateRange}
+                onChange={(dates) => setDateRange(dates as any)}
+                className="w-full !rounded-[12px] !py-[11px] !border-[rgba(203,195,213,0.2)] hover:!border-[#7f56d9] focus:!border-[#7f56d9] !shadow-none font-['Inter']"
+                placeholder={['Start Date', 'End Date']}
+                format="DD/MM/YYYY"
+              />
             </div>
           </div>
         </div>
@@ -278,21 +273,31 @@ export default function RegistrationsPage() {
         {selectedIds.size > 0 && (
           <div className="mx-[16px] mb-[16px] p-[12px] bg-[#FFFBFA] border border-[#FDA29B] rounded-[12px] flex justify-between items-center animate-in fade-in slide-in-from-top-4 duration-300">
             <div className="flex items-center gap-[12px]">
-              <span className="text-[14px] font-semibold text-[#B42318]">{selectedIds.size} {showArchived ? 'archived' : 'registration'} selected</span>
+              <span className="text-[14px] font-semibold text-[#B42318]">{selectedIds.size} registration(s) selected</span>
               <button 
                 onClick={toggleSelectAll}
                 className="text-[14px] font-semibold text-[#7F56D9] bg-transparent border-0 cursor-pointer hover:underline"
               >
-                {selectedIds.size === filtered.length ? 'Deselect All' : 'Select All'}
+                {selectedIds.size === paginatedData.length ? 'Deselect All' : 'Select All'}
               </button>
             </div>
-            <button 
-              onClick={handleArchiveSelected}
-              className="h-[40px] px-[16px] rounded-[8px] border border-[#FDA29B] bg-white text-[#B42318] font-semibold flex items-center gap-[8px] hover:bg-[#FFF1F0] hover:border-[#F97066] transition-all cursor-pointer shadow-sm"
-            >
-              {showArchived ? <HiOutlineRefresh className="text-[18px]" /> : <HiOutlineArchive className="text-[18px]" />}
-              {showArchived ? 'Restore Selected' : 'Archive Selected'}
-            </button>
+            <div className="flex gap-[8px]">
+              <button 
+                onClick={handleArchiveSelected}
+                className="h-[40px] px-[16px] rounded-[8px] border border-[#FDA29B] bg-white text-[#B42318] font-semibold flex items-center gap-[8px] hover:bg-[#FFF1F0] hover:border-[#F97066] transition-all cursor-pointer shadow-sm"
+              >
+                <HiOutlineArchive className="text-[18px]" />
+                Archive Selected
+              </button>
+
+              <button 
+                onClick={handleDeleteSelected}
+                className="h-[40px] px-[16px] rounded-[8px] border border-[#FDA29B] bg-[#FEF3F2] text-[#B42318] font-semibold flex items-center gap-[8px] hover:bg-[#FEE4E2] hover:border-[#F97066] transition-all cursor-pointer shadow-sm"
+              >
+                <HiOutlineTrash className="text-[18px]" />
+                Delete Selected
+              </button>
+            </div>
           </div>
         )}
 
@@ -304,7 +309,7 @@ export default function RegistrationsPage() {
                 <th className="px-[23px] py-[15px] w-[64px] border-b border-[#f1f5f9]">
                   <input
                     type="checkbox"
-                    checked={filtered.length > 0 && selectedIds.size === filtered.length}
+                    checked={paginatedData.length > 0 && selectedIds.size === paginatedData.length}
                     onChange={toggleSelectAll}
                     className="w-[16px] h-[16px] rounded-[4px] border-[#cbd5e1] checked:accent-[#7f56d9]"
                   />
@@ -314,7 +319,7 @@ export default function RegistrationsPage() {
                 <th className="px-[24px] py-[16px] border-b border-[#f1f5f9] text-[12px] font-semibold text-[#64748b] tracking-[0.6px] uppercase text-nowrap">PHONE NUMBER</th>
                 <th className="px-[24px] py-[16px] border-b border-[#f1f5f9] text-[12px] font-semibold text-[#64748b] tracking-[0.6px] uppercase text-nowrap">SUBMISSION DATE</th>
                 <th className="px-[24px] py-[16px] border-b border-[#f1f5f9] text-[12px] font-semibold text-[#64748b] tracking-[0.6px] uppercase">STATUS</th>
-                <th className="px-[24px] py-[16px] border-b border-[#f1f5f9] text-[12px] font-semibold text-[#64748b] tracking-[0.6px] uppercase text-right">ACTIONS</th>
+                <th className="px-[24px] py-[16px] border-b border-[#f1f5f9] text-[12px] font-semibold text-[#64748b] tracking-[0.6px] uppercase text-left">ACTIONS</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#f1f5f9]">
@@ -336,17 +341,17 @@ export default function RegistrationsPage() {
                     <td className="px-[24px] py-[16px]">
                       <div className="flex items-center gap-[12px]">
                         <div className="w-[40px] h-[40px] rounded-full bg-[#f1f5f9] border border-[#e2e8f0] flex items-center justify-center shrink-0 overflow-hidden">
-                          {app.postulant?.user?.avatar_url ? (
-                            <img src={app.postulant.user.avatar_url} alt="" className="w-full h-full object-cover" />
+                          {app.candidat?.user?.avatar_url ? (
+                            <img src={app.candidat.user.avatar_url} alt="" className="w-full h-full object-cover" />
                           ) : (
                             <span className="text-[12px] font-bold text-[#64748b]">
-                              {app.postulant?.user?.user_name?.substring(0, 2).toUpperCase() || 'UN'}
+                              {app.candidat?.user?.user_name?.substring(0, 2).toUpperCase() || 'UN'}
                             </span>
                           )}
                         </div>
                         <div className="flex flex-col min-w-0">
                           <span className="text-[14px] font-semibold text-[#0f172a] truncate">
-                            {app.postulant?.user?.user_name || 'Anonymous'}
+                            {app.candidat?.user?.user_name || 'Anonymous'}
                           </span>
                           <span className="text-[12px] text-[#64748b] truncate leading-[16px]">
                             {app.job?.title || 'Candidate'}
@@ -354,8 +359,8 @@ export default function RegistrationsPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-[24px] py-[26px] text-[14px] text-[#475569]">{app.postulant?.user?.email || '—'}</td>
-                    <td className="px-[24px] py-[26px] text-[14px] text-[#475569]">{app.postulant?.user?.phone || '—'}</td>
+                    <td className="px-[24px] py-[26px] text-[14px] text-[#475569]">{app.candidat?.user?.email || '—'}</td>
+                    <td className="px-[24px] py-[26px] text-[14px] text-[#475569]">{app.candidat?.user?.phone || '—'}</td>
                     <td className="px-[24px] py-[26px] text-[14px] text-[#475569]">
                       {new Date(app.applied_at || app.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })} {new Date(app.applied_at || app.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                     </td>
@@ -371,43 +376,52 @@ export default function RegistrationsPage() {
                       )}
                     </td>
                     <td className="px-[24px] py-[16px]">
-                      <div className="grid grid-cols-[32px_32px_32px] gap-[4px] justify-end">
-                        <button
-                          onClick={() => router.push(`/dashboard/admin/registrations/${app.postulant_id}?jobId=${app.job_id}`)}
-                          className="p-[6px] rounded-[6px] text-blue-600 hover:bg-blue-50 transition-all font-bold flex items-center justify-center"
-                          title="View Details"
-                        >
-                          <HiOutlineEye size={20} />
-                        </button>
-                        {app.status === 'pending' ? (
-                          <>
-                            <button
-                              onClick={() => {
-                                setAppToApprove(app)
-                                setIsModalVisible(true)
-                              }}
-                              className="p-[6px] rounded-[6px] text-emerald-600 hover:bg-emerald-50 transition-all font-bold flex items-center justify-center"
-                              title="Approve"
-                            >
-                              <HiOutlineCheck size={20} />
-                            </button>
-                            <button
-                              onClick={() => {
-                                setAppToDelete(app)
-                                setIsDeleteModalVisible(true)
-                              }}
-                              className="p-[6px] rounded-[6px] text-rose-600 hover:bg-rose-50 transition-all font-bold flex items-center justify-center"
-                              title="Reject"
-                            >
-                              <HiOutlineX size={20} />
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <div className="w-[32px]" />
-                            <div className="w-[32px]" />
-                          </>
-                        )}
+                      <div className="flex justify-start items-center">
+                        <div className="grid grid-cols-[32px_32px_32px] gap-[4px] items-center">
+                          {app.status === 'pending' ? (
+                            <>
+                              <button
+                                onClick={() => {
+                                  setAppToApprove(app)
+                                  setIsModalVisible(true)
+                                }}
+                                className="w-[32px] h-[32px] rounded-[6px] text-emerald-600 hover:bg-emerald-50 transition-all font-bold flex items-center justify-center"
+                                title="Approve"
+                              >
+                                <HiOutlineCheck size={20} />
+                              </button>
+                              <button
+                                onClick={() => router.push(`/dashboard/admin/registrations/${app.candidat_id}?jobId=${app.job_id}`)}
+                                className="w-[32px] h-[32px] rounded-[6px] text-[#7f56d9] hover:bg-[#f9f5ff] transition-all flex items-center justify-center"
+                                title="View Details"
+                              >
+                                <HiOutlineEye size={20} />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setAppToDelete(app)
+                                  setIsDeleteModalVisible(true)
+                                }}
+                                className="w-[32px] h-[32px] rounded-[6px] text-rose-600 hover:bg-rose-50 transition-all font-bold flex items-center justify-center"
+                                title="Reject"
+                              >
+                                <HiOutlineX size={20} />
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <div className="w-[32px]" />
+                              <button
+                                onClick={() => router.push(`/dashboard/admin/registrations/${app.candidat_id}?jobId=${app.job_id}`)}
+                                className="w-[32px] h-[32px] rounded-[6px] text-[#7f56d9] hover:bg-[#f9f5ff] transition-all flex items-center justify-center"
+                                title="View Details"
+                              >
+                                <HiOutlineEye size={20} />
+                              </button>
+                              <div className="w-[32px]" />
+                            </>
+                          )}
+                        </div>
                       </div>
                     </td>
                   </tr>
@@ -417,7 +431,7 @@ export default function RegistrationsPage() {
           </table>
           
           {/* ── PAGINATION ── */}
-          {filtered.length > pageSize && (
+          {totalItems > pageSize && (
             <div className="px-6 py-4 flex items-center justify-between border-t border-[#f1f5f9] bg-white">
               <button
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
@@ -487,7 +501,7 @@ export default function RegistrationsPage() {
               <div className="w-[64px] h-[64px] rounded-[14px] bg-[#ecfdf5] border border-[#abefc6] flex items-center justify-center mb-6">
                 <HiOutlineCheck className="text-[#10b981] text-[32px]" />
               </div>
-              <h3 className="text-[24px] font-bold text-[#101828] mb-3">Accept {appToApprove.postulant?.user?.user_name}?</h3>
+              <h3 className="text-[24px] font-bold text-[#101828] mb-3">Accept {appToApprove.candidat?.user?.user_name}?</h3>
               <p className="text-[16px] text-[#667085] leading-relaxed mb-8 max-w-[440px]">
                 Confirm accepting this registration for the role of <span className="font-bold text-[#101828]">{appToApprove.job?.title}</span>.
               </p>
@@ -509,7 +523,7 @@ export default function RegistrationsPage() {
               </div>
               <h3 className="text-[24px] font-bold text-[#101828] mb-3">Reject Registration?</h3>
               <p className="text-[16px] text-[#667085] leading-relaxed mb-8 max-w-[400px]">
-                Are you sure you want to reject <span className="font-bold text-[#101828]">{appToDelete.postulant?.user?.user_name}</span>? This action is irreversible.
+                Are you sure you want to reject <span className="font-bold text-[#101828]">{appToDelete.candidat?.user?.user_name}</span>? This action is irreversible.
               </p>
               <div className="flex gap-4 w-full">
                 <button onClick={() => setIsDeleteModalVisible(false)} className="flex-1 h-[48px] border border-[#d0d5dd] rounded-[10px] font-bold text-[#344054] hover:bg-gray-50 transition-all">Cancel</button>

@@ -13,13 +13,13 @@ import {
 } from '@ant-design/icons'
 import { useState } from 'react'
 
-export default function PostulantLayout({ children }: { children: React.ReactNode }) {
+export default function CandidatLayout({ children }: { children: React.ReactNode }) {
   const { profile, user, signout } = useAuth()
   const pathname = usePathname()
   const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
-  const fullName = profile?.user_name ?? user?.email?.split('@')[0] ?? 'Postulant'
+  const fullName = profile?.user_name ?? user?.email?.split('@')[0] ?? 'Candidat'
   const initials = fullName
     .split(' ')
     .map((w: string) => w[0])
@@ -28,9 +28,9 @@ export default function PostulantLayout({ children }: { children: React.ReactNod
     .slice(0, 2)
 
   const navLinks = [
-    { href: '/dashboard/postulant', label: 'Job Offers', icon: <HomeOutlined />, exact: true },
-    { href: '/dashboard/postulant/candidature', label: 'My Applications', icon: <FileTextOutlined />, exact: false },
-    { href: '/dashboard/postulant/profile', label: 'Settings', icon: <SettingOutlined />, exact: false },
+    { href: '/dashboard/candidat', label: 'Job Offers', icon: <HomeOutlined />, exact: true },
+    { href: '/dashboard/candidat/candidature', label: 'My Applications', icon: <FileTextOutlined />, exact: false },
+    { href: '/dashboard/candidat/profile', label: 'Settings', icon: <SettingOutlined />, exact: false },
   ]
 
   const isActive = (href: string, exact: boolean) =>
@@ -49,7 +49,7 @@ export default function PostulantLayout({ children }: { children: React.ReactNod
         
         {/* Logo Section */}
         <div className="pt-[10px] pb-[10px] px-[10px]">
-          <Link href="/dashboard/postulant" className="no-underline flex items-center group">
+          <Link href="/dashboard/candidat" className="no-underline flex items-center group">
             <img src="/assets/UnifyRH.png" alt="UnifyRH Logo" className="h-[110px] w-auto object-contain group-hover:scale-105 transition-transform" />
           </Link>
         </div>

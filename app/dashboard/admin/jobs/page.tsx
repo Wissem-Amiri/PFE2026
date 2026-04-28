@@ -2,35 +2,35 @@
 
 import { useState, useEffect } from 'react'
 import { Popconfirm, message, Tooltip } from 'antd'
-import { getAllJobs, deleteJob, isJobOpen } from '@/api/job'
-import type { Job } from '@/api/database.types'
+import { useJobs } from '@/api/hooks'
 import Link from 'next/link'
 import Image from 'next/image'
+import { HiOutlineChevronLeft, HiOutlineChevronRight } from 'react-icons/hi'
 
 export default function JobsPage() {
   const [activeTab, setActiveTab] = useState('View all')
-  const [jobs, setJobs] = useState<Job[]>([])
-  const [loading, setLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
+  const pageSize = 9
   const [messageApi, contextHolder] = message.useMessage()
 
-  const fetchJobs = async () => {
-    setLoading(true)
-    const { data } = await getAllJobs()
-    setJobs(data ?? [])
-    setLoading(false)
-  }
+  const { data: result, isLoading: loading, refetch } = useJobs({
+    page: currentPage,
+    pageSize,
+    search: '' // Can be hooked up to a search bar later
+  })
 
-  useEffect(() => {
-    fetchJobs()
-  }, [])
+  const jobs = result?.data || []
+  const totalItems = result?.count || 0
+  const totalPages = Math.ceil(totalItems / pageSize)
 
   const handleDelete = async (id: string) => {
+    const { deleteJob } = await import('@/api/job')
     const { error } = await deleteJob(id)
     if (error) {
       messageApi.error('Error deleting job')
     } else {
       messageApi.success('Job deleted successfully')
-      fetchJobs()
+      refetch()
     }
   }
 
@@ -48,11 +48,12 @@ export default function JobsPage() {
     ? jobs 
     : jobs.filter(j => j.category === activeTab)
 
-  const handleCopyLink = (jobId: string) => {
-    const link = `${window.location.origin}/jobs/${jobId}`
-    navigator.clipboard.writeText(link)
-    messageApi.success('Link copied to clipboard!')
-  }
+  const { isJobOpen } = require('@/api/job')
+
+  // Reset page on tab change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [activeTab])
 
   return (
     <div className="flex-1 p-[32px] px-[40px] h-full overflow-y-auto bg-white font-['Inter',sans-serif]">
@@ -191,6 +192,43 @@ export default function JobsPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* ── PAGINATION ── */}
+      {totalItems > pageSize && (
+        <div className="mt-12 pt-8 border-t border-[#EAECF0] flex justify-between items-center bg-white">
+          <button
+            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+            className="flex items-center gap-2 px-4 py-2 border border-[#D0D5DD] rounded-lg text-[14px] font-semibold text-[#344054] hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            <HiOutlineChevronLeft className="w-5 h-5" /> Previous
+          </button>
+
+          <div className="flex gap-2">
+            {Array.from({ length: totalPages }).map((_, i) => (
+              <button
+                key={i + 1}
+                onClick={() => setCurrentPage(i + 1)}
+                className={`w-10 h-10 rounded-lg text-[14px] font-semibold transition-all ${
+                  currentPage === i + 1
+                    ? 'bg-[#F9F5FF] text-[#7F56D9] ring-1 ring-[#7F56D9]'
+                    : 'text-[#667085] hover:bg-gray-50'
+                }`}
+              >
+                {i + 1}
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+            disabled={currentPage === totalPages}
+            className="flex items-center gap-2 px-4 py-2 border border-[#D0D5DD] rounded-lg text-[14px] font-semibold text-[#344054] hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            Next <HiOutlineChevronRight className="w-5 h-5" />
+          </button>
         </div>
       )}
 

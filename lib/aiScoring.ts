@@ -1,7 +1,7 @@
 /**
  * AI Scoring Library
  * Calculates a deterministic match score for a candidate against a job.
- * Based on real postulant data from Supabase.
+ * Based on real candidat data from Supabase.
  */
 
 export interface Experience {
@@ -98,7 +98,7 @@ function keywordOverlapScore(candidateText: string, jobText: string): number {
 
 // ─── Main scoring function ────────────────────────────────────────────────────
 export function calculateAIScore(
-  postulant: {
+  candidat: {
     bio?: string | null
     position?: string | null
     experiences?: Experience[]
@@ -113,9 +113,9 @@ export function calculateAIScore(
 ): number {
   let score = 0
 
-  const bio = postulant.bio || ''
-  const position = postulant.position || ''
-  const experiences = postulant.experiences || []
+  const bio = candidat.bio || ''
+  const position = candidat.position || ''
+  const experiences = candidat.experiences || []
   const jobText = `${job.title} ${job.description} ${job.requirements || ''}`
 
   // 1. Bio + position keyword match vs job (max 40 pts)
@@ -137,8 +137,8 @@ export function calculateAIScore(
   score += Math.min(20, matchedTitle.length * 7)
 
   // 4. Profile completeness bonus (max 10 pts)
-  if (postulant.resume_url) score += 5
-  if (postulant.portfolio) score += 3
+  if (candidat.resume_url) score += 5
+  if (candidat.portfolio) score += 3
   if (bio.length > 50) score += 2
 
   return Math.min(Math.max(score, 10), 99)
@@ -146,7 +146,7 @@ export function calculateAIScore(
 
 // ─── Full scoring pipeline ────────────────────────────────────────────────────
 export function scoreCandidate(
-  postulant: {
+  candidat: {
     bio?: string | null
     position?: string | null
     experiences?: Experience[]
@@ -159,11 +159,11 @@ export function scoreCandidate(
     requirements?: string | null
   }
 ): ScoredCandidate {
-  const experiences = postulant.experiences || []
+  const experiences = candidat.experiences || []
   return {
-    score: calculateAIScore(postulant, job),
+    score: calculateAIScore(candidat, job),
     yearsLabel: formatYearsLabel(experiences),
     prevCompanies: getPrevCompanies(experiences),
-    strengths: extractStrengths(postulant.bio || '', postulant.position || '', experiences),
+    strengths: extractStrengths(candidat.bio || '', candidat.position || '', experiences),
   }
 }

@@ -2,241 +2,274 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Tag, message, Modal, Tooltip, Breadcrumb } from 'antd'
-import { 
-  ArrowLeftOutlined, 
-  ReloadOutlined, 
-  SearchOutlined, 
-  DeleteOutlined,
-  FolderOpenOutlined 
-} from '@ant-design/icons'
-import { getArchivedCandidaturesDetailed, restoreCandidatures, hardDeleteCandidatures } from '@/api/candidatures'
+import { message, Modal, DatePicker, Select, Input } from 'antd'
+import dayjs from 'dayjs'
+import {
+  HiOutlineEye,
+  HiOutlineCheck,
+  HiOutlineX,
+  HiOutlineChevronLeft,
+  HiOutlineChevronRight,
+  HiOutlineSearch,
+  HiOutlineFilter,
+  HiOutlineCalendar,
+  HiOutlineTrash,
+  HiOutlineDownload,
+  HiOutlineArchive,
+  HiOutlineRefresh,
+  HiOutlineArrowLeft
+} from 'react-icons/hi'
+import { restoreCandidatures, hardDeleteCandidatures } from '@/api/candidatures'
+import { useCandidatures, queryKeys } from '@/api/hooks'
+import { useQueryClient } from '@tanstack/react-query'
+import Link from 'next/link'
 
-export default function ArchiveRegistrationsPage() {
-  const [applications, setApplications] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  const [isRestoreModalVisible, setIsRestoreModalVisible] = useState(false)
-
+export default function RegistrationsArchivePage() {
+  const queryClient = useQueryClient()
   const router = useRouter()
+  const [currentPage, setCurrentPage] = useState(1)
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('All Status')
+  const [dateRange, setDateRange] = useState<[any, any] | null>(null)
+  const pageSize = 10
 
-  const fetchApplications = async () => {
-    setLoading(true)
-    const { data } = await getArchivedCandidaturesDetailed()
-    setApplications(data ?? [])
-    setLoading(false)
+  const { data: result, isLoading: loading } = useCandidatures({
+    page: currentPage,
+    pageSize,
+    showArchived: true, // Always true for this page
+    status: statusFilter,
+    startDate: dateRange?.[0]?.toISOString(),
+    endDate: dateRange?.[1]?.toISOString(),
+    search: search
+  })
+
+  const applications = result?.data || []
+  const totalItems = result?.count || 0
+  const totalPages = Math.ceil(totalItems / pageSize)
+
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+
+  const handleRestoreSelected = async () => {
+    if (selectedIds.size === 0) return
+    const ids = Array.from(selectedIds)
+    try {
+      const { error } = await restoreCandidatures(ids)
+      if (error) throw error
+      message.success(`${ids.length} registration(s) restored successfully`)
+      setSelectedIds(new Set())
+      queryClient.invalidateQueries({ queryKey: queryKeys.candidatures })
+    } catch (error: any) {
+      message.error(error.message || 'Failed to restore registrations')
+    }
   }
 
-  useEffect(() => { fetchApplications() }, [])
-
-  const handleHardDelete = async (ids: string[]) => {
+  const handleDeleteSelected = async () => {
+    if (selectedIds.size === 0) return
+    
     Modal.confirm({
       title: 'Delete Permanently?',
-      content: `Are you sure you want to permanently delete ${ids.length > 1 ? 'these registrations' : 'this registration'}? This action cannot be undone.`,
+      content: `Are you sure you want to permanently delete these ${selectedIds.size} registration(s)? This action cannot be undone.`,
       okText: 'Yes, Delete',
       okType: 'danger',
-      cancelText: 'No',
+      cancelText: 'Cancel',
       centered: true,
       onOk: async () => {
-        const { error } = await hardDeleteCandidatures(ids)
-        if (!error) {
+        const ids = Array.from(selectedIds)
+        try {
+          const { error } = await hardDeleteCandidatures(ids)
+          if (error) throw error
           message.success(`${ids.length} registration(s) deleted permanently`)
-          fetchApplications()
           setSelectedIds(new Set())
-        } else {
-          message.error('Failed to delete registrations')
+          queryClient.invalidateQueries({ queryKey: queryKeys.candidatures })
+        } catch (error: any) {
+          message.error(error.message || 'Failed to delete registrations')
         }
       }
     })
   }
 
-  const handleRestoreSelected = async () => {
-    const ids = Array.from(selectedIds)
-    const { error } = await restoreCandidatures(ids)
-    if (!error) {
-      setIsRestoreModalVisible(false)
-      setSelectedIds(new Set())
-      message.success(`${ids.length} registration(s) restored successfully`)
-      fetchApplications()
-    } else {
-      message.error('Failed to restore registrations')
-    }
-  }
-
   const toggleSelectAll = () => {
-    if (selectedIds.size === filtered.length && filtered.length > 0) {
+    if (selectedIds.size === applications.length && applications.length > 0) {
       setSelectedIds(new Set())
     } else {
-      setSelectedIds(new Set(filtered.map(u => u.id)))
+      setSelectedIds(new Set(applications.map(u => u.id)))
     }
   }
 
   const toggleSelectRow = (id: string) => {
     const newSelected = new Set(selectedIds)
-    if (newSelected.has(id)) {
-      newSelected.delete(id)
-    } else {
-      newSelected.add(id)
-    }
+    if (newSelected.has(id)) newSelected.delete(id)
+    else newSelected.add(id)
     setSelectedIds(newSelected)
   }
 
-  const filtered = applications.filter(app => {
-    const u = app.user
-    const j = app.job
-    const matchSearch =
-      (u?.user_name ?? '').toLowerCase().includes(search.toLowerCase()) ||
-      (u?.email ?? '').toLowerCase().includes(search.toLowerCase()) ||
-      (j?.title ?? '').toLowerCase().includes(search.toLowerCase())
-    return matchSearch
-  })
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, statusFilter, dateRange])
 
   return (
-    <div className="flex-1 p-[24px] px-[28px] h-full overflow-y-auto">
-      <div className="mb-[20px]">
-        <Breadcrumb 
-          items={[
-            { title: <a onClick={() => router.push('/dashboard/admin/registrations')}>Registrations</a> },
-            { title: 'Archive' },
-          ]} 
-          className="mb-2"
-        />
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <button 
-              onClick={() => router.push('/dashboard/admin/registrations')}
-              className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center hover:bg-slate-50 text-slate-600 transition-all"
-            >
-              <ArrowLeftOutlined />
-            </button>
-            <h1 className="text-[22px] font-bold text-[#101828] mb-0">Archived Registrations</h1>
-          </div>
-          <div className="flex gap-[8px] items-center">
-            {selectedIds.size > 0 && (
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setIsRestoreModalVisible(true)}
-                  className="px-[14px] py-[7px] border-[1.5px] border-[#12B76A] rounded-[8px] bg-[#ECFDF3] font-['Sora',sans-serif] text-[12px] font-semibold text-[#027A48] cursor-pointer flex items-center gap-[6px] hover:bg-[#D1FADF] transition-all"
-                >
-                  <ReloadOutlined /> Restore {selectedIds.size}
-                </button>
-                <button
-                  onClick={() => handleHardDelete(Array.from(selectedIds))}
-                  className="px-[14px] py-[7px] border-[1.5px] border-[#F04438] rounded-[8px] bg-[#FEF2F2] font-['Sora',sans-serif] text-[12px] font-semibold text-[#D92D20] cursor-pointer flex items-center gap-[6px] hover:bg-[#FEE4E2] transition-all"
-                >
-                  <DeleteOutlined /> Clear {selectedIds.size}
-                </button>
-              </div>
-            )}
-          </div>
+    <div className="flex-1 bg-[#f8fafc] flex flex-col font-['Inter',sans-serif]">
+      {/* ── HEADER ── */}
+      <div className="bg-white px-[27px] py-[24px] border-b border-[#e2e8f0] flex justify-between items-center shrink-0">
+        <div className="flex items-center gap-4">
+          <Link href="/dashboard/admin/registrations" className="p-2 hover:bg-gray-100 rounded-full transition-all text-gray-500 hover:text-gray-900">
+            <HiOutlineArrowLeft size={24} />
+          </Link>
+          <h1 className="text-[20px] font-bold text-[#0f172a]">Archived Registrations</h1>
         </div>
       </div>
 
-      <div className="bg-white border border-[#E4E7EC] rounded-[12px] overflow-hidden shadow-sm">
-        <div className="px-[18px] py-[14px] border-b border-[#E4E7EC] flex justify-between items-center bg-[#F9FAFB]">
-          <div>
-            <h3 className="text-[14px] font-bold text-[#101828] mb-0 mt-0">Archive List</h3>
-            <p className="text-[12px] text-[#475467] mt-[2px] mb-0 font-medium">History of processed or archived registrations.</p>
-          </div>
-          <div className="flex items-center gap-[8px] px-[12px] py-[7px] border-[1.5px] border-[#D0D5DD] rounded-[8px] text-[12px] text-[#475467] bg-white focus-within:border-[#7c3aed]">
-            <SearchOutlined />
-            <input
-              placeholder="Search in archive"
+      <div className="flex-1 overflow-y-auto px-[32px] pb-[32px]">
+        {/* ── DESCRIPTION ── */}
+        <div className="mt-[32px] mb-[16px]">
+          <p className="text-[14px] text-[#64748b] leading-[20px]">
+            Review and manage registrations that have been moved to the archive.
+          </p>
+        </div>
+
+        {/* ── SEARCH & FILTERS BAR ── */}
+        <div className="bg-[rgba(248,248,248,0.31)] border border-[rgba(203,195,213,0.1)] rounded-[16px] h-[76px] px-[16px] mb-[16px] flex items-center justify-between">
+          <div className="flex-1 max-w-[550px] relative">
+            <div className="absolute left-[12px] top-1/2 -translate-y-1/2 w-[15px] h-[15px]">
+              <HiOutlineSearch className="text-gray-400 text-lg" />
+            </div>
+            <input 
+              placeholder="Search archived registrations..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="border-none outline-none font-medium text-[12px] text-[#101828] bg-transparent w-[200px]"
+              className="w-full bg-white border border-[rgba(203,195,213,0.2)] rounded-[12px] pl-[41px] pr-[17px] py-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-1 focus:ring-[#7f56d9]/20 transition-all placeholder:text-[#6b7280]"
             />
+          </div>
+
+          <div className="flex gap-[16px] items-center">
+            <div className="w-[180px]">
+              <Select 
+                value={statusFilter}
+                onChange={(val) => setStatusFilter(val)}
+                className="w-full !h-[44px] !rounded-[12px]"
+                options={[
+                  { value: 'All Status', label: 'All Status' },
+                  { value: 'pending', label: 'Pending' },
+                  { value: 'accepted', label: 'Approved' },
+                  { value: 'rejected', label: 'Rejected' },
+                ]}
+              />
+            </div>
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
+        {/* ── SELECTION BAR ── */}
+        {selectedIds.size > 0 && (
+          <div className="mx-[16px] mb-[16px] p-[12px] bg-[#F5F3FF] border border-[#DDD6FE] rounded-[12px] flex justify-between items-center">
+            <div className="flex items-center gap-[12px]">
+              <span className="text-[14px] font-semibold text-[#7C3AED]">{selectedIds.size} archived registration(s) selected</span>
+              <button 
+                onClick={toggleSelectAll}
+                className="text-[14px] font-semibold text-[#7F56D9] bg-transparent border-0 cursor-pointer hover:underline"
+              >
+                {selectedIds.size === applications.length ? 'Deselect All' : 'Select All'}
+              </button>
+            </div>
+            <div className="flex gap-[8px]">
+              <button 
+                onClick={handleRestoreSelected}
+                className="h-[40px] px-[16px] rounded-[8px] border border-[#DDD6FE] bg-white text-[#7C3AED] font-semibold flex items-center gap-[8px] hover:bg-[#F5F3FF] transition-all shadow-sm"
+              >
+                <HiOutlineRefresh className="text-[18px]" />
+                Restore Selected
+              </button>
+              <button 
+                onClick={handleDeleteSelected}
+                className="h-[40px] px-[16px] rounded-[8px] border border-[#FDA29B] bg-[#FEF3F2] text-[#B42318] font-semibold flex items-center gap-[8px] hover:bg-[#FEE4E2] transition-all shadow-sm"
+              >
+                <HiOutlineTrash className="text-[18px]" />
+                Delete Permanently
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── DATA TABLE CARD ── */}
+        <div className="bg-white border border-[#e2e8f0] rounded-[16px] shadow-sm overflow-hidden">
+          <table className="w-full text-left border-collapse">
             <thead>
-              <tr>
-                <th className="px-[16px] py-[12px] text-left text-[11px] text-[#475467] font-bold uppercase tracking-wider border-b border-[#E4E7EC] bg-[#F9FAFB]">
+              <tr className="bg-[rgba(248,250,252,0.5)]">
+                <th className="px-[23px] py-[15px] w-[64px] border-b border-[#f1f5f9]">
                   <input
                     type="checkbox"
-                    className="rounded cursor-pointer"
-                    checked={filtered.length > 0 && selectedIds.size === filtered.length}
+                    checked={applications.length > 0 && selectedIds.size === applications.length}
                     onChange={toggleSelectAll}
+                    className="w-[16px] h-[16px] rounded-[4px] border-[#cbd5e1] checked:accent-[#7f56d9]"
                   />
                 </th>
-                <th className="px-[16px] py-[12px] text-left text-[11px] text-[#475467] font-bold uppercase tracking-wider border-b border-[#E4E7EC] bg-[#F9FAFB]">Name</th>
-                <th className="px-[16px] py-[12px] text-left text-[11px] text-[#475467] font-bold uppercase tracking-wider border-b border-[#E4E7EC] bg-[#F9FAFB]">Job Title</th>
-                <th className="px-[16px] py-[12px] text-left text-[11px] text-[#475467] font-bold uppercase tracking-wider border-b border-[#E4E7EC] bg-[#F9FAFB]">Status</th>
-                <th className="px-[16px] py-[12px] text-left text-[11px] text-[#475467] font-bold uppercase tracking-wider border-b border-[#E4E7EC] bg-[#F9FAFB]">Archived At</th>
-                <th className="px-[16px] py-[12px] text-left text-[11px] text-[#475467] font-bold uppercase tracking-wider border-b border-[#E4E7EC] bg-[#F9FAFB]">Actions</th>
+                <th className="px-[24px] py-[16px] border-b border-[#f1f5f9] text-[12px] font-semibold text-[#64748b] tracking-[0.6px] uppercase">NAME</th>
+                <th className="px-[24px] py-[16px] border-b border-[#f1f5f9] text-[12px] font-semibold text-[#64748b] tracking-[0.6px] uppercase">EMAIL</th>
+                <th className="px-[24px] py-[16px] border-b border-[#f1f5f9] text-[12px] font-semibold text-[#64748b] tracking-[0.6px] uppercase">SUBMISSION DATE</th>
+                <th className="px-[24px] py-[16px] border-b border-[#f1f5f9] text-[12px] font-semibold text-[#64748b] tracking-[0.6px] uppercase">STATUS</th>
+                <th className="px-[24px] py-[16px] border-b border-[#f1f5f9] text-[12px] font-semibold text-[#64748b] tracking-[0.6px] uppercase text-left">ACTIONS</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-[#f1f5f9]">
               {loading ? (
-                <tr><td colSpan={6} className="text-center py-12 text-slate-400 font-medium animate-pulse">Loading archive...</td></tr>
-              ) : filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="text-center py-12">
-                    <div className="flex flex-col items-center gap-2">
-                       <FolderOpenOutlined className="text-[32px] text-slate-200" />
-                       <span className="text-slate-400 font-medium">No archived registrations found.</span>
-                    </div>
-                  </td>
-                </tr>
+                <tr><td colSpan={6} className="text-center py-[60px] text-[#64748b]">Loading archive...</td></tr>
+              ) : applications.length === 0 ? (
+                <tr><td colSpan={6} className="text-center py-[60px] text-[#64748b]">No archived registrations found.</td></tr>
               ) : (
-                filtered.map((app) => (
-                  <tr key={app.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-[16px] py-[12px] border-b border-[#F2F4F7] align-middle">
+                applications.map((app) => (
+                  <tr key={app.id} className="hover:bg-[#f8fafc]/50 transition-colors h-[74px]">
+                    <td className="px-[24px] py-[16px]">
                       <input
                         type="checkbox"
-                        className="rounded cursor-pointer"
                         checked={selectedIds.has(app.id)}
                         onChange={() => toggleSelectRow(app.id)}
+                        className="w-[16px] h-[16px] rounded-[4px] border-[#cbd5e1] checked:accent-[#7f56d9]"
                       />
                     </td>
-                    <td className="px-[16px] py-[12px] border-b border-[#F2F4F7] align-middle">
-                      <div className="flex items-center gap-[10px]">
-                        <div className="w-[32px] h-[32px] rounded-full overflow-hidden bg-slate-100 flex items-center justify-center text-[11px] font-bold text-slate-500 shrink-0 border border-slate-200">
-                          {app.user?.user_name?.substring(0, 2).toUpperCase() || 'UN'}
+                    <td className="px-[24px] py-[16px]">
+                      <div className="flex items-center gap-[12px]">
+                        <div className="w-[40px] h-[40px] rounded-full bg-[#f1f5f9] border border-[#e2e8f0] flex items-center justify-center shrink-0 overflow-hidden">
+                          {app.candidat?.user?.avatar_url ? (
+                            <img src={app.candidat.user.avatar_url} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-[12px] font-bold text-[#64748b]">
+                              {app.candidat?.user?.user_name?.substring(0, 2).toUpperCase() || 'UN'}
+                            </span>
+                          )}
                         </div>
-                        <div>
-                          <div className="text-[12px] font-bold text-[#101828]">{app.user?.user_name || '—'}</div>
-                          <div className="text-[11px] text-slate-500">{app.user?.email || '—'}</div>
+                        <div className="flex flex-col">
+                          <span className="text-[14px] font-semibold text-[#0f172a]">{app.candidat?.user?.user_name || 'Anonymous'}</span>
+                          <span className="text-[12px] text-[#64748b]">{app.job?.title || 'Candidate'}</span>
                         </div>
                       </div>
                     </td>
-                    <td className="px-[16px] py-[12px] border-b border-[#F2F4F7] align-middle text-[12px] font-semibold text-slate-700">
-                      {app.job?.title || 'Unknown Position'}
+                    <td className="px-[24px] py-[26px] text-[14px] text-[#475569]">{app.candidat?.user?.email || '—'}</td>
+                    <td className="px-[24px] py-[26px] text-[14px] text-[#475569]">
+                      {dayjs(app.applied_at || app.created_at).format('DD/MM/YYYY HH:mm')}
                     </td>
-                    <td className="px-[16px] py-[12px] border-b border-[#F2F4F7] align-middle">
-                      {app.status === 'accepted' ? (
-                        <Tag color="green" className="rounded-full px-3 font-bold uppercase text-[10px]">Accepted</Tag>
-                      ) : (
-                        <Tag color="default" className="rounded-full px-3 font-bold uppercase text-[10px]">{app.status}</Tag>
+                    <td className="px-[24px] py-[26px]">
+                      {app.status === 'pending' && (
+                        <span className="px-[10px] py-[2px] rounded-full bg-[#fef3c7] text-[#b45309] text-[12px] font-medium">Pending</span>
+                      )}
+                      {app.status === 'accepted' && (
+                        <span className="px-[10px] py-[2px] rounded-full bg-[#dcfce7] text-[#15803d] text-[12px] font-medium">Approved</span>
+                      )}
+                      {app.status === 'rejected' && (
+                        <span className="px-[10px] py-[2px] rounded-full bg-[#fee2e2] text-[#b91c1c] text-[12px] font-medium">Rejected</span>
                       )}
                     </td>
-                    <td className="px-[16px] py-[12px] border-b border-[#F2F4F7] align-middle text-[12px] text-slate-500 font-medium">
-                      {new Date(app.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-[16px] py-[12px] border-b border-[#F2F4F7] align-middle">
-                      <div className="flex gap-2">
-                        <Tooltip title="Restore Registration">
-                          <button 
-                            onClick={() => {
-                              setSelectedIds(new Set([app.id]))
-                              setIsRestoreModalVisible(true)
-                            }}
-                            className="w-[32px] h-[32px] rounded-[8px] border border-[#D0D5DD] bg-white flex items-center justify-center cursor-pointer text-[#12B76A] hover:bg-[#ECFDF3] hover:border-[#12B76A] transition-all"
+                    <td className="px-[24px] py-[16px]">
+                      <div className="flex justify-start items-center">
+                        <div className="grid grid-cols-[32px_32px_32px] gap-[4px] items-center">
+                          <div className="w-[32px]" />
+                          <button
+                            onClick={() => router.push(`/dashboard/admin/registrations/${app.candidat_id}?jobId=${app.job_id}`)}
+                            className="w-[32px] h-[32px] rounded-[6px] text-[#7f56d9] hover:bg-[#f9f5ff] transition-all flex items-center justify-center"
+                            title="View Details"
                           >
-                            <ReloadOutlined className="text-[14px]" />
+                            <HiOutlineEye size={20} />
                           </button>
-                        </Tooltip>
-                        <Tooltip title="Delete Permanently">
-                          <button 
-                            onClick={() => handleHardDelete([app.id])}
-                            className="w-[32px] h-[32px] rounded-[8px] border border-[#D0D5DD] bg-white flex items-center justify-center cursor-pointer text-[#F04438] hover:bg-[#FEF2F2] hover:border-[#F04438] transition-all"
-                          >
-                            <DeleteOutlined className="text-[14px]" />
-                          </button>
-                        </Tooltip>
+                          <div className="w-[32px]" />
+                        </div>
                       </div>
                     </td>
                   </tr>
@@ -244,34 +277,31 @@ export default function ArchiveRegistrationsPage() {
               )}
             </tbody>
           </table>
+
+          {/* ── PAGINATION ── */}
+          {totalItems > pageSize && (
+            <div className="px-6 py-4 flex items-center justify-between border-t border-[#f1f5f9] bg-white">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="flex items-center gap-2 px-3 py-2 border border-[#d0d5dd] rounded-[8px] text-[14px] font-semibold text-[#344054] hover:bg-gray-50 disabled:opacity-50 transition-all"
+              >
+                <HiOutlineChevronLeft /> Previous
+              </button>
+              
+              <span className="text-[14px] text-[#64748b]">Page {currentPage} of {totalPages}</span>
+
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className="flex items-center gap-2 px-3 py-2 border border-[#d0d5dd] rounded-[8px] text-[14px] font-semibold text-[#344054] hover:bg-gray-50 disabled:opacity-50 transition-all"
+              >
+                Next <HiOutlineChevronRight />
+              </button>
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Restore Confirmation Modal */}
-      <Modal
-        title="Restore Registrations"
-        open={isRestoreModalVisible}
-        onCancel={() => setIsRestoreModalVisible(false)}
-        centered
-        footer={[
-          <button 
-            key="cancel" 
-            onClick={() => setIsRestoreModalVisible(false)}
-            className="px-6 py-2 rounded-lg border border-slate-200 text-slate-600 font-semibold mr-3 hover:bg-slate-50 transition-all"
-          >
-            Cancel
-          </button>,
-          <button 
-            key="ok" 
-            onClick={handleRestoreSelected}
-            className="px-8 py-2 rounded-lg bg-[#7c3aed] text-white font-semibold hover:bg-[#6d28d9] transition-all shadow-md"
-          >
-            Yes, Restore
-          </button>
-        ]}
-      >
-        <p className="py-4 text-slate-600 font-medium">Are you sure you want to restore these registrations to the active list?</p>
-      </Modal>
     </div>
   )
 }

@@ -67,8 +67,8 @@ export default function JobOverviewPage() {
         if (!error) {
           if (status === 'accepted') {
             // Simple transition: use defaults for hiring details
-            await updateUserStatus(application.postulant_id, 'approved')
-            await deleteAllOtherCandidatures(application.postulant_id, application.id)
+            await updateUserStatus(application.candidat_id, 'approved')
+            await deleteAllOtherCandidatures(application.candidat_id, application.id)
             await decrementJobSeats(jobId)
             
             // Reload job details to see new available seats

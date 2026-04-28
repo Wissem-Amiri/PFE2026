@@ -1,6 +1,7 @@
 'use client'
 import { useAuth } from '@/api/AuthContext'
 import Link from 'next/link'
+import NotificationBell from '../../../components/NotificationBell'
 
 import Image from 'next/image'
 import { 
@@ -80,19 +81,22 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
 
         {/* Sidebar Footer (Settings + User) */}
         <div className="px-[16px] py-[24px]">
-          <Link
-            href="/dashboard/employee/settings"
-            className={`flex items-center gap-[12px] px-[12px] py-[10px] rounded-[8px] text-[14px] font-semibold transition-all no-underline mb-[24px]
-              ${pathname === '/dashboard/employee/settings'
-                ? 'bg-[#F9F5FF] text-[#7F56D9]'
-                : 'text-[#667085] hover:bg-[#F9FAFB]'
-              }`}
-          >
-            <span className="text-[20px]">
-              <HiOutlineCog />
-            </span>
-            Settings
-          </Link>
+          <div className="flex items-center justify-between pr-[4px] mb-[24px]">
+            <Link
+              href="/dashboard/employee/settings"
+              className={`flex-1 flex items-center gap-[12px] px-[12px] py-[10px] rounded-[8px] text-[14px] font-semibold transition-all no-underline
+                ${pathname === '/dashboard/employee/settings'
+                  ? 'bg-[#F9F5FF] text-[#7F56D9]'
+                  : 'text-[#667085] hover:bg-[#F9FAFB]'
+                }`}
+            >
+              <span className="text-[20px]">
+                <HiOutlineCog />
+              </span>
+              Settings
+            </Link>
+            <NotificationBell />
+          </div>
 
           <div className="pt-[24px] border-t border-[#F2F4F7] flex items-center justify-between group">
             <div className="flex items-center gap-[12px] overflow-hidden">
@@ -120,8 +124,11 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
       </aside>
 
       {/* ── MAIN CONTENT ── */}
-      <main className="flex-1 overflow-y-auto bg-white min-w-0">
-        {children}
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-white">
+        {/* Page Content */}
+        <div className="flex-1 overflow-y-auto pt-8">
+          {children}
+        </div>
       </main>
     </div>
   )
