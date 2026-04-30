@@ -97,7 +97,7 @@ export async function getAllCandidaturesDetailed(params: {
   page: number;
   pageSize: number;
   showArchived?: boolean;
-  status?: string;
+  status?: string | string[];
   search?: string;
   startDate?: string;
   endDate?: string;
@@ -119,7 +119,11 @@ export async function getAllCandidaturesDetailed(params: {
 
   // Filter by Status
   if (status && status !== 'All Status') {
-    query = query.eq('status', status.toLowerCase());
+    if (Array.isArray(status) && status.length > 0) {
+      query = query.in('status', status.map(s => s.toLowerCase()));
+    } else if (typeof status === 'string') {
+      query = query.eq('status', status.toLowerCase());
+    }
   }
 
   // Filter by Search (Name or Job Title)

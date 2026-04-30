@@ -155,11 +155,11 @@ export default function CreateJobPage() {
           <div className="flex flex-col">
             
             {/* Job Name */}
-            <div className="flex py-[24px] border-b border-[#EAECF0]">
-              <div className="w-[280px] pt-1">
+            <div className="flex flex-col sm:flex-row py-[24px] border-b border-[#EAECF0] gap-2 sm:gap-0">
+              <div className="w-full sm:w-[280px] pt-1">
                 <span className="text-[14px] font-medium text-[#344054]">Job Name <span className="text-red-500">*</span></span>
               </div>
-              <div className="flex-1 max-w-[512px]">
+              <div className="flex-1 w-full sm:max-w-[512px]">
                 <Controller
                   name="title"
                   control={control}
@@ -179,12 +179,12 @@ export default function CreateJobPage() {
             </div>
 
             {/* Category & Deadline */}
-            <div className="flex py-[24px] border-b border-[#EAECF0]">
-              <div className="w-[280px]">
+            <div className="flex flex-col sm:flex-row py-[24px] border-b border-[#EAECF0] gap-2 sm:gap-0">
+              <div className="w-full sm:w-[280px]">
                 <span className="text-[14px] font-medium text-[#344054]">Category & Deadline <span className="text-red-500">*</span></span>
                 <p className="text-[#667085] text-[13px] mt-1 m-0">Select the field and closing date.</p>
               </div>
-              <div className="flex-1 max-w-[512px] flex gap-4">
+              <div className="flex-1 w-full sm:max-w-[512px] flex flex-col sm:flex-row gap-4">
                 <div className="flex-1 flex flex-col gap-1.5">
                   <Controller
                     name="category"
@@ -231,12 +231,12 @@ export default function CreateJobPage() {
             </div>
 
             {/* Description */}
-            <div className="flex py-[24px] border-b border-[#EAECF0]">
-              <div className="w-[280px]">
+            <div className="flex flex-col sm:flex-row py-[24px] border-b border-[#EAECF0] gap-2 sm:gap-0">
+              <div className="w-full sm:w-[280px]">
                 <span className="text-[14px] font-medium text-[#344054]">Description <span className="text-red-500">*</span></span>
                 <p className="text-[#667085] text-[13px] mt-1 m-0">Write a short introduction.</p>
               </div>
-              <div className="flex-1 max-w-[512px]">
+              <div className="flex-1 w-full sm:max-w-[512px]">
                 <Controller
                   name="description"
                   control={control}
@@ -263,12 +263,12 @@ export default function CreateJobPage() {
             </div>
 
             {/* Requirements */}
-            <div className="flex py-[24px] border-b border-[#EAECF0]">
-              <div className="w-[280px]">
+            <div className="flex flex-col sm:flex-row py-[24px] border-b border-[#EAECF0] gap-2 sm:gap-0">
+              <div className="w-full sm:w-[280px]">
                 <span className="text-[14px] font-medium text-[#344054]">Requirements <span className="text-red-500">*</span></span>
                 <p className="text-[#667085] text-[13px] mt-1 m-0">Define what the candidate needs. Use one line per bullet point.</p>
               </div>
-              <div className="flex-1 max-w-[512px]">
+              <div className="flex-1 w-full sm:max-w-[512px]">
                 <Controller
                   name="requirements"
                   control={control}
@@ -288,12 +288,12 @@ export default function CreateJobPage() {
             </div>
 
             {/* Choose Job Picture */}
-            <div className="flex py-[24px] border-b border-[#EAECF0]">
-              <div className="w-[280px]">
+            <div className="flex flex-col sm:flex-row py-[24px] border-b border-[#EAECF0] gap-4 sm:gap-0">
+              <div className="w-full sm:w-[280px]">
                 <span className="text-[14px] font-medium text-[#344054]">Choose Job picture</span>
                 <p className="text-[#667085] text-[13px] mt-1 m-0">This will be displayed on Job profile.</p>
               </div>
-              <div className="flex-1 max-w-[512px] flex items-start gap-[20px]">
+              <div className="flex-1 w-full sm:max-w-[512px] flex items-start gap-[20px]">
                 {/* Image Preview - Styled as a Gradient Circle like Figma */}
                 <div 
                   className="w-[64px] h-[64px] rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center border border-[#EAECF0]"
@@ -328,11 +328,11 @@ export default function CreateJobPage() {
             </div>
 
             {/* Number of Open Seats */}
-            <div className="flex py-[24px] border-b border-[#EAECF0]">
-              <div className="w-[280px]">
+            <div className="flex flex-col sm:flex-row py-[24px] border-b border-[#EAECF0] gap-2 sm:gap-0">
+              <div className="w-full sm:w-[280px]">
                 <span className="text-[14px] font-medium text-[#344054]">Number of Open Seats <span className="text-red-500">*</span></span>
               </div>
-              <div className="flex-1 max-w-[512px]">
+              <div className="flex-1 w-full sm:max-w-[512px]">
                 <Controller
                   name="open_seats"
                   control={control}
@@ -352,11 +352,11 @@ export default function CreateJobPage() {
             </div>
 
             {/* Job Status */}
-            <div className="flex py-[24px]">
-              <div className="w-[280px]">
+            <div className="flex flex-col sm:flex-row py-[24px] gap-2 sm:gap-0">
+              <div className="w-full sm:w-[280px]">
                 <span className="text-[14px] font-medium text-[#344054]">Job Status</span>
               </div>
-              <div className="flex-1 max-w-[512px]">
+              <div className="flex-1 w-full sm:max-w-[512px]">
                 <Controller
                   name="is_open"
                   control={control}

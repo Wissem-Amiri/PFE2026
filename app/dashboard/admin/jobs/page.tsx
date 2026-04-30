@@ -60,19 +60,26 @@ export default function JobsPage() {
       {contextHolder}
       
       {/* ── HEADER ── */}
-      <div className="flex flex-col gap-[32px] mb-[32px]">
-        <div className="flex justify-between items-center">
+      <div className="flex flex-col gap-[24px] mb-[32px]">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <h1 className="text-[30px] font-semibold text-[#101828] tracking-tight m-0">Jobs</h1>
+          <Link 
+            href="/dashboard/admin/jobs/createJob"
+            className="flex justify-center items-center gap-2 w-full sm:w-auto px-[16px] py-[10px] bg-[#7F56D9] text-white rounded-[8px] font-medium text-[14px] shadow-[0px_1px_2px_0px_rgba(16,24,40,0.05)] hover:bg-[#6941C6] transition-all no-underline"
+          >
+            <img src="/assets/plus_white.svg" alt="" className="w-5 h-5" />
+            Add Job
+          </Link>
         </div>
 
-        {/* ── TABS & ACTIONS ── */}
-        <div className="relative flex justify-between items-end border-b border-[#EAECF0]">
-          <div className="flex gap-8 overflow-x-auto no-scrollbar">
+        {/* ── TABS ── */}
+        <div className="relative border-b border-[#EAECF0] w-full">
+          <div className="flex gap-8 overflow-x-auto no-scrollbar w-full">
             {tabs.map((tab) => (
               <button
                 key={tab.label}
                 onClick={() => setActiveTab(tab.label)}
-                className={`pb-4 px-1 text-[14px] font-semibold relative transition-colors whitespace-nowrap ${
+                className={`pb-4 px-1 text-[14px] font-semibold relative transition-colors whitespace-nowrap flex-shrink-0 ${
                   activeTab === tab.label ? 'text-[#6941C6]' : 'text-[#667085] hover:text-[#101828]'
                 }`}
               >
@@ -82,16 +89,6 @@ export default function JobsPage() {
                 )}
               </button>
             ))}
-          </div>
-
-          <div className="pb-3">
-             <Link 
-               href="/dashboard/admin/jobs/createJob"
-               className="inline-flex items-center gap-2 px-[16px] py-[10px] bg-[#7F56D9] text-white rounded-[8px] font-medium text-[14px] shadow-[0px_1px_2px_0px_rgba(16,24,40,0.05)] hover:bg-[#6941C6] transition-all no-underline"
-             >
-               <img src="/assets/plus_white.svg" alt="" className="w-5 h-5" />
-               Add Job
-             </Link>
           </div>
         </div>
       </div>
@@ -204,8 +201,8 @@ export default function JobsPage() {
       )}
 
       {/* ── PAGINATION ── */}
-      {totalItems > pageSize && (
-        <div className="mt-12 pt-8 border-t border-[#EAECF0] flex justify-between items-center bg-white">
+      {totalPages > 1 && (
+        <div className="mt-8 pt-6 border-t border-[#EAECF0] flex flex-col sm:flex-row gap-4 justify-between items-center">
           <button
             onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
             disabled={currentPage === 1}

@@ -213,11 +213,11 @@ export default function RegistrationsPage() {
   }, [search, statusFilter, dateRange])
 
   return (
-    <div className="flex-1 bg-[#f8fafc] flex flex-col font-['Inter',sans-serif]">
+    <div className="flex-1 bg-[#f8fafc] flex flex-col font-['Inter',sans-serif] min-w-0">
       {/* ── HEADER ── */}
-      <div className="bg-white px-[27px] py-[24px] border-b border-[#e2e8f0] flex justify-between items-center shrink-0">
+      <div className="bg-white px-4 md:px-[27px] py-4 md:py-[24px] border-b border-[#e2e8f0] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
         <h1 className="text-[20px] font-bold text-[#0f172a]">Registrations</h1>
-        <div className="flex gap-[8px]">
+        <div className="flex flex-wrap gap-[8px]">
           <Link
             href="/dashboard/admin/registrations/archive"
             className="flex items-center gap-[8px] px-[17px] py-[9px] border border-[#e2e8f0] rounded-[8px] text-[14px] font-semibold text-[#334155] bg-white shadow-sm transition-all hover:bg-gray-50"
@@ -235,7 +235,7 @@ export default function RegistrationsPage() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-[32px] pb-[32px]">
+      <div className="flex-1 overflow-y-auto px-4 md:px-[32px] pb-[32px]">
         {/* ── DESCRIPTION ── */}
         <div className="mt-[32px] mb-[16px]">
           <p className="text-[14px] text-[#64748b] leading-[20px]">
@@ -244,8 +244,8 @@ export default function RegistrationsPage() {
         </div>
 
         {/* ── SEARCH & FILTERS BAR ── */}
-        <div className="bg-[rgba(248,248,248,0.31)] border border-[rgba(203,195,213,0.1)] rounded-[16px] h-[76px] px-[16px] mb-[16px] flex items-center justify-between">
-          <div className="flex-1 max-w-[550px] relative">
+        <div className="bg-[rgba(248,248,248,0.31)] border border-[rgba(203,195,213,0.1)] rounded-[16px] p-4 mb-[16px] flex flex-col xl:flex-row items-center justify-between gap-4 h-auto">
+          <div className="flex-1 w-full xl:max-w-[550px] relative">
             <div className="absolute left-[12px] top-1/2 -translate-y-1/2 w-[15px] h-[15px]">
               <img src="/assets/search.svg" alt="" className="w-full h-full opacity-60" />
             </div>
@@ -257,8 +257,8 @@ export default function RegistrationsPage() {
             />
           </div>
 
-          <div className="flex gap-[16px] items-center">
-            <div className="w-[180px]">
+          <div className="flex flex-col sm:flex-row gap-[16px] items-center w-full xl:w-auto">
+            <div className="w-full sm:w-[180px]">
               <Select
                 value={statusFilter}
                 onChange={(val) => setStatusFilter(val)}
@@ -277,7 +277,7 @@ export default function RegistrationsPage() {
               />
             </div>
 
-            <div className="w-[280px]">
+            <div className="w-full sm:w-[280px]">
               <DatePicker.RangePicker
                 value={dateRange}
                 onChange={(dates) => setDateRange(dates as any)}
@@ -322,9 +322,10 @@ export default function RegistrationsPage() {
         )}
 
         {/* ── DATA TABLE CARD ── */}
-        <div className="bg-white border border-[#e2e8f0] rounded-[16px] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] overflow-hidden">
-          <table className="w-full text-left border-collapse">
-            <thead>
+        <div className="bg-white border border-[#e2e8f0] rounded-[16px] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] overflow-hidden w-full overflow-x-auto no-scrollbar">
+          <div className="min-w-[1000px]">
+            <table className="w-full text-left border-collapse">
+              <thead>
               <tr className="bg-[rgba(248,250,252,0.5)]">
                 <th className="px-[23px] py-[15px] w-[64px] border-b border-[#f1f5f9]">
                   <input
@@ -449,10 +450,11 @@ export default function RegistrationsPage() {
               )}
             </tbody>
           </table>
+          </div>
 
           {/* ── PAGINATION ── */}
           {totalItems > pageSize && (
-            <div className="px-6 py-4 flex items-center justify-between border-t border-[#f1f5f9] bg-white">
+            <div className="px-6 py-4 flex flex-col sm:flex-row gap-4 items-center justify-between border-t border-[#f1f5f9] bg-white">
               <button
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}

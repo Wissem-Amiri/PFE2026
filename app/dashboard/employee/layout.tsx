@@ -1,4 +1,5 @@
 'use client'
+import { useState } from 'react'
 import { useAuth } from '@/api/AuthContext'
 import Link from 'next/link'
 import NotificationBell from '../../../components/NotificationBell'
@@ -9,7 +10,9 @@ import {
   HiOutlineLogout,
   HiOutlineHome,
   HiOutlineClipboardList,
-  HiOutlineUserGroup
+  HiOutlineUserGroup,
+  HiOutlineMenu,
+  HiOutlineX
 } from 'react-icons/hi'
 import { usePathname } from 'next/navigation'
 import { useMyLeaves } from '@/api/hooks'
@@ -17,6 +20,7 @@ import { useMyLeaves } from '@/api/hooks'
 export default function EmployeeLayout({ children }: { children: React.ReactNode }) {
   const { profile, user, signout } = useAuth()
   const pathname = usePathname()
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const { data: leavesData } = useMyLeaves(user?.id || '', { page: 1, pageSize: 1 })
   const totalLeaves = leavesData?.count || 0
@@ -31,10 +35,31 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
   const initials = profile?.user_name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'EM'
 
   return (
-    <div className="flex min-h-screen font-['Inter',sans-serif] bg-white">
+    <div className="flex flex-col lg:flex-row min-h-screen font-['Inter',sans-serif] bg-white">
+
+      {/* ── MOBILE HEADER ── */}
+      <div className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-[#eaecf0] sticky top-0 z-40">
+        <Link href="/dashboard/employee" className="block no-underline">
+          <Image src="/assets/UnifyRH.png" alt="UnifyRH Logo" width={83} height={32} className="h-[32px] w-auto" />
+        </Link>
+        <button 
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="p-2 text-gray-500 rounded-lg hover:bg-gray-100"
+        >
+          {isMobileMenuOpen ? <HiOutlineX className="w-6 h-6" /> : <HiOutlineMenu className="w-6 h-6" />}
+        </button>
+      </div>
+
+      {/* ── OVERLAY (Mobile) ── */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-gray-900/50 z-40 lg:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
 
       {/* ── SIDEBAR (Figma Fidelity) ── */}
-      <aside className="w-[243px] min-w-[243px] bg-[#FCFCFD] border-r border-[#EAECF0] flex flex-col h-screen sticky top-0 overflow-clip">
+      <aside className={`fixed inset-y-0 left-0 z-50 w-[243px] min-w-[243px] bg-[#FCFCFD] border-r border-[#EAECF0] flex flex-col h-screen transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 overflow-clip ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
 
         {/* Logo Section (UnifyRH) */}
         <div className="pt-[32px] pb-[24px] pl-[16px]">

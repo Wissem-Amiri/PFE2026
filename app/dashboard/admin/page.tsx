@@ -58,25 +58,39 @@ export default function AdminDashboardPage() {
   const [typeFilter, setTypeFilter] = useState<string[]>([])
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(null)
 
+  const showLeaves = typeFilter.length === 0 || typeFilter.includes('Leave requests');
+  const showRegistrationRequests = typeFilter.includes('Registration requests');
+  const showJobSubmissions = typeFilter.length === 0 || typeFilter.includes('Job submissions');
+  const fetchCandidatures = showJobSubmissions || showRegistrationRequests;
+  
+  let candidaturesStatus = statusFilter.length > 0 ? statusFilter : undefined;
+  if (!showJobSubmissions && showRegistrationRequests) {
+    if (candidaturesStatus) {
+      candidaturesStatus = candidaturesStatus.includes('pending') ? ['pending'] : ['__NONE__'];
+    } else {
+      candidaturesStatus = ['pending'];
+    }
+  }
+
   const { data: leavesResult, isLoading: leavesLoading } = useLeaves({ 
     page: 1, 
-    pageSize: 50, 
+    pageSize: showLeaves ? 50 : 0, 
     search,
-    status: statusFilter.length === 1 ? statusFilter[0] : undefined, // Simplify for this hook if it only takes string
+    status: statusFilter.length > 0 ? statusFilter : undefined,
     startDate: dateRange?.[0]?.format('YYYY-MM-DD'),
     endDate: dateRange?.[1]?.format('YYYY-MM-DD')
   })
   const { data: candidaturesResult, isLoading: candidaturesLoading } = useCandidatures({ 
     page: 1, 
-    pageSize: 50, 
+    pageSize: fetchCandidatures ? 50 : 0, 
     search,
-    status: statusFilter.length === 1 ? statusFilter[0] : undefined,
+    status: candidaturesStatus,
     startDate: dateRange?.[0]?.format('YYYY-MM-DD'),
     endDate: dateRange?.[1]?.format('YYYY-MM-DD')
   })
 
-  const leaves = leavesResult?.data || []
-  const candidatures = candidaturesResult?.data || []
+  const leaves = showLeaves ? (leavesResult?.data || []) : [];
+  const candidatures = fetchCandidatures ? (candidaturesResult?.data || []) : [];
 
   const loading = leavesLoading || candidaturesLoading
   const [currentPage, setCurrentPage] = useState(1)
@@ -119,11 +133,7 @@ export default function AdminDashboardPage() {
       details: `Applied for ${c.job?.title}`,
       status: c.status
     }))
-  ].filter(act => {
-    if (typeFilter.length > 0 && !typeFilter.includes(act.leaveType || 'candidature')) return false
-    if (statusFilter.length > 0 && !statusFilter.includes(act.status)) return false
-    return true
-  }).sort((a, b) => dayjs(b.date).valueOf() - dayjs(a.date).valueOf())
+  ].sort((a, b) => dayjs(b.date).valueOf() - dayjs(a.date).valueOf())
 
   const pageSize = 3
   const paginatedActivities = useMemo(() => {
@@ -183,12 +193,12 @@ export default function AdminDashboardPage() {
         await archiveCandidatures(candidatureIds)
       }
 
-      message.success(`${selectedRowKeys.length} activity items archived`)
+      message.success(`${selectedRowKeys.length} activity items deleted`)
       setSelectedRowKeys([])
       queryClient.invalidateQueries({ queryKey: queryKeys.leaves })
       queryClient.invalidateQueries({ queryKey: queryKeys.candidatures })
     } catch (err) {
-      message.error('Failed to archive activities')
+      message.error('Failed to delete activities')
     } finally {
       setIsDeleting(false)
     }
@@ -199,14 +209,14 @@ export default function AdminDashboardPage() {
       {/* Sidebar Placeholder (Space reserved to match Figma's x=243) */}
 
       {/* ── MAIN CONTENT ── */}
-      <div className="flex-1 bg-[#FCFCFD] rounded-tl-[40px] pt-[32px] pb-[48px] overflow-y-auto no-scrollbar">
+      <div className="flex-1 bg-[#FCFCFD] lg:rounded-tl-[40px] pt-[24px] md:pt-[32px] pb-[48px] overflow-y-auto no-scrollbar min-w-0">
         {/* Header section (3024:10913) */}
-        <div className="px-[24px] flex justify-between items-center mb-[32px]">
-          <h1 className="text-[30px] font-medium text-[#101828] font-['Inter'] m-0 p-0 leading-none">Home</h1>
-          <div className="flex items-center">
+        <div className="px-4 md:px-[24px] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-[32px]">
+          <h1 className="text-[28px] md:text-[30px] font-medium text-[#101828] font-['Inter'] m-0 p-0 leading-none">Home</h1>
+          <div className="flex items-center w-full sm:w-auto">
             {activities.length > 3 && (
-              <div className="relative flex items-center">
-                <div className="flex items-center bg-white border border-[#eaecf0] rounded-[12px] h-[44px] w-[300px] shadow-sm focus-within:border-[#7f56d9] focus-within:ring-4 focus-within:ring-[#7f56d9]/10 transition-all duration-200">
+              <div className="relative flex items-center w-full sm:w-auto">
+                <div className="flex items-center bg-white border border-[#eaecf0] rounded-[12px] h-[44px] w-full sm:w-[300px] shadow-sm focus-within:border-[#7f56d9] focus-within:ring-4 focus-within:ring-[#7f56d9]/10 transition-all duration-200">
                   <div className="w-[44px] h-[44px] flex items-center justify-center shrink-0">
                     <img src="/assets/search.svg" className="w-[20px] h-[20px] opacity-60" alt="Search" />
                   </div>
@@ -224,7 +234,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* ── STATS (Strict Figma Structure 3024:10912) ── */}
-        <div className="px-[24px] grid grid-cols-1 md:grid-cols-3 gap-[16px] mb-[32px]">
+        <div className="px-4 md:px-[24px] grid grid-cols-1 md:grid-cols-3 gap-[16px] mb-[32px]">
           {stats.map((stat, idx) => (
             <Link key={idx} href={stat.href} className="no-underline block group">
               <div className="bg-white p-[14.87px] h-[96.8px] rounded-[16px] border border-[#eaecf0] shadow-[0px_8px_16px_-4px_rgba(16,24,40,0.04)] hover:shadow-[0px_12px_24px_-4px_rgba(16,24,40,0.1)] group-hover:border-[#7f56d9] hover:-translate-y-1 transition-all duration-300 cursor-pointer relative flex flex-col justify-between overflow-hidden">
@@ -240,8 +250,8 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* ── TABLE (Strict Figma Activity 3024:10940) ── */}
-        <div className="ml-[24px] mr-[24px] bg-white rounded-[16px] border border-[#eaecf0] shadow-[0px_8px_16px_-4px_rgba(16,24,40,0.04)] overflow-hidden mb-[48px]">
-          <div className="px-6 py-5 border-b border-[#eaecf0] flex justify-between items-center h-[72px]">
+        <div className="mx-4 md:mx-[24px] bg-white rounded-[16px] border border-[#eaecf0] shadow-[0px_8px_16px_-4px_rgba(16,24,40,0.04)] overflow-hidden mb-[48px]">
+          <div className="px-4 md:px-6 py-4 md:py-5 border-b border-[#eaecf0] flex flex-col sm:flex-row justify-between items-start sm:items-center min-h-[72px] gap-4">
             <h3 className="text-[18px] font-medium text-[#101828] font-['Inter'] mb-0 leading-[28px]">Recent activity</h3>
             
             {selectedRowKeys.length > 0 && (
@@ -259,9 +269,10 @@ export default function AdminDashboardPage() {
             )}
           </div>
 
-          <div className="overflow-x-auto no-scrollbar">
-            <Table
-              columns={[
+          <div className="w-full overflow-x-auto no-scrollbar">
+            <div className="min-w-[800px]">
+              <Table
+                columns={[
                 // The selection column is now handled by Ant Design's rowSelection prop below
                 // We'll keep the custom padding for the first column via styles or by keeping this but with correct selection logic
                 {
@@ -328,13 +339,10 @@ export default function AdminDashboardPage() {
                   title: <span className="text-[11px] font-bold text-[#667085] uppercase tracking-wider">Activity</span>,
                   key: 'activity',
                   filters: [
-                    { text: 'Vacation', value: 'Vacation' },
-                    { text: 'Casual', value: 'Casual' },
-                    { text: 'Personal', value: 'Personal' },
-                    { text: 'Sick', value: 'Sick' },
-                    { text: 'Candidature', value: 'candidature' },
+                    { text: 'Registration requests', value: 'Registration requests' },
+                    { text: 'Leave requests', value: 'Leave requests' },
+                    { text: 'Job submissions', value: 'Job submissions' },
                   ],
-                  onFilter: (value: any, record: any) => (record.leaveType || 'candidature') === value,
                   render: (record: any) => {
                     const isLeave = record.type === 'leave';
 
@@ -391,7 +399,6 @@ export default function AdminDashboardPage() {
                     { text: 'Rejected', value: 'rejected' },
                     { text: 'Accepted', value: 'accepted' },
                   ],
-                  onFilter: (value: any, record: any) => record.status === value,
                   render: (status: string) => (
                     <Tag color={status === 'approved' || status === 'accepted' ? 'success' : status === 'rejected' ? 'error' : 'warning'} className="rounded-full px-3 py-0.5 font-bold capitalize border-none">
                       {status}
@@ -401,6 +408,10 @@ export default function AdminDashboardPage() {
               ]}
               dataSource={paginatedActivities}
               pagination={false}
+              onChange={(pagination, filters) => {
+                setTypeFilter(filters.activity as string[] || []);
+                setStatusFilter(filters.status as string[] || []);
+              }}
               rowSelection={{
                 type: 'checkbox',
                 selectedRowKeys,
@@ -411,11 +422,12 @@ export default function AdminDashboardPage() {
               rowKey={(record) => `${record.type}-${record.id}`}
               locale={{ emptyText: <CustomEmpty /> }}
             />
+            </div>
           </div>
 
           {/* ── CUSTOM PAGINATION (Matching Screenshot) ── */}
           {activities.length > 3 && (
-            <div className="px-6 py-4 border-t border-[#EAECF0] bg-white flex items-center justify-between">
+            <div className="px-4 md:px-6 py-4 border-t border-[#EAECF0] bg-white flex flex-col sm:flex-row items-center justify-between gap-4">
               <button
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}

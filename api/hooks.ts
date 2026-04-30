@@ -19,7 +19,7 @@ export function useLeaves(params: {
   page: number;
   pageSize: number;
   showArchived?: boolean;
-  status?: string;
+  status?: string | string[];
   search?: string;
   startDate?: string;
   endDate?: string;
@@ -48,7 +48,7 @@ export function useCandidatures(params: {
   page: number;
   pageSize: number;
   showArchived?: boolean;
-  status?: string;
+  status?: string | string[];
   search?: string;
   leaveType?: string;
   startDate?: string;

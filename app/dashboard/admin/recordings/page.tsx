@@ -116,7 +116,7 @@ export default function RecordingsPage() {
     <div className="flex-1 p-[32px] h-full overflow-y-auto bg-[#FCFCFD]">
 
       {/* ── HEADER ── */}
-      <div className="flex justify-between items-center mb-[32px]">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-[32px]">
         <h1 className="text-[30px] font-semibold text-[#101828] mb-0">Recordings</h1>
         <div className="flex items-center gap-[12px]">
           <div className="content-stretch flex items-center justify-center overflow-clip p-[10px] relative rounded-[8px] cursor-pointer hover:bg-gray-50 transition-all text-[#667085]">
@@ -180,8 +180,8 @@ export default function RecordingsPage() {
         </div>
 
         {/* Tabs and Search Section */}
-        <div className="px-[24px] py-[12px] border-b border-[#EAECF0] flex justify-between items-center">
-          <div className="flex bg-white p-[2px] rounded-[8px] border border-[#D0D5DD] shadow-sm">
+        <div className="px-[24px] py-[12px] border-b border-[#EAECF0] flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
+          <div className="flex flex-wrap bg-white p-[2px] rounded-[8px] border border-[#D0D5DD] shadow-sm w-full xl:w-auto">
             {['View all', 'Your files'].map(tab => (
               <button
                 key={tab}
@@ -195,17 +195,17 @@ export default function RecordingsPage() {
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-[12px]">
-            <div className="relative">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-[12px] w-full xl:w-auto">
+            <div className="relative w-full sm:w-auto">
               <HiOutlineSearch className="absolute left-[12px] top-1/2 -translate-y-1/2 w-[20px] h-[20px] text-[#667085]" />
               <Input
                 placeholder="Search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-[40px] py-[10px] w-[400px] rounded-[8px] border-[#D0D5DD] shadow-sm text-[16px]"
+                className="pl-[40px] py-[10px] w-full sm:w-[400px] rounded-[8px] border-[#D0D5DD] shadow-sm text-[16px]"
               />
             </div>
-            <Button className="h-[44px] px-[16px] rounded-[8px] border-[#D0D5DD] shadow-sm flex items-center gap-[8px] font-semibold text-[#344054]">
+            <Button className="h-[44px] px-[16px] rounded-[8px] border-[#D0D5DD] shadow-sm flex items-center justify-center gap-[8px] font-semibold text-[#344054] w-full sm:w-auto">
               <HiOutlineFilter className="w-[20px] h-[20px]" />
               Filters
             </Button>
@@ -213,8 +213,9 @@ export default function RecordingsPage() {
         </div>
 
         {/* The Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
+        <div className="overflow-x-auto no-scrollbar w-full">
+          <div className="min-w-[1000px]">
+            <table className="w-full border-collapse">
             <thead>
               <tr className="bg-[#F9FAFB] border-b border-[#EAECF0]">
                 <th className="pl-[24px] pr-[12px] py-[12px] text-left w-[48px]">
@@ -291,11 +292,12 @@ export default function RecordingsPage() {
               )}
             </tbody>
           </table>
+          </div>
         </div>
 
         {/* Pagination Section */}
         {totalItems > pageSize && (
-          <div className="px-[24px] py-[16px] border-t border-[#EAECF0] flex justify-between items-center bg-white">
+          <div className="px-[24px] py-[16px] border-t border-[#EAECF0] flex flex-col sm:flex-row gap-4 justify-between items-center bg-white">
             <Button 
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}

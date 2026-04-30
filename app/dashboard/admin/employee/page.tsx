@@ -259,7 +259,7 @@ export default function AdminEmployeeListPage() {
       onClick={() => setFocusedEmployeeId(null)}
     >
       {/* Header */}
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 mb-8">
         <div className="flex items-start gap-6">
           <div>
             <div className="flex items-center gap-2 text-[#64748b] mb-2 cursor-pointer hover:text-[#7c3aed] transition-colors" onClick={() => router.push('/dashboard/admin')}>
@@ -285,8 +285,8 @@ export default function AdminEmployeeListPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-[16px]">
-          <div className="flex items-center gap-[12px] px-[14px] py-[10px] border border-[#e2e8f0] rounded-[12px] bg-white shadow-sm w-[360px] focus-within:ring-2 focus-within:ring-purple-100 transition-all">
+        <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-[16px] w-full xl:w-auto">
+          <div className="flex items-center gap-[12px] px-[14px] py-[10px] border border-[#e2e8f0] rounded-[12px] bg-white shadow-sm w-full sm:w-[360px] focus-within:ring-2 focus-within:ring-purple-100 transition-all">
             <SearchOutlined className="text-[#64748b]" />
             <input
               placeholder="Search by name, position or department..."
@@ -299,7 +299,7 @@ export default function AdminEmployeeListPage() {
           <Select
             value={deptFilter}
             onChange={value => setDeptFilter(value)}
-            className="w-[220px] h-[42px]"
+            className="w-full sm:w-[220px] h-[42px]"
             styles={{ popup: { root: { borderRadius: '12px' } } }}
             options={departmentOptions.map(dept => ({ label: dept, value: dept }))}
           />
@@ -333,7 +333,7 @@ export default function AdminEmployeeListPage() {
 
       {/* ── SELECTION BAR ── */}
       {selectedIds.size > 0 && (
-        <div className="mb-6 p-[12px] bg-[#FFFBFA] border border-[#FDA29B] rounded-[12px] flex justify-between items-center animate-in fade-in slide-in-from-top-4 duration-300">
+        <div className="mb-6 p-[12px] bg-[#FFFBFA] border border-[#FDA29B] rounded-[12px] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 animate-in fade-in slide-in-from-top-4 duration-300">
           <div className="flex items-center gap-[12px]">
             <span className="text-[14px] font-semibold text-[#B42318]">{selectedIds.size} employee(s) selected</span>
             <button
@@ -343,7 +343,7 @@ export default function AdminEmployeeListPage() {
               {selectedIds.size === employees.length ? 'Deselect All' : 'Select All'}
             </button>
           </div>
-          <div className="flex gap-[8px]">
+          <div className="flex flex-wrap gap-[8px] w-full sm:w-auto">
             <button
               onClick={handleArchiveSelected}
               className="h-[40px] px-[16px] rounded-[8px] border border-[#FDA29B] bg-white text-[#B42318] font-semibold flex items-center gap-[8px] hover:bg-[#FFF1F0] hover:border-[#F97066] transition-all cursor-pointer shadow-sm"
@@ -469,9 +469,10 @@ export default function AdminEmployeeListPage() {
           </div>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-[#eaecf0] shadow-sm overflow-hidden">
-          <table className="w-full text-left border-collapse">
-            <thead>
+        <div className="bg-white rounded-2xl border border-[#eaecf0] shadow-sm overflow-hidden w-full overflow-x-auto no-scrollbar">
+          <div className="min-w-[1000px]">
+            <table className="w-full text-left border-collapse">
+              <thead>
               <tr className="bg-[#f9fafb] border-b border-[#eaecf0]">
                 <th className="px-6 py-4 text-[12px] font-bold text-[#667085] uppercase tracking-wider w-[50px]">
                   <input
@@ -547,12 +548,13 @@ export default function AdminEmployeeListPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 
       {/* ── PAGINATION ── */}
       {viewType === 'table' && totalItems > tablePageSize && (
-        <div className="mt-12 flex justify-between items-center bg-white border border-[#eaecf0] rounded-2xl p-4 shadow-sm">
+        <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-between items-center bg-white border border-[#eaecf0] rounded-2xl p-4 shadow-sm">
           <button
             onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
             disabled={currentPage === 1}

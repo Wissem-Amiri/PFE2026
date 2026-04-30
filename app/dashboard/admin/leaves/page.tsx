@@ -217,7 +217,8 @@ export default function AdminLeavesPage() {
         onCancel={() => setActionModal({ ...actionModal, open: false })}
         footer={null}
         centered
-        width={540}
+        width="95%"
+        style={{ maxWidth: 540 }}
         className="fidelity-modal"
       >
         <div className="flex flex-col items-center text-center pt-4">
@@ -271,8 +272,8 @@ export default function AdminLeavesPage() {
       </Modal>
 
       {/* ── HEADER ── */}
-      <header className="bg-white border-b border-[#eaecf0] pt-[40px] pb-[32px] px-[40px]">
-        <div className="max-w-[1400px] mx-auto flex justify-between items-start">
+      <header className="bg-white border-b border-[#eaecf0] pt-6 md:pt-[40px] pb-[32px] px-4 md:px-[40px]">
+        <div className="max-w-[1400px] mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="space-y-1">
             <h1 className="text-[30px] font-semibold text-[#101828] tracking-tight">Leaves</h1>
             <p className="text-[16px] text-[#667085] font-normal">Keep track of yours and your team's medical and personal leaves.</p>
@@ -290,12 +291,12 @@ export default function AdminLeavesPage() {
       </header>
 
       {/* ── CONTENT ── */}
-      <main className="flex-1 p-[40px] pt-0">
+      <main className="flex-1 p-4 md:p-[40px] pt-4 md:pt-0">
         <div className="max-w-[1400px] mx-auto space-y-[24px]">
 
           {/* ── SEARCH & FILTERS BAR ── */}
-          <div className="bg-[rgba(248,248,248,0.31)] border border-[rgba(203,195,213,0.1)] rounded-[16px] h-[76px] px-[16px] mb-[16px] flex items-center justify-between">
-            <div className="flex-1 max-w-[550px] relative">
+          <div className="bg-[rgba(248,248,248,0.31)] border border-[rgba(203,195,213,0.1)] rounded-[16px] h-auto p-4 mb-[16px] flex flex-col xl:flex-row items-center justify-between gap-4">
+            <div className="flex-1 w-full xl:max-w-[550px] relative">
               <div className="absolute left-[12px] top-1/2 -translate-y-1/2 w-[15px] h-[15px]">
                 <img src="/assets/search.svg" alt="" className="w-full h-full opacity-60" />
               </div>
@@ -307,8 +308,8 @@ export default function AdminLeavesPage() {
               />
             </div>
 
-            <div className="flex gap-[16px] items-center">
-              <div className="w-[180px]">
+            <div className="flex flex-col sm:flex-row gap-[16px] items-center w-full xl:w-auto">
+              <div className="w-full sm:w-[180px]">
                 <Select
                   value={statusFilter}
                   onChange={val => setStatusFilter(val)}
@@ -323,7 +324,7 @@ export default function AdminLeavesPage() {
                 />
               </div>
 
-              <div className="w-[180px]">
+              <div className="w-full sm:w-[180px]">
                 <Select
                   value={leaveTypeFilter}
                   onChange={val => setLeaveTypeFilter(val)}
@@ -340,7 +341,7 @@ export default function AdminLeavesPage() {
                 />
               </div>
 
-              <div className="w-[280px]">
+              <div className="w-full sm:w-[280px]">
                 <DatePicker.RangePicker
                   value={dateRange}
                   onChange={(dates) => setDateRange(dates as any)}
@@ -368,8 +369,8 @@ export default function AdminLeavesPage() {
           )}
 
           {/* Table Container */}
-          <div className="bg-white rounded-[12px] border border-[#eaecf0] shadow-[0px_1px_2px_0px_rgba(16,24,40,0.05)] overflow-hidden">
-            <div className="overflow-x-auto">
+          <div className="bg-white rounded-[12px] border border-[#eaecf0] shadow-[0px_1px_2px_0px_rgba(16,24,40,0.05)] overflow-hidden w-full overflow-x-auto no-scrollbar">
+            <div className="min-w-[1000px]">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-[#f9fafb] border-b border-[#eaecf0]">
@@ -520,17 +521,18 @@ export default function AdminLeavesPage() {
                 </tbody>
               </table>
             </div>
+          </div>
 
-            {/* Pagination */}
-            {totalItems > pageSize && (
-              <div className="px-6 py-4 flex items-center justify-between border-t border-[#f1f5f9] bg-white">
-                <button
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                  disabled={currentPage === 1}
-                  className="flex items-center gap-2 px-3 py-2 border border-[#d0d5dd] rounded-[8px] text-[14px] font-semibold text-[#344054] hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                >
-                  <HiOutlineChevronLeft /> Previous
-                </button>
+          {/* ── PAGINATION ── */}
+          {totalItems > pageSize && (
+            <div className="px-6 py-4 flex flex-col sm:flex-row gap-4 items-center justify-between bg-white border border-[#eaecf0] rounded-[12px] shadow-[0px_1px_2px_0px_rgba(16,24,40,0.05)] mt-4">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="flex items-center gap-2 px-3 py-2 border border-[#d0d5dd] rounded-[8px] text-[14px] font-semibold text-[#344054] hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                <HiOutlineChevronLeft /> Previous
+              </button>
 
                 <div className="flex gap-[4px]">
                   {Array.from({ length: totalPages }).map((_, i) => (
@@ -557,7 +559,6 @@ export default function AdminLeavesPage() {
               </div>
             )}
           </div>
-        </div>
       </main>
 
       <style jsx global>{`

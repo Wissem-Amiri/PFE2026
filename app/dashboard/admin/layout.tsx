@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useAuth } from '@/api/AuthContext'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -11,7 +12,9 @@ import {
   HiOutlineBriefcase,
   HiOutlineVideoCamera,
   HiOutlineCog,
-  HiOutlineLogout
+  HiOutlineLogout,
+  HiOutlineMenu,
+  HiOutlineX
 } from 'react-icons/hi'
 import { Avatar } from 'antd'
 import NotificationBell from '../../../components/NotificationBell'
@@ -21,6 +24,7 @@ import { useLeaves, useCandidatures } from '@/api/hooks'
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { profile, user, signout } = useAuth()
   const pathname = usePathname()
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const { data: leavesData } = useLeaves()
   const { data: candidaturesData } = useCandidatures()
@@ -54,10 +58,29 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   ]
 
   return (
-    <div className="flex min-h-screen font-['Inter',sans-serif] bg-[#fcfcfd]">
+    <div className="flex flex-col lg:flex-row min-h-screen font-['Inter',sans-serif] bg-[#fcfcfd]">
+      
+      {/* ── MOBILE HEADER ── */}
+      <div className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-[#eaecf0] sticky top-0 z-40">
+        <img src="/assets/UnifyRH.png" alt="UnifyRH Logo" className="h-[40px] w-auto object-contain" />
+        <button 
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="p-2 text-gray-500 rounded-lg hover:bg-gray-100"
+        >
+          {isMobileMenuOpen ? <HiOutlineX className="w-6 h-6" /> : <HiOutlineMenu className="w-6 h-6" />}
+        </button>
+      </div>
+
+      {/* ── OVERLAY (Mobile) ── */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-gray-900/50 z-40 lg:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
 
       {/* ── SIDEBAR ── */}
-      <aside className="w-[243px] min-w-[243px] bg-[#fcfcfd] border-r border-[#eaecf0] flex flex-col h-screen sticky top-0">
+      <aside className={`fixed inset-y-0 left-0 z-50 w-[243px] min-w-[243px] bg-[#fcfcfd] border-r border-[#eaecf0] flex flex-col h-screen transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
 
         {/* Logo */}
         <div className="pt-[10px] pb-[10px] px-[10px]">
@@ -132,7 +155,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* ── MAIN CONTENT ── */}
-      <main className="flex-1 overflow-y-auto bg-white rounded-tl-[40px] shadow-[-10px_0_30px_rgba(0,0,0,0.02)] min-w-0">
+      <main className="flex-1 overflow-y-auto bg-white lg:rounded-tl-[40px] shadow-[-10px_0_30px_rgba(0,0,0,0.02)] min-w-0">
         {children}
       </main>
     </div>

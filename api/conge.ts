@@ -101,7 +101,7 @@ export async function getAllLeavesDetailed(params: {
   page: number;
   pageSize: number;
   showArchived?: boolean;
-  status?: string;
+  status?: string | string[];
   search?: string;
   leaveType?: string;
   startDate?: string;
@@ -125,7 +125,11 @@ export async function getAllLeavesDetailed(params: {
 
   // Filter by Status
   if (status && status !== 'All Status') {
-    query = query.eq('status', status.toLowerCase());
+    if (Array.isArray(status) && status.length > 0) {
+      query = query.in('status', status.map(s => s.toLowerCase()));
+    } else if (typeof status === 'string') {
+      query = query.eq('status', status.toLowerCase());
+    }
   }
 
   // Filter by Search (Name or Type)

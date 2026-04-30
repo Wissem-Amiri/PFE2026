@@ -222,14 +222,14 @@ export default function EmployeeDashboardPage() {
       {contextHolder}
 
       {/* Main Content Wrap */}
-      <div className="flex flex-1 p-8 pt-10 gap-10">
+      <div className="flex flex-col lg:flex-row flex-1 p-4 md:p-8 pt-6 md:pt-10 gap-6 md:gap-10">
 
         {/* LEFT COLUMN: Main Dashboard Area */}
-        <div className="flex-1 flex flex-col gap-10 min-w-0">
+        <div className="flex-1 flex flex-col gap-6 md:gap-10 min-w-0">
 
           {/* Header */}
-          <div className="flex justify-between items-center">
-            <h1 className="text-[32px] font-bold text-[#101828] m-0">Home</h1>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <h1 className="text-[28px] md:text-[32px] font-bold text-[#101828] m-0">Home</h1>
             <div className="relative group">
               <HiOutlineSearch className="absolute left-[12px] top-1/2 -translate-y-1/2 text-[#667085] group-focus-within:text-[#7C3AED] transition-colors" />
               <input
@@ -240,7 +240,7 @@ export default function EmployeeDashboardPage() {
                   setSearch(e.target.value)
                   setCurrentPage(1)
                 }}
-                className="pl-[36px] pr-[16px] py-[8px] rounded-[8px] border border-[#D0D5DD] bg-white text-[#101828] text-[14px] outline-none focus:border-[#7C3AED] focus:ring-4 focus:ring-[#7C3AED]/10 transition-all w-[240px] placeholder:text-[#98A2B3]"
+                className="pl-[36px] pr-[16px] py-[8px] rounded-[8px] border border-[#D0D5DD] bg-white text-[#101828] text-[14px] outline-none focus:border-[#7C3AED] focus:ring-4 focus:ring-[#7C3AED]/10 transition-all w-full sm:w-[240px] placeholder:text-[#98A2B3]"
               />
             </div>
           </div>
@@ -276,8 +276,8 @@ export default function EmployeeDashboardPage() {
           </div>
 
           {/* Table Card */}
-          <div className="bg-white rounded-[24px] border border-[#F2F4F7] shadow-sm flex flex-col overflow-hidden">
-            <div className="px-8 py-6 border-b border-[#F2F4F7] flex justify-between items-center h-[88px]">
+          <div className="bg-white rounded-[24px] border border-[#F2F4F7] shadow-sm flex flex-col overflow-hidden max-w-full">
+            <div className="px-4 md:px-8 py-6 border-b border-[#F2F4F7] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 min-h-[88px]">
               <h3 className="text-[18px] font-bold text-[#101828] m-0">Latest Leaves</h3>
               
               {selectedRowKeys.length > 0 && (
@@ -295,8 +295,9 @@ export default function EmployeeDashboardPage() {
                 </div>
               )}
             </div>
-            <div className="flex-1">
-              <Table
+            <div className="flex-1 w-full overflow-x-auto">
+              <div className="min-w-[800px]">
+                <Table
                 columns={columns}
                 dataSource={leaves}
                 onChange={(pagination, filters, sorter: any) => {
@@ -350,12 +351,13 @@ export default function EmployeeDashboardPage() {
                   )
                 }}
               />
+              </div>
             </div>
           </div>
         </div>
 
         {/* RIGHT COLUMN: Profile & Actions */}
-        <div className="w-[340px] shrink-0 flex flex-col gap-8">
+        <div className="w-full lg:w-[340px] shrink-0 flex flex-col gap-8">
 
           {/* Profile Card */}
           <div className="bg-white rounded-[32px] p-8 border border-[#F2F4F7] shadow-sm flex flex-col items-center">
@@ -419,7 +421,8 @@ export default function EmployeeDashboardPage() {
         open={isModalOpen}
         onCancel={() => { setIsModalOpen(false); form.resetFields(); }}
         footer={null}
-        width={500}
+        width="95%"
+        style={{ maxWidth: 500 }}
         centered
         closeIcon={null}
         className="fidelity-modal"
