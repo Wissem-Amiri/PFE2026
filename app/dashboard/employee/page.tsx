@@ -13,9 +13,12 @@ import {
   HiOutlineHeart,
   HiOutlineArrowNarrowDown,
   HiOutlineInbox,
-  HiOutlineScale
+  HiOutlineScale,
+  HiOutlineCalendar,
+  HiOutlineFilter,
+  HiOutlineTrash
 } from 'react-icons/hi'
-import { requestLeave } from '@/api/conge'
+import { requestLeave, deleteLeavesPermanently } from '@/api/conge'
 import { useMyLeaves, queryKeys } from '@/api/hooks'
 import { useQueryClient } from '@tanstack/react-query'
 
@@ -27,15 +30,45 @@ export default function EmployeeDashboardPage() {
   const { profile, user } = useAuth()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([])
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<string[]>([])
+  const [typeFilter, setTypeFilter] = useState<string[]>([])
+  const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(null)
   const pageSize = 5
-  
-  const { data: result, isLoading: loading } = useMyLeaves(user?.id || '', { page: currentPage, pageSize })
+
+  const { data: result, isLoading: loading } = useMyLeaves(user?.id || '', {
+    page: currentPage,
+    pageSize,
+    search,
+    status: statusFilter.length > 0 ? statusFilter : undefined,
+    leaveType: typeFilter.length > 0 ? typeFilter : undefined,
+    startDate: dateRange?.[0]?.format('YYYY-MM-DD'),
+    endDate: dateRange?.[1]?.format('YYYY-MM-DD'),
+    sortOrder: 'descend'
+  })
   const leaves = result?.data || []
   const totalItems = result?.count || 0
   const [form] = Form.useForm()
   const [messageApi, contextHolder] = message.useMessage()
 
 
+
+  const handleDeleteSelected = async () => {
+    if (selectedRowKeys.length === 0) return
+    setIsDeleting(true)
+    try {
+      await deleteLeavesPermanently(selectedRowKeys.map(k => String(k)))
+      message.success(`${selectedRowKeys.length} leave requests permanently deleted`)
+      setSelectedRowKeys([])
+      queryClient.invalidateQueries({ queryKey: queryKeys.myLeaves(user?.id || '') })
+    } catch (err) {
+      message.error('Failed to delete leave requests')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   const calculateDaysForType = (type: string) => {
     return leaves
@@ -82,11 +115,7 @@ export default function EmployeeDashboardPage() {
 
   const columns = [
     {
-      title: (
-        <div className="flex items-center gap-1 uppercase tracking-wider text-[11px] font-bold text-[#667085]">
-          Submission Date <HiOutlineArrowNarrowDown className="text-xs" />
-        </div>
-      ),
+      title: <span className="uppercase tracking-wider text-[11px] font-bold text-[#667085]">Submission Date</span>,
       dataIndex: 'created_at',
       key: 'created_at',
       render: (date: string) => (
@@ -97,17 +126,65 @@ export default function EmployeeDashboardPage() {
     },
     {
       title: <span className="uppercase tracking-wider text-[11px] font-bold text-[#667085]">From - to</span>,
-      key: 'duration',
+      key: 'dates',
+      filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }: any) => (
+        <div className="p-4 bg-white rounded-xl shadow-xl border border-gray-100 flex flex-col gap-3">
+          <RangePicker
+            value={dateRange}
+            onChange={(dates) => {
+              setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs] | null)
+              setSelectedKeys(dates ? [dates] : [])
+            }}
+            className="custom-range-picker"
+          />
+          <div className="flex justify-between items-center mt-2 border-t pt-3">
+            <button
+              onClick={() => {
+                setDateRange(null)
+                setSelectedKeys([])
+                clearFilters()
+                confirm()
+              }}
+              className="text-[12px] text-gray-500 font-medium hover:text-red-500 transition-colors"
+            >
+              Reset
+            </button>
+            <Button
+              type="primary"
+              size="small"
+              onClick={() => confirm()}
+              className="bg-[#7C3AED] hover:bg-[#6D28D9] border-none rounded-lg px-4"
+            >
+              Apply
+            </Button>
+          </div>
+        </div>
+      ),
+      filterIcon: (filtered: boolean) => (
+        <HiOutlineCalendar className={`text-[16px] ${filtered ? 'text-[#7C3AED]' : 'text-gray-400'}`} />
+      ),
       render: (record: any) => (
-        <span className="text-[14px] text-[#475467] font-medium">
-          {dayjs(record.start_date).format('MM/DD/YYYY')} to {dayjs(record.end_date).format('MM/DD/YYYY')}
-        </span>
+        <div className="flex flex-col">
+          <span className="text-[14px] text-[#475467] font-medium">
+            {dayjs(record.start_date).format('MM/DD/YYYY')} to {dayjs(record.end_date).format('MM/DD/YYYY')}
+          </span>
+          <span className="text-[11px] text-[#98A2B3] font-medium uppercase mt-0.5">
+            {dayjs(record.end_date).diff(dayjs(record.start_date), 'day') + 1} Days
+          </span>
+        </div>
       )
     },
     {
       title: <span className="uppercase tracking-wider text-[11px] font-bold text-[#667085]">Type</span>,
       dataIndex: 'type',
       key: 'type',
+      filters: [
+        { text: 'Vacation', value: 'Vacation' },
+        { text: 'Casual', value: 'Casual' },
+        { text: 'Personal', value: 'Personal' },
+        { text: 'Sick', value: 'Sick' },
+      ],
+      filteredValue: typeFilter.length > 0 ? typeFilter : null,
       render: (type: string) => {
         let icon = <HiOutlineSun />;
         let color = '#F97316';
@@ -126,6 +203,12 @@ export default function EmployeeDashboardPage() {
       title: <span className="uppercase tracking-wider text-[11px] font-bold text-[#667085]">Status</span>,
       dataIndex: 'status',
       key: 'status',
+      filters: [
+        { text: 'Pending', value: 'pending' },
+        { text: 'Approved', value: 'approved' },
+        { text: 'Rejected', value: 'rejected' },
+      ],
+      filteredValue: statusFilter.length > 0 ? statusFilter : null,
       render: (status: string) => (
         <Tag color={status === 'approved' ? 'success' : status === 'rejected' ? 'error' : 'warning'} className="rounded-full px-3 py-0.5 font-bold capitalize border-none">
           {status}
@@ -147,15 +230,38 @@ export default function EmployeeDashboardPage() {
           {/* Header */}
           <div className="flex justify-between items-center">
             <h1 className="text-[32px] font-bold text-[#101828] m-0">Home</h1>
-            <div className="p-2 hover:bg-gray-50 rounded-full cursor-pointer transition-colors">
-              <HiOutlineSearch className="text-2xl text-[#667085]" />
+            <div className="relative group">
+              <HiOutlineSearch className="absolute left-[12px] top-1/2 -translate-y-1/2 text-[#667085] group-focus-within:text-[#7C3AED] transition-colors" />
+              <input
+                type="text"
+                placeholder="Search Leaves..."
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value)
+                  setCurrentPage(1)
+                }}
+                className="pl-[36px] pr-[16px] py-[8px] rounded-[8px] border border-[#D0D5DD] bg-white text-[#101828] text-[14px] outline-none focus:border-[#7C3AED] focus:ring-4 focus:ring-[#7C3AED]/10 transition-all w-[240px] placeholder:text-[#98A2B3]"
+              />
             </div>
           </div>
 
           {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
             {stats.map((stat, idx) => (
-              <div key={idx} className="bg-white p-6 rounded-[12px] border border-[#F2F4F7] shadow-sm flex flex-col gap-4 group hover:shadow-md transition-shadow">
+              <div
+                key={idx}
+                onClick={() => {
+                  const newFilter = typeFilter.includes(stat.title)
+                    ? typeFilter.filter(t => t !== stat.title)
+                    : [...typeFilter, stat.title]
+                  setTypeFilter(newFilter)
+                  setCurrentPage(1)
+                }}
+                className={`p-6 rounded-[12px] border shadow-sm flex flex-col gap-4 group hover:shadow-md transition-all cursor-pointer ${typeFilter.includes(stat.title)
+                    ? 'border-[#7F56D9] bg-[#F9F5FF] ring-4 ring-[#7F56D9]/10'
+                    : 'bg-white border-[#F2F4F7]'
+                  }`}
+              >
                 <div className="flex justify-between items-center">
                   <span className="text-[12px] font-bold text-[#667085] uppercase tracking-widest">{stat.title}</span>
                 </div>
@@ -171,25 +277,68 @@ export default function EmployeeDashboardPage() {
 
           {/* Table Card */}
           <div className="bg-white rounded-[24px] border border-[#F2F4F7] shadow-sm flex flex-col overflow-hidden">
-            <div className="px-8 py-6 border-b border-[#F2F4F7]">
+            <div className="px-8 py-6 border-b border-[#F2F4F7] flex justify-between items-center h-[88px]">
               <h3 className="text-[18px] font-bold text-[#101828] m-0">Latest Leaves</h3>
+              
+              {selectedRowKeys.length > 0 && (
+                <div className="flex items-center gap-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                  <span className="text-[14px] text-[#667085] font-medium">{selectedRowKeys.length} selected</span>
+                  <Button 
+                    onClick={handleDeleteSelected}
+                    loading={isDeleting}
+                    danger
+                    className="h-[42px] px-6 rounded-xl font-bold flex items-center gap-2"
+                    icon={<HiOutlineTrash className="text-lg" />}
+                  >
+                    Delete selected
+                  </Button>
+                </div>
+              )}
             </div>
             <div className="flex-1">
               <Table
                 columns={columns}
                 dataSource={leaves}
+                onChange={(pagination, filters, sorter: any) => {
+                  // Handle Pagination
+                  if (pagination.current) setCurrentPage(pagination.current)
+
+                  // Handle Filters
+                  const status = filters.status ? filters.status as string[] : []
+                  const type = filters.type ? filters.type as string[] : []
+
+                  if (JSON.stringify(status) !== JSON.stringify(statusFilter) ||
+                    JSON.stringify(type) !== JSON.stringify(typeFilter)) {
+                    setCurrentPage(1)
+                  }
+
+                  setStatusFilter(status)
+                  setTypeFilter(type)
+
+                  // Handle Sorting
+                  if (sorter.field === 'created_at' && sorter.order) {
+                    setSortOrder(sorter.order)
+                    setCurrentPage(1)
+                  } else if (!sorter.order) {
+                    // If sort is cleared, we default back to descend
+                    setSortOrder('descend')
+                    setCurrentPage(1)
+                  }
+                }}
                 pagination={totalItems > pageSize ? {
                   current: currentPage,
                   pageSize: pageSize,
                   total: totalItems,
-                  onChange: (page) => setCurrentPage(page),
                   size: 'small',
-                  className: 'mt-4'
+                  className: 'mt-4 px-8 mb-6'
                 } : false}
                 loading={loading}
                 className="custom-table"
-                rowSelection={{ type: 'checkbox' }}
                 rowKey="id"
+                rowSelection={{
+                  selectedRowKeys,
+                  onChange: (keys) => setSelectedRowKeys(keys),
+                }}
                 locale={{
                   emptyText: (
                     <div className="py-20 flex flex-col items-center gap-4">
@@ -244,7 +393,6 @@ export default function EmployeeDashboardPage() {
           <div className="bg-white rounded-[24px] p-6 border border-[#F2F4F7] shadow-sm">
             <div className="flex justify-between items-center mb-6">
               <span className="text-[14px] font-bold text-[#101828]">Balance</span>
-              <HiOutlineDotsVertical className="text-[#D0D5DD]" />
             </div>
             <div className="flex justify-between items-center">
               <span className="text-[48px] font-bold text-[#101828] leading-none">{profile?.employee?.vacation_balance ?? 0}</span>

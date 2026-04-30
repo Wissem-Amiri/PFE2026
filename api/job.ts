@@ -2,28 +2,55 @@ import { supabase } from './supabase'
 import type { Database, Job } from './database.types'
 
 export async function getAllJobs(params?: {
-  page: number;
-  pageSize: number;
+  page?: number;
+  pageSize?: number;
   search?: string;
+  category?: string;
+  status?: 'Open' | 'Closed';
+  sort?: 'closing_soon' | 'closing_late';
 }) {
   let query = supabase
     .from('jobs')
     .select('*', { count: 'exact' });
 
   if (params) {
-    const { page, pageSize, search } = params;
+    const { page, pageSize, search, category, status, sort } = params;
     
     if (search) {
-      query = query.ilike('title', `%${search}%`);
+      query = query.or(`title.ilike.%${search}%,category.ilike.%${search}%,description.ilike.%${search}%`);
     }
 
-    const from = (page - 1) * pageSize;
-    const to = from + pageSize - 1;
-    query = query.range(from, to);
+    if (category && category !== 'All Categories') {
+      query = query.eq('category', category);
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+
+    if (status === 'Open') {
+      query = query.eq('is_open', true).gt('open_seats', 0).gt('deadline', today);
+    } else if (status === 'Closed') {
+      // Jobs are closed if is_open is false OR open_seats <= 0 OR deadline <= today
+      query = query.or(`is_open.eq.false,open_seats.lte.0,deadline.lte.${today}`);
+    }
+
+    if (sort === 'closing_soon') {
+      query = query.order('deadline', { ascending: true });
+    } else if (sort === 'closing_late') {
+      query = query.order('deadline', { ascending: false });
+    } else {
+      query = query.order('created_at', { ascending: false });
+    }
+
+    if (page && pageSize) {
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+      query = query.range(from, to);
+    }
+  } else {
+    query = query.order('created_at', { ascending: false });
   }
 
-  const { data, error, count } = await query
-    .order('created_at', { ascending: false });
+  const { data, error, count } = await query;
 
   return { data: data as Job[] | null, count: count || 0, error };
 }

@@ -1,17 +1,18 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Badge, Popover, List, Typography, Spin, Modal } from 'antd'
+import { Badge, Popover, List, Typography, Spin } from 'antd'
 import { BellOutlined, CheckCircleOutlined, DeleteOutlined } from '@ant-design/icons'
 import { supabase } from '@/api/supabase'
 import { useAuth } from '@/api/AuthContext'
 import { getUnreadNotifications, markNotificationAsRead, markAllNotificationsAsRead, deleteNotification, Notification } from '@/api/notifications'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
-import 'dayjs/locale/fr'
+import 'dayjs/locale/en-gb'
+import { useRouter } from 'next/navigation'
 
 dayjs.extend(relativeTime)
-dayjs.locale('fr')
+dayjs.locale('en-gb')
 
 const { Text } = Typography
 
@@ -20,6 +21,7 @@ export default function NotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(true)
   const [open, setOpen] = useState(false)
+  const router = useRouter()
 
   const unreadCount = notifications.length
 
@@ -55,24 +57,30 @@ export default function NotificationBell() {
     }
   }, [user])
 
-  const showNotificationModal = (item: Notification) => {
-    Modal.info({
-      title: item.title,
-      icon: <BellOutlined style={{ color: '#7F56D9' }} />,
-      content: (
-        <div className="mt-4">
-          <p className="text-gray-700 leading-relaxed text-[15px]">{item.message}</p>
-          <p className="text-xs text-gray-400 mt-6">{dayjs(item.created_at).format('DD MMMM YYYY, à HH:mm')}</p>
-        </div>
-      ),
-      okText: 'Fermer',
-      centered: true,
-      maskClosable: true,
-      onOk: async () => {
-        // Mark as read in DB but keep it in the list visually until deleted or "Mark all as read"
-        await markNotificationAsRead(item.id)
+  const handleNotificationClick = async (item: Notification) => {
+    // 1. Mark as read in DB
+    await markNotificationAsRead(item.id)
+    
+    // 2. Remove from local list visually
+    setNotifications((prev) => prev.filter((n) => n.id !== item.id))
+    
+    // 3. Close the popover
+    setOpen(false)
+
+    // 4. Navigate based on notification title/content
+    const title = item.title.toLowerCase()
+    const message = item.message.toLowerCase()
+    const role = (user as any)?.role
+
+    if (role === 'admin') {
+      if (title.includes('congé') || message.includes('congé') || title.includes('leave') || message.includes('leave')) {
+        router.push('/dashboard/admin/leaves')
+      } else if (title.includes('candidature') || message.includes('postulé') || title.includes('application') || message.includes('applied')) {
+        router.push('/dashboard/admin/registrations')
       }
-    })
+    } else {
+      router.push('/dashboard/employee')
+    }
   }
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
@@ -94,14 +102,14 @@ export default function NotificationBell() {
       {loading ? (
         <div className="flex justify-center p-4"><Spin /></div>
       ) : notifications.length === 0 ? (
-        <div className="text-center p-4 text-gray-400">Aucune nouvelle notification.</div>
+        <div className="text-center p-4 text-gray-400">No new notifications.</div>
       ) : (
         <List
           dataSource={notifications}
           renderItem={(item) => (
             <List.Item
               className="cursor-pointer hover:bg-gray-50 transition-colors p-3 relative group"
-              onClick={() => showNotificationModal(item)}
+              onClick={() => handleNotificationClick(item)}
             >
               <List.Item.Meta
                 avatar={<div className="mt-1"><CheckCircleOutlined style={{ color: '#7F56D9' }} /></div>}
@@ -116,7 +124,7 @@ export default function NotificationBell() {
               <button
                 onClick={(e) => handleDelete(e, item.id)}
                 className="absolute right-3 top-3 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 bg-transparent border-none cursor-pointer p-1 transition-all duration-200"
-                title="Supprimer la notification"
+                title="Delete notification"
               >
                 <DeleteOutlined className="text-lg" />
               </button>
@@ -138,7 +146,7 @@ export default function NotificationBell() {
               onClick={handleReadAll}
               className="text-[11px] text-[#7F56D9] hover:text-[#6941C6] font-semibold bg-transparent border-none cursor-pointer p-0 underline decoration-dotted transition-colors"
             >
-              Tout marquer comme lu
+              Mark all as read
             </button>
           )}
         </div>

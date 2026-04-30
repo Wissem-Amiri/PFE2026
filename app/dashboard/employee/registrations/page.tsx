@@ -16,13 +16,25 @@ export default function EmployeeRegistrationsPage() {
   const [appliedJobsStatus, setAppliedJobsStatus] = useState<Map<string, string>>(new Map())
   const [messageApi, contextHolder] = message.useMessage()
   const router = useRouter()
+  const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [activeTab, setActiveTab] = useState('All Positions')
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 500)
+    return () => clearTimeout(timer)
+  }, [search])
 
   useEffect(() => {
     async function loadJobsAndStatus() {
       setLoading(true)
-      const { data } = await getAllJobs()
-      const openJobs = (data ?? []).filter(j => j.is_open)
-      setJobs(openJobs)
+      const { data } = await getAllJobs({
+        search: debouncedSearch,
+        category: activeTab === 'All Positions' ? undefined : activeTab,
+        status: 'Open'
+      })
+      setJobs(data ?? [])
 
       if (user) {
         const { data: candidatures } = await getUserCandidatures(user.id)
@@ -36,18 +48,27 @@ export default function EmployeeRegistrationsPage() {
     }
 
     loadJobsAndStatus()
-  }, [user])
+  }, [user, debouncedSearch, activeTab])
 
   const handleApplyClick = (jobId: string) => {
-    if (!user) return messageApi.error("Vous devez être connecté pour postuler.")
+    if (!user) return messageApi.error("You must be logged in to apply.")
     router.push(`/dashboard/employee/profile?applyTo=${jobId}`)
   }
 
-  const categories = ['Tous les postes', ...Array.from(new Set(jobs.map(j => j.category)))]
-  const [activeTab, setActiveTab] = useState('Tous les postes')
+  // Pre-fetch all categories once at start for the filter chips
+  const [categories, setCategories] = useState<string[]>(['All Positions'])
+  useEffect(() => {
+    async function fetchCategories() {
+      const { data } = await getAllJobs()
+      if (data) {
+        const cats = Array.from(new Set(data.map(j => j.category)))
+        setCategories(['All Positions', ...cats])
+      }
+    }
+    fetchCategories()
+  }, [])
 
-  const filteredJobs = (activeTab === 'Tous les postes' ? jobs : jobs.filter(j => j.category === activeTab))
-    .filter(job => {
+  const filteredJobs = jobs.filter(job => {
       const status = appliedJobsStatus.get(job.id)
       return status !== 'rejected' && status !== 'accepted'
     })
@@ -68,6 +89,8 @@ export default function EmployeeRegistrationsPage() {
           placeholder="Search by job title or department..."
           size="large"
           className="rounded-xl"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
         />
       </div>
 

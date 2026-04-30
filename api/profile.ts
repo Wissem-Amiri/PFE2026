@@ -89,22 +89,18 @@ export async function getEmployeesPaginated(params: {
   const { page, pageSize, search, department, showArchived = false } = params;
 
   let query = supabase
-    .from('utilisateur')
-    .select(`
-      *,
-      candidat(id, country),
-      employee!inner(id, department, position, hire_date, vacation_balance, monthly_rate)
-    `, { count: 'exact' })
+    .from('v_employee_directory')
+    .select('*', { count: 'exact' })
     .eq('role', 'employee')
     .eq('status', 'approved')
     .eq('is_archived', showArchived);
 
   if (department && department !== 'All Departments') {
-    query = query.eq('employee.department', department);
+    query = query.eq('department', department);
   }
 
   if (search) {
-    query = query.or(`user_name.ilike.%${search}%,email.ilike.%${search}%`);
+    query = query.or(`user_name.ilike.%${search}%,email.ilike.%${search}%,department.ilike.%${search}%,position.ilike.%${search}%`);
   }
 
   const from = (page - 1) * pageSize;
@@ -290,24 +286,25 @@ export async function createEmployeeAccount(data: {
   position: string
   monthly_rate: number
 }) {
-  console.log('🚀 Calling admin_create_employee RPC with:', data)
+  console.log('🚀 Calling invitation API for:', data.email)
   
-  // @ts-ignore - The RPC function exists in DB but is not yet in generated types
-  const { data: result, error } = await supabase.rpc('admin_create_employee', {
-    email_input: data.email,
-    password_input: data.password || 'TemporaryPassword123!',
-    name_input: data.user_name,
-    dept_input: data.department,
-    pos_input: data.position,
-    date_input: data.hire_date,
-    rate_input: data.monthly_rate
-  })
+  try {
+    const response = await fetch('/api/invite-employee', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    })
 
-  if (error) {
-    console.error('❌ RPC Error:', error)
+    const result = await response.json()
+
+    if (!response.ok) {
+      return { data: null, error: new Error(result.error || 'Failed to invite employee') }
+    }
+
+    console.log('✅ Invitation Success:', result)
+    return { data: result, error: null }
+  } catch (error: any) {
+    console.error('❌ API Error:', error)
     return { data: null, error }
   }
-
-  console.log('✅ RPC Success:', result)
-  return { data: result, error: null }
 }

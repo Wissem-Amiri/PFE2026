@@ -12,16 +12,20 @@ import {
   HiOutlineUserGroup
 } from 'react-icons/hi'
 import { usePathname } from 'next/navigation'
-
-const navItems = [
-  { href: '/dashboard/employee', label: 'Home', icon: <HiOutlineHome />, badge: '10' },
-  { href: '/dashboard/employee/registrations', label: 'Registrations', icon: <HiOutlineClipboardList /> },
-  { href: '/dashboard/employee/employee-list', label: 'Employee', icon: <HiOutlineUserGroup /> },
-]
+import { useMyLeaves } from '@/api/hooks'
 
 export default function EmployeeLayout({ children }: { children: React.ReactNode }) {
   const { profile, user, signout } = useAuth()
   const pathname = usePathname()
+
+  const { data: leavesData } = useMyLeaves(user?.id || '', { page: 1, pageSize: 1 })
+  const totalLeaves = leavesData?.count || 0
+
+  const navItems = [
+    { href: '/dashboard/employee', label: 'Home', icon: <HiOutlineHome />, badge: totalLeaves > 0 ? totalLeaves.toString() : undefined },
+    { href: '/dashboard/employee/registrations', label: 'Registrations', icon: <HiOutlineClipboardList /> },
+    { href: '/dashboard/employee/employee-list', label: 'Employees', icon: <HiOutlineUserGroup /> },
+  ]
 
   // Get initials for avatar
   const initials = profile?.user_name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'EM'

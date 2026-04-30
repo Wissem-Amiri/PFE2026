@@ -113,15 +113,8 @@ export async function getAllCandidaturesDetailed(params: {
   } = params;
 
   let query = supabase
-    .from('candidatures')
-    .select(`
-      *,
-      candidat:candidat!inner(
-        *,
-        user:utilisateur!inner(*)
-      ),
-      job:jobs!inner(*)
-    `, { count: 'exact' })
+    .from('v_candidatures_activities')
+    .select('*', { count: 'exact' })
     .eq('is_archived', showArchived);
 
   // Filter by Status
@@ -131,7 +124,7 @@ export async function getAllCandidaturesDetailed(params: {
 
   // Filter by Search (Name or Job Title)
   if (search) {
-    query = query.or(`job.title.ilike.%${search}%,candidat.user.user_name.ilike.%${search}%`);
+    query = query.or(`job_title.ilike.%${search}%,user_name.ilike.%${search}%`);
   }
 
   // Filter by Date Range
@@ -155,7 +148,22 @@ export async function getAllCandidaturesDetailed(params: {
     .range(from, to);
   
   return { 
-    data: data as any[], 
+    data: (data || []).map(item => ({
+      ...item,
+      candidat: {
+        id: item.candidat_id,
+        user: {
+          user_name: item.user_name,
+          avatar_url: item.avatar_url,
+          email: item.email,
+          phone: item.phone
+        }
+      },
+      job: {
+        id: item.job_id,
+        title: item.job_title
+      }
+    })), 
     count: count || 0, 
     error 
   };

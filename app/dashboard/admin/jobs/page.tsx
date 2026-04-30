@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Popconfirm, message, Tooltip } from 'antd'
+import { Popconfirm, message, Tooltip, Skeleton } from 'antd'
 import { useJobs } from '@/api/hooks'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -61,17 +61,30 @@ export default function JobsPage() {
       
       {/* ── HEADER ── */}
       <div className="flex flex-col gap-[32px] mb-[32px]">
-        <div className="flex flex-col gap-[20px]">
+        <div className="flex justify-between items-center">
           <h1 className="text-[30px] font-semibold text-[#101828] tracking-tight m-0">Jobs</h1>
-          
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-             <div className="space-y-1 max-w-[600px]">
-                <h3 className="text-[18px] font-medium text-[#101828]">Jobs Title</h3>
-                <p className="text-[14px] text-[#667085] leading-relaxed">
-                  Manage and track your company's recruitment flow. Create new job openings, monitor application statuses, and build your dream team with our streamlined administrative interface.
-                </p>
-             </div>
-             
+        </div>
+
+        {/* ── TABS & ACTIONS ── */}
+        <div className="relative flex justify-between items-end border-b border-[#EAECF0]">
+          <div className="flex gap-8 overflow-x-auto no-scrollbar">
+            {tabs.map((tab) => (
+              <button
+                key={tab.label}
+                onClick={() => setActiveTab(tab.label)}
+                className={`pb-4 px-1 text-[14px] font-semibold relative transition-colors whitespace-nowrap ${
+                  activeTab === tab.label ? 'text-[#6941C6]' : 'text-[#667085] hover:text-[#101828]'
+                }`}
+              >
+                {tab.label}
+                {activeTab === tab.label && (
+                  <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#6941C6] rounded-full" />
+                )}
+              </button>
+            ))}
+          </div>
+
+          <div className="pb-3">
              <Link 
                href="/dashboard/admin/jobs/createJob"
                className="inline-flex items-center gap-2 px-[16px] py-[10px] bg-[#7F56D9] text-white rounded-[8px] font-medium text-[14px] shadow-[0px_1px_2px_0px_rgba(16,24,40,0.05)] hover:bg-[#6941C6] transition-all no-underline"
@@ -81,31 +94,26 @@ export default function JobsPage() {
              </Link>
           </div>
         </div>
-
-        {/* ── TABS ── */}
-        <div className="relative flex gap-8 border-b border-[#EAECF0] overflow-x-auto no-scrollbar">
-          {tabs.map((tab) => (
-            <button
-              key={tab.label}
-              onClick={() => setActiveTab(tab.label)}
-              className={`pb-4 px-1 text-[14px] font-semibold relative transition-colors whitespace-nowrap ${
-                activeTab === tab.label ? 'text-[#6941C6]' : 'text-[#667085] hover:text-[#101828]'
-              }`}
-            >
-              {tab.label}
-              {activeTab === tab.label && (
-                <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#6941C6] rounded-full" />
-              )}
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* ── CONTENT ── */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-           <div className="w-8 h-8 border-4 border-[#F4EBFF] border-t-[#7950F2] rounded-full animate-spin mb-4" />
-           <p className="text-[#667085] font-medium">Loading jobs...</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-[24px]">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="bg-white border border-[#EAECF0] rounded-[12px] p-[24px] space-y-4">
+              <div className="flex justify-between items-start">
+                <Skeleton.Button active shape="square" style={{ width: 48, height: 48, borderRadius: 10 }} />
+                <div className="flex gap-2">
+                  <Skeleton.Avatar active size="small" shape="square" />
+                  <Skeleton.Avatar active size="small" shape="square" />
+                </div>
+              </div>
+              <Skeleton active paragraph={{ rows: 2 }} title={{ width: '80%' }} />
+              <div className="pt-4 border-t border-[#EAECF0] flex justify-end">
+                <Skeleton.Button active size="small" style={{ width: 60 }} />
+              </div>
+            </div>
+          ))}
         </div>
       ) : filteredJobs.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-[100px] px-4 text-center border-2 border-dashed border-[#EAECF0] rounded-2xl">
@@ -173,8 +181,8 @@ export default function JobsPage() {
                   
                   <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[12px] font-medium leading-5" 
                     style={{ 
-                      backgroundColor: isJobOpen(job) ? '#ECFDF3' : '#F9FAFB',
-                      color: isJobOpen(job) ? '#027A48' : '#344054'
+                      backgroundColor: isJobOpen(job) ? '#ECFDF3' : '#FEF2F2',
+                      color: isJobOpen(job) ? '#027A48' : '#B91C1C'
                     }}>
                     {isJobOpen(job) ? 'Open' : 'Closed'}
                   </div>

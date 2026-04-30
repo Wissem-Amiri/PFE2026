@@ -89,7 +89,7 @@ export default function EmployeeLeavesPage() {
               {status}
             </Tag>
             {status === 'rejected' && record.rejection_reason && (
-              <Tooltip title={`Motif : ${record.rejection_reason}`}>
+              <Tooltip title={`Reason: ${record.rejection_reason}`}>
                 <InfoCircleOutlined className="text-red-500 cursor-help" />
               </Tooltip>
             )}
@@ -164,9 +164,9 @@ export default function EmployeeLeavesPage() {
               placeholder="Select leave type"
               size="large"
               options={[
-                { value: 'Vacation', label: 'Vacation (Congé Annuel)' },
-                { value: 'Sick Leave', label: 'Sick Leave (Congé Maladie)' },
-                { value: 'Personal', label: 'Personal Leave (Congé Exceptionnel)' },
+                { value: 'Vacation', label: 'Vacation' },
+                { value: 'Sick Leave', label: 'Sick Leave' },
+                { value: 'Personal', label: 'Personal Leave' },
                 { value: 'Maternity/Paternity', label: 'Maternity/Paternity' },
               ]}
             />

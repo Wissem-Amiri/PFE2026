@@ -22,11 +22,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { profile, user, signout } = useAuth()
   const pathname = usePathname()
 
-  const { data: leaves = [] } = useLeaves()
-  const { data: candidatures = [] } = useCandidatures()
+  const { data: leavesData } = useLeaves()
+  const { data: candidaturesData } = useCandidatures()
 
-  const totalLeaves = leaves.length
-  const totalRegistrations = candidatures.length
+  const totalLeaves = leavesData?.count || 0
+  const totalRegistrations = candidaturesData?.count || 0
   const totalActivities = totalLeaves + totalRegistrations
 
   const navItems = [

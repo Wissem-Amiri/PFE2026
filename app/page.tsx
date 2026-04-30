@@ -6,8 +6,9 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/api/AuthContext'
 import { getAllJobs, isJobOpen } from '@/api/job'
 import type { Job } from '@/api/database.types'
-import { Spin } from 'antd'
+import { Spin, Select } from 'antd'
 import { BiArrowToTop } from "react-icons/bi";
+import { SearchOutlined } from '@ant-design/icons'
 
 export default function LandingPage() {
   const router = useRouter()
@@ -19,14 +20,33 @@ export default function LandingPage() {
   const [statusFilter, setStatusFilter] = useState<'Open' | 'Closed'>('Open')
   const [dateSort, setDateSort] = useState<'closing_soon' | 'closing_late'>('closing_soon')
   const [categoryFilter, setCategoryFilter] = useState('All Categories')
+  const [categories, setCategories] = useState<string[]>([])
   const [previewJob, setPreviewJob] = useState<Job | null>(null)
 
+  // Fetch categories once on mount
+  useEffect(() => {
+    async function fetchCategories() {
+      const { data } = await getAllJobs()
+      if (data) {
+        const uniqueCats = Array.from(new Set(data.map(j => j.category).filter(Boolean)))
+        setCategories(uniqueCats)
+      }
+    }
+    fetchCategories()
+  }, [])
+
+  // Fetch jobs based on filters
   useEffect(() => {
     async function fetchJobs() {
+      setLoadingJobs(true)
       try {
-        const { data, error } = await getAllJobs()
+        const { data, error } = await getAllJobs({
+          search: searchTerm,
+          category: categoryFilter,
+          status: statusFilter,
+          sort: dateSort
+        })
         if (!error && data) {
-          // Store all jobs (open and closed)
           setJobs(data)
         }
       } catch (err) {
@@ -36,7 +56,7 @@ export default function LandingPage() {
       }
     }
     fetchJobs()
-  }, [])
+  }, [searchTerm, categoryFilter, statusFilter, dateSort])
 
   const handleApplyClick = (jobId?: string) => {
     if (user) {
@@ -76,11 +96,12 @@ export default function LandingPage() {
                 Dashboard
               </Link>
             )}
-            <Link href="/login">
-              <button className="bg-[#7F56D9] text-white text-[14px] font-semibold px-6 py-2.5 rounded-full hover:bg-[#663BBE] transition-colors shadow-sm">
-                Apply Now
-              </button>
-            </Link>
+            <button 
+              onClick={() => handleApplyClick()}
+              className="bg-[#7F56D9] text-white text-[14px] font-semibold px-6 py-2.5 rounded-full hover:bg-[#663BBE] transition-colors shadow-sm"
+            >
+              Join our team
+            </button>
           </div>
         </div>
       </nav>
@@ -218,69 +239,53 @@ export default function LandingPage() {
             </span>
           </div>
 
-          <div className="bg-[#f8f1fd]/50 border border-[#cbc3d5]/10 flex flex-col md:flex-row gap-4 p-4 rounded-[16px] mb-8">
-            <div className="flex-1 relative">
-              <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+          <div className="bg-[#f8f1fd]/50 border border-[#cbc3d5]/10 flex flex-col md:flex-row gap-4 p-4 rounded-[16px] mb-8 items-center">
+            <div className="flex-1 relative w-full">
+              <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none z-10">
+                <SearchOutlined className="text-gray-400" />
               </div>
               <input
                 type="text"
                 placeholder="Search positions..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full h-full min-h-[48px] bg-white border border-[#cbc3d5]/30 rounded-[12px] pl-10 pr-4 text-[14px] text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#7f56d9] transition-all"
+                className="w-full h-[48px] bg-white border border-[#cbc3d5]/30 rounded-[12px] pl-10 pr-4 text-[14px] text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#7f56d9] transition-all shadow-sm"
               />
             </div>
             <div className="flex flex-wrap gap-4 w-full md:w-auto">
               {/* Category Filter */}
-              <div className="relative bg-white border border-[#cbc3d5]/30 flex-1 md:flex-none min-w-[160px] h-[48px] px-4 rounded-[12px] flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors">
-                <span className="font-['Inter',sans-serif] font-medium text-[14px] text-[#494453] truncate pr-2">
-                  {categoryFilter === 'All Categories' ? 'Category' : categoryFilter}
-                </span>
-                <svg className="w-4 h-4 text-gray-400 pointer-events-none shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                <select
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  value={categoryFilter}
-                  onChange={(e) => setCategoryFilter(e.target.value)}
-                >
-                  <option value="All Categories">All Categories</option>
-                  {Array.from(new Set(jobs.map(j => j.category).filter(Boolean))).map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-              </div>
+              <Select
+                value={categoryFilter}
+                onChange={setCategoryFilter}
+                className="landing-select h-[48px] min-w-[160px]"
+                options={[
+                  { label: 'All Categories', value: 'All Categories' },
+                  ...categories.map(cat => ({ label: cat, value: cat }))
+                ]}
+                placeholder="Category"
+              />
 
               {/* Status Filter */}
-              <div className="relative bg-white border border-[#cbc3d5]/30 flex-1 md:flex-none min-w-[160px] h-[48px] px-4 rounded-[12px] flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors">
-                <span className="font-['Inter',sans-serif] font-medium text-[14px] text-[#494453] truncate pr-2">
-                  {statusFilter === 'Open' ? 'Status: Open' : 'Status: Closed'}
-                </span>
-                <svg className="w-4 h-4 text-gray-400 pointer-events-none shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                <select
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as 'Open' | 'Closed')}
-                >
-                  <option value="Open">Open Offers</option>
-                  <option value="Closed">Closed Offers</option>
-                </select>
-              </div>
+              <Select
+                value={statusFilter}
+                onChange={setStatusFilter}
+                className="landing-select h-[48px] min-w-[160px]"
+                options={[
+                  { label: 'Open Offers', value: 'Open' },
+                  { label: 'Closed Offers', value: 'Closed' }
+                ]}
+              />
 
               {/* Date Filter */}
-              <div className="relative bg-white border border-[#cbc3d5]/30 flex-1 md:flex-none min-w-[160px] h-[48px] px-4 rounded-[12px] flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors">
-                <span className="font-['Inter',sans-serif] font-medium text-[14px] text-[#494453] truncate pr-2">
-                  {dateSort === 'closing_soon' ? 'Closing Soon' : 'Closing Later'}
-                </span>
-                <svg className="w-4 h-4 text-gray-400 pointer-events-none shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                <select
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  value={dateSort}
-                  onChange={(e) => setDateSort(e.target.value as 'closing_soon' | 'closing_late')}
-                >
-                  <option value="closing_soon">Closing Soon</option>
-                  <option value="closing_late">Closing Later</option>
-                </select>
-              </div>
+              <Select
+                value={dateSort}
+                onChange={setDateSort}
+                className="landing-select h-[48px] min-w-[160px]"
+                options={[
+                  { label: 'Closing Soon', value: 'closing_soon' },
+                  { label: 'Closing Later', value: 'closing_late' }
+                ]}
+              />
             </div>
           </div>
 
@@ -288,15 +293,7 @@ export default function LandingPage() {
             {loadingJobs ? (
               <div className="py-12 flex justify-center"><Spin size="large" /></div>
             ) : (() => {
-              let finalJobs = jobs
-                .filter(j => j.title.toLowerCase().includes(searchTerm.toLowerCase()))
-                .filter(j => statusFilter === 'Open' ? isJobOpen(j) : !isJobOpen(j))
-                .filter(j => categoryFilter === 'All Categories' ? true : j.category === categoryFilter)
-                .sort((a, b) => {
-                  const aTime = new Date(a.deadline).getTime();
-                  const bTime = new Date(b.deadline).getTime();
-                  return dateSort === 'closing_soon' ? aTime - bTime : bTime - aTime;
-                });
+              const finalJobs = jobs; // Logic now on backend
 
               if (finalJobs.length === 0) {
                 return (
@@ -473,22 +470,22 @@ export default function LandingPage() {
           <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); handleApplyClick(); }}>
             <div className="grid sm:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="font-['Manrope',sans-serif] font-bold text-[14px] text-[#1d1a22]">Full Name</label>
+                <label className="font-['Manrope',sans-serif] font-bold text-[14px] text-[#1d1a22]">Full Name <span className="text-red-500">*</span></label>
                 <input type="text" placeholder="John Doe" className="w-full bg-[#f8f1fd] px-5 py-4 rounded-xl text-[16px] text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#7f56d9]/50 transition-all" />
               </div>
               <div className="space-y-2">
-                <label className="font-['Manrope',sans-serif] font-bold text-[14px] text-[#1d1a22]">Email Address</label>
+                <label className="font-['Manrope',sans-serif] font-bold text-[14px] text-[#1d1a22]">Email Address <span className="text-red-500">*</span></label>
                 <input type="email" placeholder="john@example.com" className="w-full bg-[#f8f1fd] px-5 py-4 rounded-xl text-[16px] text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#7f56d9]/50 transition-all" />
               </div>
             </div>
 
             <div className="grid sm:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="font-['Manrope',sans-serif] font-bold text-[14px] text-[#1d1a22]">Phone Number</label>
+                <label className="font-['Manrope',sans-serif] font-bold text-[14px] text-[#1d1a22]">Phone Number <span className="text-red-500">*</span></label>
                 <input type="tel" placeholder="+1 (555) 000-0000" className="w-full bg-[#f8f1fd] px-5 py-4 rounded-xl text-[16px] text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#7f56d9]/50 transition-all" />
               </div>
               <div className="space-y-2 flex flex-col justify-end">
-                <label className="font-['Manrope',sans-serif] font-bold text-[14px] text-[#1d1a22]">Resume Upload</label>
+                <label className="font-['Manrope',sans-serif] font-bold text-[14px] text-[#1d1a22]">Resume Upload <span className="text-red-500">*</span></label>
                 <div className="w-full bg-[#f8f1fd] border-2 border-dashed border-[#cbc3d5]/50 px-5 py-3.5 rounded-xl text-[14px] text-[#494453] flex items-center gap-3 cursor-pointer hover:border-[#7f56d9] transition-colors">
                   <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
                   <span>Choose PDF or Doc</span>
@@ -497,7 +494,7 @@ export default function LandingPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="font-['Manrope',sans-serif] font-bold text-[14px] text-[#1d1a22]">Cover Letter</label>
+              <label className="font-['Manrope',sans-serif] font-bold text-[14px] text-[#1d1a22]">Cover Letter <span className="text-red-500">*</span></label>
               <textarea placeholder="Tell us why you're a visionary..." rows={4} className="w-full bg-[#f8f1fd] px-5 py-4 rounded-xl text-[16px] text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#7f56d9]/50 transition-all resize-none"></textarea>
             </div>
 
@@ -547,6 +544,33 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+      <style jsx global>{`
+        .landing-select .ant-select-selector {
+          height: 48px !important;
+          border-radius: 12px !important;
+          border-color: rgba(203, 195, 213, 0.3) !important;
+          padding: 0 16px !important;
+          display: flex !important;
+          align-items: center !important;
+          background: white !important;
+          font-family: 'Inter', sans-serif !important;
+          font-weight: 500 !important;
+          color: #494453 !important;
+          box-shadow: 0 1px 2px 0 rgba(16, 24, 40, 0.05) !important;
+        }
+        .landing-select .ant-select-selection-item {
+          line-height: 48px !important;
+          font-size: 14px !important;
+        }
+        .landing-select.ant-select-focused .ant-select-selector {
+          border-color: #7f56d9 !important;
+          box-shadow: 0 0 0 4px rgba(127, 86, 217, 0.1) !important;
+        }
+        .landing-select .ant-select-arrow {
+          color: #9ca3af !important;
+          right: 16px !important;
+        }
+      `}</style>
     </div>
   )
 }

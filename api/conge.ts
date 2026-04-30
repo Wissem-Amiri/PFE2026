@@ -22,7 +22,7 @@ export async function requestLeave(leaveData: Omit<Conge, 'id' | 'created_at' | 
     .select()
 
   if (!error && data?.[0]) {
-   
+
     // @ts-ignore - La fonction existe en DB mais l'éditeur met du temps à se mettre à jour
     await supabase.rpc('create_admin_notification', {
       p_title: 'Nouvelle demande de congé',
@@ -34,11 +34,52 @@ export async function requestLeave(leaveData: Omit<Conge, 'id' | 'created_at' | 
 }
 
 /** Get leaves for a specific user (Employee) */
-export async function getMyLeaves(employeeId: string, params?: { page: number, pageSize: number }) {
+export async function getMyLeaves(employeeId: string, params?: { 
+  page: number, 
+  pageSize: number, 
+  search?: string,
+  status?: string | string[],
+  leaveType?: string | string[],
+  startDate?: string,
+  endDate?: string,
+  sortOrder?: 'ascend' | 'descend'
+}) {
   let query = supabase
     .from('conges')
     .select('*', { count: 'exact' })
     .eq('employee_id', employeeId);
+
+  if (params?.search) {
+    query = query.ilike('reason', `%${params.search}%`);
+  }
+
+  if (params?.startDate) {
+    query = query.gte('start_date', params.startDate);
+  }
+
+  if (params?.endDate) {
+    query = query.lte('start_date', params.endDate);
+  }
+
+  if (params?.status) {
+    if (Array.isArray(params.status)) {
+      if (params.status.length > 0) {
+        query = query.in('status', params.status.map(s => s.toLowerCase()));
+      }
+    } else if (params.status !== 'All Status') {
+      query = query.eq('status', params.status.toLowerCase());
+    }
+  }
+
+  if (params?.leaveType) {
+    if (Array.isArray(params.leaveType)) {
+      if (params.leaveType.length > 0) {
+        query = query.in('type', params.leaveType);
+      }
+    } else if (params.leaveType !== 'All Types') {
+      query = query.eq('type', params.leaveType);
+    }
+  }
 
   if (params) {
     const { page, pageSize } = params;
@@ -47,8 +88,10 @@ export async function getMyLeaves(employeeId: string, params?: { page: number, p
     query = query.range(from, to);
   }
 
+  const sortAscending = params?.sortOrder === 'ascend';
+
   const { data, error, count } = await query
-    .order('created_at', { ascending: false })
+    .order('created_at', { ascending: sortAscending })
 
   return { data: data as Conge[], count: count || 0, error }
 }
@@ -64,26 +107,20 @@ export async function getAllLeavesDetailed(params: {
   startDate?: string;
   endDate?: string;
 }) {
-  const { 
-    page, 
-    pageSize, 
-    showArchived = false, 
-    status, 
+  const {
+    page,
+    pageSize,
+    showArchived = false,
+    status,
     search,
     leaveType,
-    startDate, 
-    endDate 
+    startDate,
+    endDate
   } = params;
 
   let query = supabase
-    .from('conges')
-    .select(`
-      *,
-      employee:employee!inner(
-        *,
-        user:utilisateur!inner(*)
-      )
-    `, { count: 'exact' })
+    .from('v_leaves_activities')
+    .select('*', { count: 'exact' })
     .eq('is_archived', showArchived);
 
   // Filter by Status
@@ -93,7 +130,7 @@ export async function getAllLeavesDetailed(params: {
 
   // Filter by Search (Name or Type)
   if (search) {
-    query = query.or(`type.ilike.%${search}%,employee.user.user_name.ilike.%${search}%`);
+    query = query.or(`type.ilike.%${search}%,user_name.ilike.%${search}%`);
   }
 
   // Filter by Leave Type
@@ -115,11 +152,22 @@ export async function getAllLeavesDetailed(params: {
   const { data, error, count } = await query
     .order('created_at', { ascending: false })
     .range(from, to);
-  
-  return { 
-    data: data as any[], 
-    count: count || 0, 
-    error 
+
+  return {
+    data: (data || []).map(item => ({
+      ...item,
+      employee: {
+        id: item.employee_id,
+        department: item.department,
+        position: item.position,
+        user: {
+          user_name: item.user_name,
+          avatar_url: item.avatar_url
+        }
+      }
+    })),
+    count: count || 0,
+    error
   };
 }
 
@@ -129,6 +177,14 @@ export async function archiveLeaves(ids: string[]) {
     .update({ is_archived: true })
     .in('id', ids)
     .select()
+  return { data, error }
+}
+
+export async function deleteLeavesPermanently(ids: string[]) {
+  const { data, error } = await supabase
+    .from('conges')
+    .delete()
+    .in('id', ids)
   return { data, error }
 }
 
@@ -145,7 +201,7 @@ export async function unarchiveLeaves(ids: string[]) {
 export async function updateLeaveStatus(leaveId: string, status: 'approved' | 'rejected', rejectionReason?: string) {
   // Fetch leave to get employee_id for notification and duration
   const { data: leave } = await supabase.from('conges').select('*').eq('id', leaveId).single()
-  
+
   if (!leave) return { data: null, error: { message: "Leave not found" } }
 
   // If approving any leave, deduct from balance
@@ -175,14 +231,14 @@ export async function updateLeaveStatus(leaveId: string, status: 'approved' | 'r
   // Insert real-time notification
   if (!error && leave) {
     const title = status === 'approved' ? 'Congé approuvé' : 'Congé refusé'
-    let message = status === 'approved' 
-      ? `Votre demande de congé du ${leave.start_date} au ${leave.end_date} a été validée.` 
+    let message = status === 'approved'
+      ? `Votre demande de congé du ${leave.start_date} au ${leave.end_date} a été validée.`
       : `Votre demande de congé du ${leave.start_date} au ${leave.end_date} a été refusée.`
-      
+
     if (status === 'rejected' && rejectionReason) {
       message += ` Motif : ${rejectionReason}`
     }
-      
+
     await supabase.from('notifications').insert([{
       user_id: leave.employee_id,
       title,

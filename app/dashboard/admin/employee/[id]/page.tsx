@@ -26,6 +26,7 @@ import {
   Tag
 } from 'antd'
 import { getProfile, updateProfile } from '@/api/profile'
+import { getAllJobs } from '@/api/job'
 import type { FullProfile } from '@/api/database.types'
 
 export default function EmployeeDetailsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -34,6 +35,7 @@ export default function EmployeeDetailsPage({ params }: { params: Promise<{ id: 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [profile, setProfile] = useState<FullProfile | null>(null)
+  const [availableJobs, setAvailableJobs] = useState<any[]>([])
 
   const fetchProfile = async () => {
     setLoading(true)
@@ -47,8 +49,14 @@ export default function EmployeeDetailsPage({ params }: { params: Promise<{ id: 
     setLoading(false)
   }
 
+  const fetchJobs = async () => {
+    const { data } = await getAllJobs()
+    if (data) setAvailableJobs(data)
+  }
+
   useEffect(() => {
     fetchProfile()
+    fetchJobs()
   }, [id])
 
   const handleSave = async () => {
@@ -124,9 +132,14 @@ export default function EmployeeDetailsPage({ params }: { params: Promise<{ id: 
                 <div className="absolute bottom-2 right-2 w-5 h-5 bg-green-500 border-[3px] border-white rounded-full"></div>
               </div>
               <h2 className="text-[20px] font-black text-[#101828] mb-1">{profile?.user_name}</h2>
-              <Tag className="rounded-full border-none bg-[#F5F3FF] text-[#7C3AED] font-bold text-[10px] uppercase px-3 py-0.5">
-                {profile?.employee?.department || 'Member'}
-              </Tag>
+              <div className="flex flex-col items-center gap-1">
+                <Tag className="rounded-full border-none bg-[#F5F3FF] text-[#7C3AED] font-bold text-[10px] uppercase px-3 py-0.5">
+                  {profile?.employee?.position || 'Employee'}
+                </Tag>
+                <span className="text-[12px] text-[#667085] font-medium">
+                  {profile?.employee?.department || 'General'}
+                </span>
+              </div>
             </div>
             
             <Divider className="m-0" />
@@ -210,6 +223,26 @@ export default function EmployeeDetailsPage({ params }: { params: Promise<{ id: 
                     { value: 'Marketing', label: 'Marketing' },
                     { value: 'Sales', label: 'Sales' },
                     { value: 'Operations', label: 'Operations' },
+                  ]}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[14px] font-bold text-[#344054] flex items-center gap-2">
+                  <IdcardOutlined className="text-[#98a2b3]" /> Job Position
+                </label>
+                <Select
+                  size="large"
+                  showSearch
+                  className="w-full h-[48px] rounded-xl overflow-hidden"
+                  value={profile?.employee?.position}
+                  onChange={val => setProfile(prev => prev ? ({ 
+                    ...prev, 
+                    employee: { ...(prev.employee || {}), position: val } as any 
+                  }) : null)}
+                  placeholder="Select position..."
+                  options={[
+                    ...availableJobs.map(j => ({ value: j.title, label: j.title })),
+                    { value: 'General Employee', label: 'Other / General' }
                   ]}
                 />
               </div>

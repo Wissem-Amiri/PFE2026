@@ -24,7 +24,7 @@ import { useLeaves, queryKeys } from '@/api/hooks'
 
 import { useQueryClient } from '@tanstack/react-query'
 
-import { downloadCSV } from '@/api/export'
+import { exportTableToPDF } from '@/lib/export'
 
 export default function AdminLeavesPage() {
   const queryClient = useQueryClient()
@@ -102,28 +102,32 @@ export default function AdminLeavesPage() {
   }
 
   const handleExport = () => {
-    const headers = ['Employee', 'Email', 'Type', 'Start Date', 'End Date', 'Days', 'Reason', 'Status', 'Requested At']
-    const rows = filteredLeaves.map(l => {
+    if (leaves.length === 0) {
+      messageApi.info('No leaves to export')
+      return
+    }
+
+    const headers = ['Employee', 'Type', 'Start', 'End', 'Days', 'Status', 'Request Date']
+    const rows = leaves.map(l => {
       const days = dayjs(l.end_date).diff(dayjs(l.start_date), 'day') + 1
       return [
         l.user?.user_name || 'Unknown',
-        l.user?.email || '-',
         l.type || '-',
-        dayjs(l.start_date).format('YYYY-MM-DD'),
-        dayjs(l.end_date).format('YYYY-MM-DD'),
-        days,
-        l.reason || '-',
+        dayjs(l.start_date).format('MM/DD/YYYY'),
+        dayjs(l.end_date).format('MM/DD/YYYY'),
+        `${days}`,
         l.status || '-',
-        dayjs(l.created_at).format('YYYY-MM-DD HH:mm')
+        dayjs(l.created_at).format('MM/DD/YYYY')
       ]
     })
 
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
-    ].join('\n')
-
-    downloadCSV(csvContent, `leaves_export_${dayjs().format('YYYY-MM-DD')}.csv`)
+    exportTableToPDF(
+      'Leave Requests Report',
+      headers,
+      rows,
+      'Leaves_Report'
+    )
+    messageApi.success('PDF Export successful')
   }
 
   const showDetails = (record: any) => {
@@ -270,7 +274,7 @@ export default function AdminLeavesPage() {
       <header className="bg-white border-b border-[#eaecf0] pt-[40px] pb-[32px] px-[40px]">
         <div className="max-w-[1400px] mx-auto flex justify-between items-start">
           <div className="space-y-1">
-            <h1 className="text-[30px] font-semibold text-[#101828] tracking-tight">Latest Leaves Request</h1>
+            <h1 className="text-[30px] font-semibold text-[#101828] tracking-tight">Leaves</h1>
             <p className="text-[16px] text-[#667085] font-normal">Keep track of yours and your team's medical and personal leaves.</p>
           </div>
           <div className="flex gap-3">

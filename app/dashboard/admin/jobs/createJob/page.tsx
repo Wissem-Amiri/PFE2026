@@ -71,9 +71,9 @@ export default function CreateJobPage() {
     const { error } = await createJob(jobData as any)
     
     if (error) {
-      messageApi.error(`Erreur: ${error.message || 'lors de la création du Job'}`)
+      messageApi.error(`Error: ${error.message || 'while creating the job'}`)
     } else {
-      messageApi.success('Job créé avec succès !')
+      messageApi.success('Job created successfully!')
       setTimeout(() => router.push('/dashboard/admin/jobs'), 1000)
     }
   }
@@ -157,7 +157,7 @@ export default function CreateJobPage() {
             {/* Job Name */}
             <div className="flex py-[24px] border-b border-[#EAECF0]">
               <div className="w-[280px] pt-1">
-                <span className="text-[14px] font-medium text-[#344054]">Job Name</span>
+                <span className="text-[14px] font-medium text-[#344054]">Job Name <span className="text-red-500">*</span></span>
               </div>
               <div className="flex-1 max-w-[512px]">
                 <Controller
@@ -181,7 +181,7 @@ export default function CreateJobPage() {
             {/* Category & Deadline */}
             <div className="flex py-[24px] border-b border-[#EAECF0]">
               <div className="w-[280px]">
-                <span className="text-[14px] font-medium text-[#344054]">Category & Deadline</span>
+                <span className="text-[14px] font-medium text-[#344054]">Category & Deadline <span className="text-red-500">*</span></span>
                 <p className="text-[#667085] text-[13px] mt-1 m-0">Select the field and closing date.</p>
               </div>
               <div className="flex-1 max-w-[512px] flex gap-4">
@@ -202,6 +202,7 @@ export default function CreateJobPage() {
                           { value: 'Design', label: 'Design' },
                           { value: 'Marketing', label: 'Marketing' },
                           { value: 'Sales', label: 'Sales' },
+                          { value: 'Support Client', label: 'Support Client' },
                         ]} 
                       />
                     )}
@@ -232,7 +233,7 @@ export default function CreateJobPage() {
             {/* Description */}
             <div className="flex py-[24px] border-b border-[#EAECF0]">
               <div className="w-[280px]">
-                <span className="text-[14px] font-medium text-[#344054]">Description</span>
+                <span className="text-[14px] font-medium text-[#344054]">Description <span className="text-red-500">*</span></span>
                 <p className="text-[#667085] text-[13px] mt-1 m-0">Write a short introduction.</p>
               </div>
               <div className="flex-1 max-w-[512px]">
@@ -264,7 +265,7 @@ export default function CreateJobPage() {
             {/* Requirements */}
             <div className="flex py-[24px] border-b border-[#EAECF0]">
               <div className="w-[280px]">
-                <span className="text-[14px] font-medium text-[#344054]">Requirements</span>
+                <span className="text-[14px] font-medium text-[#344054]">Requirements <span className="text-red-500">*</span></span>
                 <p className="text-[#667085] text-[13px] mt-1 m-0">Define what the candidate needs. Use one line per bullet point.</p>
               </div>
               <div className="flex-1 max-w-[512px]">
@@ -329,7 +330,7 @@ export default function CreateJobPage() {
             {/* Number of Open Seats */}
             <div className="flex py-[24px] border-b border-[#EAECF0]">
               <div className="w-[280px]">
-                <span className="text-[14px] font-medium text-[#344054]">Number of Open Seats</span>
+                <span className="text-[14px] font-medium text-[#344054]">Number of Open Seats <span className="text-red-500">*</span></span>
               </div>
               <div className="flex-1 max-w-[512px]">
                 <Controller

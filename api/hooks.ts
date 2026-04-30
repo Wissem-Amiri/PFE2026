@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query'
 import { getAllLeavesDetailed } from './conge'
 import { getAllCandidaturesDetailed } from './candidatures'
 import { getAllRecordings } from './recordings'
@@ -20,6 +20,7 @@ export function useLeaves(params: {
   pageSize: number;
   showArchived?: boolean;
   status?: string;
+  search?: string;
   startDate?: string;
   endDate?: string;
 } = { page: 1, pageSize: 20 }) {
@@ -110,7 +111,37 @@ export function useEmployees(params: {
   })
 }
 
-export function useMyLeaves(userId: string, params: { page: number, pageSize: number } = { page: 1, pageSize: 5 }) {
+export function useInfiniteEmployees(params: {
+  pageSize: number;
+  search?: string;
+  department?: string;
+  showArchived?: boolean;
+}) {
+  return useInfiniteQuery({
+    queryKey: [...queryKeys.employees, 'infinite', params],
+    queryFn: async ({ pageParam = 1 }) => {
+      const { data, count, error } = await getEmployeesPaginated({
+        ...params,
+        page: pageParam as number,
+      })
+      if (error) throw error
+      return { data: data || [], count, nextPage: (data?.length || 0) < params.pageSize ? undefined : (pageParam as number) + 1 }
+    },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => lastPage.nextPage,
+  })
+}
+
+export function useMyLeaves(userId: string, params: { 
+  page: number, 
+  pageSize: number, 
+  search?: string,
+  status?: string | string[],
+  leaveType?: string | string[],
+  startDate?: string,
+  endDate?: string,
+  sortOrder?: 'ascend' | 'descend'
+} = { page: 1, pageSize: 5 }) {
   return useQuery({
     queryKey: [...queryKeys.myLeaves, userId, params],
     queryFn: async () => {

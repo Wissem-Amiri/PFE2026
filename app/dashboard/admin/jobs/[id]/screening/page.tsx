@@ -121,7 +121,7 @@ export default function AIScreeningPage() {
           return {
             id: app.id,
             score: scored.score,
-            name: user.user_name || 'Candidat',
+            name: user.user_name || 'Candidate',
             email: user.email || '',
             avatar: user.avatar_url || undefined,
             strengths: scored.strengths,
@@ -179,17 +179,17 @@ export default function AIScreeningPage() {
   const handleApprove = async (c: Candidate) => {
     const { error } = await updateCandidatureStatus(c.id, 'accepted')
     if (!error) {
-      messageApi.success(`${c.name} approuvé`)
+      messageApi.success(`${c.name} approved`)
       setCandidates(p => p.map(x => x.id === c.id ? { ...x, status: 'accepted' } : x))
-    } else messageApi.error('Échec de l\'action')
+    } else messageApi.error('Action failed')
   }
 
   const handleReject = async (c: Candidate) => {
     const { error } = await updateCandidatureStatus(c.id, 'rejected')
     if (!error) {
-      messageApi.success(`${c.name} rejeté`)
+      messageApi.success(`${c.name} rejected`)
       setCandidates(p => p.map(x => x.id === c.id ? { ...x, status: 'rejected' } : x))
-    } else messageApi.error('Échec de l\'action')
+    } else messageApi.error('Action failed')
   }
 
   if (loading) return (
@@ -214,18 +214,18 @@ export default function AIScreeningPage() {
           </div>
           <h1 className="text-[30px] font-extrabold text-[#0f172a] tracking-tight leading-[36px] m-0">AI Screening Dashboard</h1>
           <p className="text-[#64748b] text-[16px] m-0">
-            {candidates.length} candidat{candidates.length !== 1 ? 's' : ''} pour ce poste
+            {candidates.length} candidate{candidates.length !== 1 ? 's' : ''} for this position
           </p>
         </div>
         <div className="flex gap-3">
           <button className="flex items-center gap-2 px-[16px] py-[9px] bg-white border border-[#e2e8f0] rounded-[8px] text-[14px] font-semibold text-[#0f172a] cursor-pointer hover:bg-[#f8fafc] transition-colors shadow-sm">
             <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M2 5l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-            Exporter
+            Export
           </button>
           <button onClick={() => router.push(`/dashboard/admin/jobs/${jobId}`)}
             className="flex items-center gap-2 px-[16px] py-[9px] bg-[#7c3aed] rounded-[8px] text-[14px] font-semibold text-white cursor-pointer hover:bg-[#6d28d9] transition-colors shadow-md shadow-purple-200 border-none">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6" /></svg>
-            Retour au poste
+            Back to Job
           </button>
         </div>
       </div>
@@ -235,7 +235,7 @@ export default function AIScreeningPage() {
         <div className="col-span-8 bg-white border border-[#f1f5f9] rounded-[12px] shadow-sm flex items-center gap-6 px-[18px] py-[17px]">
           {[
             { label: 'SCORE:', value: scoreFilter, set: setScoreFilter, opts: ['All Scores', 'Above 90%', 'Above 80%', 'Above 70%'] },
-            { label: 'EXPÉRIENCE:', value: expFilter, set: setExpFilter, opts: ['All Levels', 'With Experience', 'No Experience'] },
+            { label: 'EXPERIENCE:', value: expFilter, set: setExpFilter, opts: ['All Levels', 'With Experience', 'No Experience'] },
           ].map(({ label, value, set, opts }) => (
             <div key={label} className="flex items-center gap-2">
               <span className="text-[12px] font-bold text-[#94a3b8] uppercase tracking-widest whitespace-nowrap">{label}</span>
@@ -251,7 +251,7 @@ export default function AIScreeningPage() {
             </div>
           ))}
           <div className="ml-auto text-[12px] text-[#94a3b8] font-medium">
-            {filtered.length} résultat{filtered.length !== 1 ? 's' : ''}
+            {filtered.length} result{filtered.length !== 1 ? 's' : ''}
           </div>
         </div>
 
@@ -272,7 +272,7 @@ export default function AIScreeningPage() {
         {/* Header */}
         <div className="grid bg-[rgba(248,250,252,0.5)] border-b border-[#f1f5f9]"
           style={{ gridTemplateColumns: '300px 180px 1fr 180px 180px' }}>
-          {['CANDIDAT', 'SCORE AI', 'POINTS FORTS', 'EXPÉRIENCE', 'ACTIONS'].map((h, i) => (
+          {['CANDIDATE', 'AI SCORE', 'STRENGTHS', 'EXPERIENCE', 'ACTIONS'].map((h, i) => (
             <div key={h} className={`px-6 py-4 text-[12px] font-bold text-[#94a3b8] uppercase tracking-widest ${i === 1 ? 'text-center' : i === 4 ? 'text-right' : ''}`}>
               {h}
             </div>
@@ -283,8 +283,8 @@ export default function AIScreeningPage() {
         {filtered.length === 0 ? (
           <div className="py-20 flex flex-col items-center gap-3 text-center">
             <div className="w-14 h-14 rounded-2xl bg-[#f8fafc] border border-[#f1f5f9] flex items-center justify-center text-2xl">🔍</div>
-            <p className="text-[#0f172a] font-bold text-[16px] m-0">Aucun candidat trouvé</p>
-            <p className="text-[#64748b] text-[14px] m-0">Essayez d'ajuster les filtres ci-dessus.</p>
+            <p className="text-[#0f172a] font-bold text-[16px] m-0">No candidates found</p>
+            <p className="text-[#64748b] text-[14px] m-0">Try adjusting the filters above.</p>
           </div>
         ) : paged.map((c, idx) => (
           <div key={c.id}
@@ -322,21 +322,21 @@ export default function AIScreeningPage() {
                   <p className="text-[#64748b] text-[10px] font-medium m-0 truncate">Prev: {c.prevCompanies}</p>
                 </>
               ) : (
-                <span className="text-[12px] text-[#94a3b8] font-medium italic">Aucune expérience</span>
+                <span className="text-[12px] text-[#94a3b8] font-medium italic">No experience</span>
               )}
             </div>
 
             {/* Actions */}
             <div className="px-6 flex items-center justify-end gap-2">
-              <button title="Approuver" onClick={() => handleApprove(c)} disabled={c.status === 'accepted'}
+              <button title="Approve" onClick={() => handleApprove(c)} disabled={c.status === 'accepted'}
                 className={`w-9 h-9 rounded-[8px] flex items-center justify-center transition-all border-none ${c.status === 'accepted' ? 'bg-[#dcfce7] opacity-40 cursor-not-allowed' : 'bg-[#f0fdf4] hover:bg-[#dcfce7] cursor-pointer'}`}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </button>
-              <button title="Rejeter" onClick={() => handleReject(c)} disabled={c.status === 'rejected'}
+              <button title="Reject" onClick={() => handleReject(c)} disabled={c.status === 'rejected'}
                 className={`w-9 h-9 rounded-[8px] flex items-center justify-center transition-all border-none ${c.status === 'rejected' ? 'bg-[#fee2e2] opacity-40 cursor-not-allowed' : 'bg-[#fef2f2] hover:bg-[#fee2e2] cursor-pointer'}`}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="#dc2626" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </button>
-              <button title="Voir le profil" onClick={() => router.push(`/dashboard/admin/registrations/${candidates.find(x => x.id === c.id)?.id}`)}
+              <button title="View profile" onClick={() => router.push(`/dashboard/admin/registrations/${candidates.find(x => x.id === c.id)?.id}`)}
                 className="w-9 h-9 rounded-[8px] bg-[#f8fafc] hover:bg-[#f1f5f9] flex items-center justify-center transition-all cursor-pointer border-none">
                 <svg width="17" height="12" viewBox="0 0 18 13" fill="none"><path d="M1 6.5C1 6.5 4 1 9 1s8 5.5 8 5.5-3 5.5-8 5.5S1 6.5 1 6.5z" stroke="#64748b" strokeWidth="1.5" /><circle cx="9" cy="6.5" r="2" stroke="#64748b" strokeWidth="1.5" /></svg>
               </button>
@@ -348,7 +348,7 @@ export default function AIScreeningPage() {
         {filtered.length > 0 && (
           <div className="flex items-center justify-between px-6 py-4 border-t border-[#f1f5f9] bg-[rgba(248,250,252,0.5)]">
             <p className="text-[12px] font-medium text-[#64748b] m-0">
-              Affichage <span className="font-bold text-[#0f172a]">{(page - 1) * perPage + 1} – {Math.min(page * perPage, filtered.length)}</span> sur {filtered.length}
+              Showing <span className="font-bold text-[#0f172a]">{(page - 1) * perPage + 1} – {Math.min(page * perPage, filtered.length)}</span> of {filtered.length}
             </p>
             <div className="flex gap-1">
               <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
@@ -381,7 +381,7 @@ export default function AIScreeningPage() {
           <div className="flex flex-col gap-3">
             {topSkills.length > 0
               ? topSkills.map(s => <SkillBar key={s.label} label={s.label} pct={s.pct} />)
-              : <p className="text-[13px] text-[#94a3b8] italic m-0">Pas assez de données</p>
+              : <p className="text-[13px] text-[#94a3b8] italic m-0">Not enough data</p>
             }
           </div>
         </div>
@@ -389,12 +389,12 @@ export default function AIScreeningPage() {
         {/* Average AI Score */}
         <div className="bg-white border border-[#f1f5f9] rounded-[16px] p-6 shadow-sm flex flex-col gap-4">
           <div className="flex items-center justify-between">
-            <span className="text-[12px] font-bold text-[#94a3b8] uppercase tracking-widest">SCORE AI MOYEN</span>
+            <span className="text-[12px] font-bold text-[#94a3b8] uppercase tracking-widest">AVERAGE AI SCORE</span>
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M2 13L6 8l4 3 4-6 2 4" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </div>
           <div className="flex flex-col items-center gap-1 py-2">
             <span className="text-[40px] font-extrabold text-[#0f172a] tracking-tight leading-none">{avgScore}%</span>
-            <span className="text-[10px] font-bold text-[#10b981] uppercase tracking-wider mt-1">Score basé sur les données réelles</span>
+            <span className="text-[10px] font-bold text-[#10b981] uppercase tracking-wider mt-1">Score based on real data</span>
           </div>
         </div>
 
@@ -404,10 +404,10 @@ export default function AIScreeningPage() {
           <span className="text-[12px] font-bold text-[#ddd6fe] uppercase tracking-widest">NOTE AI RECRUITER</span>
           <p className="text-white text-[14px] font-medium italic leading-[22px] m-0 z-10">
             &ldquo;{candidates.length === 0
-              ? 'Aucune candidature pour le moment.'
+              ? 'No applications for the moment.'
               : avgScore >= 70
-                ? `Bonne qualité de candidats. Score moyen de ${avgScore}% — recommandez un seuil de 75%.`
-                : `Pool de candidats à améliorer. Score moyen de ${avgScore}% — élargissez les critères.`
+                ? `Good candidate quality. Average score of ${avgScore}% — recommend a 75% threshold.`
+                : `Candidate pool needs improvement. Average score of ${avgScore}% — broaden your criteria.`
             }&rdquo;
           </p>
         </div>

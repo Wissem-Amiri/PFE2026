@@ -62,6 +62,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  // ── ONLINE STATUS TRACKING ──
+  useEffect(() => {
+    if (!user?.id) return
+
+    const channel = supabase.channel('online-status', {
+      config: { presence: { key: user.id } }
+    })
+
+    const updateStatus = async (status: boolean) => {
+      try {
+        await supabase.from('utilisateur').update({ is_online: status }).eq('id', user.id)
+      } catch (err) {
+        console.error('Error updating online status:', err)
+      }
+    }
+
+    channel.subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        await updateStatus(true)
+      }
+    })
+
+    const handleVisibilityChange = () => {
+      updateStatus(document.visibilityState === 'visible')
+    }
+
+    const handleBeforeUnload = () => {
+      // Use navigator.sendBeacon or a synchronous call if possible, 
+      // but here we just try a fire-and-forget update
+      updateStatus(false)
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('beforeunload', handleBeforeUnload)
+
+    return () => {
+      updateStatus(false)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      supabase.removeChannel(channel)
+    }
+  }, [user?.id])
+
   const signUp = async (email: string, password: string, options?: any) => {
     const mergedOptions = {
       ...options,
@@ -99,6 +142,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signout = async () => {
+    if (user?.id) {
+      await supabase.from('utilisateur').update({ is_online: false }).eq('id', user.id)
+    }
     await supabase.auth.signOut()
     setSession(null)
     setUser(null)
@@ -146,8 +192,8 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     const isHomePage = pathname === '/'
     const isDashboard = pathname.startsWith('/dashboard/')
 
-    // If authenticated and on an auth page (except new-pass & verify-email) → go to correct dashboard
-    if (user && isAuthPage && !isNewPassPage && !isVerifyEmailPage) {
+    // If authenticated and on an auth page or home page (except new-pass & verify-email) → go to correct dashboard
+    if (user && (isAuthPage || isHomePage) && !isNewPassPage && !isVerifyEmailPage) {
       const role = profile?.role || user.user_metadata?.role
       const dashboardPath = getDashboardByRole(role)
       

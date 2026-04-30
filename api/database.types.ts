@@ -16,6 +16,7 @@ export interface BaseUtilisateur {
   phone: string | null
   avatar_url: string | null
   is_archived: boolean
+  is_online: boolean
   created_at: string | null
 }
 

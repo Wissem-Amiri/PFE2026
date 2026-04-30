@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { getAllUsers, getProfile } from '@/api/profile'
 import { getAllLeavesDetailed } from '@/api/conge'
 import { getAllCandidaturesDetailed } from '@/api/candidatures'
@@ -15,8 +15,10 @@ import {
   Table,
   Tag,
   Tooltip,
+  Button,
   message,
-  Pagination
+  Pagination,
+  DatePicker
 } from 'antd'
 import {
   UserOutlined,
@@ -40,7 +42,9 @@ import {
   HiOutlineBell,
   HiOutlineLockClosed,
   HiOutlineHeart,
-  HiOutlineTrash
+  HiOutlineTrash,
+  HiOutlineChevronLeft,
+  HiOutlineChevronRight
 } from 'react-icons/hi'
 import dayjs from 'dayjs'
 
@@ -49,16 +53,39 @@ import { useLeaves, useCandidatures } from '@/api/hooks'
 export default function AdminDashboardPage() {
   const { user } = useAuth()
   const [adminProfile, setAdminProfile] = useState<FullProfile | null>(null)
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<string[]>([])
+  const [typeFilter, setTypeFilter] = useState<string[]>([])
+  const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(null)
 
-  const { data: leavesResult, isLoading: leavesLoading } = useLeaves({ page: 1, pageSize: 20 })
-  const { data: candidaturesResult, isLoading: candidaturesLoading } = useCandidatures({ page: 1, pageSize: 20 })
+  const { data: leavesResult, isLoading: leavesLoading } = useLeaves({ 
+    page: 1, 
+    pageSize: 50, 
+    search,
+    status: statusFilter.length === 1 ? statusFilter[0] : undefined, // Simplify for this hook if it only takes string
+    startDate: dateRange?.[0]?.format('YYYY-MM-DD'),
+    endDate: dateRange?.[1]?.format('YYYY-MM-DD')
+  })
+  const { data: candidaturesResult, isLoading: candidaturesLoading } = useCandidatures({ 
+    page: 1, 
+    pageSize: 50, 
+    search,
+    status: statusFilter.length === 1 ? statusFilter[0] : undefined,
+    startDate: dateRange?.[0]?.format('YYYY-MM-DD'),
+    endDate: dateRange?.[1]?.format('YYYY-MM-DD')
+  })
 
   const leaves = leavesResult?.data || []
   const candidatures = candidaturesResult?.data || []
 
   const loading = leavesLoading || candidaturesLoading
-  const [search, setSearch] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([])
+
+  // Reset to first page when searching to avoid empty states
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search])
 
   const queryClient = useQueryClient()
   const [isDeleting, setIsDeleting] = useState(false)
@@ -92,12 +119,19 @@ export default function AdminDashboardPage() {
       details: `Applied for ${c.job?.title}`,
       status: c.status
     }))
-  ].sort((a, b) => dayjs(b.date).valueOf() - dayjs(a.date).valueOf())
+  ].filter(act => {
+    if (typeFilter.length > 0 && !typeFilter.includes(act.leaveType || 'candidature')) return false
+    if (statusFilter.length > 0 && !statusFilter.includes(act.status)) return false
+    return true
+  }).sort((a, b) => dayjs(b.date).valueOf() - dayjs(a.date).valueOf())
 
-  const filteredActivities = activities.filter(a =>
-    (a.user?.user_name || '').toLowerCase().includes(search.toLowerCase()) ||
-    (a.details || '').toLowerCase().includes(search.toLowerCase())
-  )
+  const pageSize = 3
+  const paginatedActivities = useMemo(() => {
+    return activities.slice(
+      (currentPage - 1) * pageSize,
+      currentPage * pageSize
+    )
+  }, [activities, currentPage])
 
 
   const stats = [
@@ -165,24 +199,27 @@ export default function AdminDashboardPage() {
       {/* Sidebar Placeholder (Space reserved to match Figma's x=243) */}
 
       {/* ── MAIN CONTENT ── */}
-      <div className="flex-1 bg-[#FCFCFD] rounded-tl-[40px] pt-[32px] pb-[48px] overflow-y-auto">
+      <div className="flex-1 bg-[#FCFCFD] rounded-tl-[40px] pt-[32px] pb-[48px] overflow-y-auto no-scrollbar">
         {/* Header section (3024:10913) */}
         <div className="px-[24px] flex justify-between items-center mb-[32px]">
-          <h1 className="text-[30px] font-medium text-[#101828] leading-[38px] font-['Inter']">Home</h1>
-          <div className="flex items-center gap-[12px]">
-            <div className="relative flex items-center group">
-              <div className={`flex items-center bg-white border border-[#eaecf0] rounded-[8px] px-[12px] py-[8px] transition-all duration-300 shadow-sm
-                ${search ? 'w-[280px] border-[#7f56d9] ring-2 ring-[#7f56d9]/10' : 'w-[40px] hover:w-[280px] hover:border-[#7f56d9]'}`}>
-                <img src="/assets/search.svg" className="w-[18px] h-[18px] opacity-70 shrink-0" alt="Search" />
-                <input
-                  type="text"
-                  placeholder="Search activities..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="ml-3 w-full bg-transparent border-none outline-none text-[14px] text-[#101828] placeholder:text-[#667085] font-['Inter']"
-                />
+          <h1 className="text-[30px] font-medium text-[#101828] font-['Inter'] m-0 p-0 leading-none">Home</h1>
+          <div className="flex items-center">
+            {activities.length > 3 && (
+              <div className="relative flex items-center">
+                <div className="flex items-center bg-white border border-[#eaecf0] rounded-[12px] h-[44px] w-[300px] shadow-sm focus-within:border-[#7f56d9] focus-within:ring-4 focus-within:ring-[#7f56d9]/10 transition-all duration-200">
+                  <div className="w-[44px] h-[44px] flex items-center justify-center shrink-0">
+                    <img src="/assets/search.svg" className="w-[20px] h-[20px] opacity-60" alt="Search" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search activities..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="flex-1 bg-transparent border-none outline-none text-[14px] text-[#101828] placeholder:text-[#667085] font-medium font-['Inter'] pr-3"
+                  />
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
@@ -222,13 +259,13 @@ export default function AdminDashboardPage() {
             )}
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto no-scrollbar">
             <Table
               columns={[
                 // The selection column is now handled by Ant Design's rowSelection prop below
                 // We'll keep the custom padding for the first column via styles or by keeping this but with correct selection logic
                 {
-                  title: <span className="text-[12px] font-medium text-[#667085] font-['Inter'] uppercase ml-6">Submission Date</span>,
+                  title: <span className="text-[11px] font-bold text-[#667085] uppercase tracking-wider ml-6">Submission Date</span>,
                   key: 'applicant',
                   render: (record: any) => (
                     <div className="flex items-center gap-[12px]">
@@ -244,10 +281,43 @@ export default function AdminDashboardPage() {
                   )
                 },
                 {
-                  title: <span className="text-[12px] font-medium text-[#667085] font-['Inter'] uppercase">Date</span>,
+                  title: <span className="text-[11px] font-bold text-[#667085] uppercase tracking-wider">Date</span>,
                   key: 'date_range',
+                  filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }: any) => (
+                    <div className="p-4 bg-white rounded-xl shadow-xl border border-gray-100 flex flex-col gap-3">
+                      <DatePicker.RangePicker
+                        value={dateRange}
+                        onChange={(dates) => {
+                          setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs] | null)
+                        }}
+                        className="custom-range-picker"
+                      />
+                      <div className="flex justify-between items-center mt-2 border-t pt-3">
+                        <button
+                          onClick={() => {
+                            setDateRange(null)
+                            confirm()
+                          }}
+                          className="text-[12px] text-gray-500 font-medium hover:text-red-500 transition-colors"
+                        >
+                          Reset
+                        </button>
+                        <Button
+                          type="primary"
+                          size="small"
+                          onClick={() => confirm()}
+                          className="bg-[#7C3AED] hover:bg-[#6D28D9] border-none rounded-lg px-4"
+                        >
+                          Apply
+                        </Button>
+                      </div>
+                    </div>
+                  ),
+                  filterIcon: (filtered: boolean) => (
+                    <CalendarOutlined className={`text-[16px] ${filtered ? 'text-[#7C3AED]' : 'text-gray-400'}`} />
+                  ),
                   render: (record: any) => (
-                    <span className="text-[14px] text-[#667085] font-['Inter']">
+                    <span className="text-[14px] text-[#667085] font-medium">
                       {record.type === 'leave'
                         ? `${dayjs(record.date).format('MM/DD/YYYY')} to ${dayjs(record.date).add(2, 'day').format('MM/DD/YYYY')}`
                         : `${dayjs(record.date).format('MM/DD/YYYY')} ${dayjs(record.date).format('HH:mm')}`}
@@ -255,8 +325,16 @@ export default function AdminDashboardPage() {
                   )
                 },
                 {
-                  title: <span className="text-[12px] font-medium text-[#667085] font-['Inter'] uppercase">Activity</span>,
+                  title: <span className="text-[11px] font-bold text-[#667085] uppercase tracking-wider">Activity</span>,
                   key: 'activity',
+                  filters: [
+                    { text: 'Vacation', value: 'Vacation' },
+                    { text: 'Casual', value: 'Casual' },
+                    { text: 'Personal', value: 'Personal' },
+                    { text: 'Sick', value: 'Sick' },
+                    { text: 'Candidature', value: 'candidature' },
+                  ],
+                  onFilter: (value: any, record: any) => (record.leaveType || 'candidature') === value,
                   render: (record: any) => {
                     const isLeave = record.type === 'leave';
 
@@ -302,20 +380,27 @@ export default function AdminDashboardPage() {
                       </div>
                     )
                   }
+                },
+                {
+                  title: <span className="text-[11px] font-bold text-[#667085] uppercase tracking-wider">Status</span>,
+                  dataIndex: 'status',
+                  key: 'status',
+                  filters: [
+                    { text: 'Pending', value: 'pending' },
+                    { text: 'Approved', value: 'approved' },
+                    { text: 'Rejected', value: 'rejected' },
+                    { text: 'Accepted', value: 'accepted' },
+                  ],
+                  onFilter: (value: any, record: any) => record.status === value,
+                  render: (status: string) => (
+                    <Tag color={status === 'approved' || status === 'accepted' ? 'success' : status === 'rejected' ? 'error' : 'warning'} className="rounded-full px-3 py-0.5 font-bold capitalize border-none">
+                      {status}
+                    </Tag>
+                  )
                 }
               ]}
-              dataSource={filteredActivities}
-              pagination={{
-                pageSize: 10,
-                hideOnSinglePage: true,
-                placement: 'bottomCenter',
-                className: 'custom-pagination',
-                itemRender: (page, type, originalElement) => {
-                  if (type === 'prev') return <button className="px-[14px] py-[8px] bg-white border border-[#d0d5dd] rounded-[8px] shadow-sm text-[14px] font-medium text-[#344054] hover:bg-gray-50 flex items-center gap-[8px] mr-4 font-['Inter']"><img src="/assets/arrow-left.svg" className="w-[14px] h-[14px]" alt="" /> Previous</button>
-                  if (type === 'next') return <button className="px-[14px] py-[8px] bg-white border border-[#d0d5dd] rounded-[8px] shadow-sm text-[14px] font-medium text-[#344054] hover:bg-gray-50 flex items-center gap-[8px] ml-4 font-['Inter']">Next <img src="/assets/arrow-right.svg" className="w-[14px] h-[14px]" alt="" /></button>
-                  return originalElement
-                }
-              }}
+              dataSource={paginatedActivities}
+              pagination={false}
               rowSelection={{
                 type: 'checkbox',
                 selectedRowKeys,
@@ -327,6 +412,42 @@ export default function AdminDashboardPage() {
               locale={{ emptyText: <CustomEmpty /> }}
             />
           </div>
+
+          {/* ── CUSTOM PAGINATION (Matching Screenshot) ── */}
+          {activities.length > 3 && (
+            <div className="px-6 py-4 border-t border-[#EAECF0] bg-white flex items-center justify-between">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="flex items-center gap-2 px-[14px] py-[8px] border border-[#D0D5DD] rounded-[8px] bg-white text-[14px] font-semibold text-[#344054] shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                <HiOutlineChevronLeft className="text-[18px]" />
+                Previous
+              </button>
+
+              <Pagination
+                current={currentPage}
+                total={activities.length}
+                pageSize={3}
+                onChange={page => setCurrentPage(page)}
+                showSizeChanger={false}
+                itemRender={(page, type, originalElement) => {
+                  if (type === 'prev' || type === 'next') return null;
+                  return originalElement;
+                }}
+                className="custom-center-pagination"
+              />
+
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(Math.ceil(activities.length / 3), prev + 1))}
+                disabled={currentPage === Math.ceil(activities.length / 3)}
+                className="flex items-center gap-2 px-[14px] py-[8px] border border-[#D0D5DD] rounded-[8px] bg-white text-[14px] font-semibold text-[#344054] shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                Next
+                <HiOutlineChevronRight className="text-[18px]" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -370,11 +491,11 @@ export default function AdminDashboardPage() {
           background: #f9fafb !important;
           color: #667085 !important;
           font-size: 11px !important;
-          font-weight: 600 !important;
-          padding: 12px 24px !important;
+          font-weight: 700 !important;
+          padding: 16px 24px !important;
           border-bottom: 1px solid #eaecf0 !important;
           text-transform: uppercase !important;
-          letter-spacing: 0.05em !important;
+          letter-spacing: 0.08em !important;
           font-family: 'Inter', sans-serif !important;
         }
         .figma-dashboard-table.decoration-table .ant-table-tbody > tr > td {
@@ -385,26 +506,49 @@ export default function AdminDashboardPage() {
         .figma-dashboard-table.decoration-table .ant-table-row:hover > td {
           background-color: #fcfcfd !important;
         }
-        .custom-pagination {
-          margin: 0 !important;
-          padding: 16px 24px !important;
-          border-top: 1px solid #eaecf0 !important;
-          display: flex !important;
-          justify-content: space-between !important;
-          align-items: center !important;
-          width: 100% !important;
-        }
-        .custom-pagination .ant-pagination-item {
-            border-radius: 8px !important;
-            border: none !important;
-            margin: 0 2px !important;
-            font-weight: 500 !important;
-        }
-        .custom-pagination .ant-pagination-item-active {
-            background: #f9f5ff !important;
-        }
-        .custom-pagination .ant-pagination-item-active a {
+        .ant-pagination-item-active a {
             color: #7f56d9 !important;
+        }
+        
+        /* Premium Ant Design Pagination Styling - Centered Numbers */
+        .custom-center-pagination {
+          margin: 0 !important;
+          padding: 0 !important;
+          display: flex !important;
+          align-items: center !important;
+        }
+        .custom-center-pagination .ant-pagination-item {
+          border-radius: 8px !important;
+          border: none !important;
+          background: transparent !important;
+          font-family: 'Inter', sans-serif !important;
+          font-weight: 500 !important;
+          margin: 0 4px !important;
+          min-width: 32px !important;
+          height: 32px !important;
+          line-height: 32px !important;
+          transition: all 0.2s !important;
+        }
+        .custom-center-pagination .ant-pagination-item a {
+          color: #667085 !important;
+        }
+        .custom-center-pagination .ant-pagination-item:hover {
+          background: #F9F5FF !important;
+        }
+        .custom-center-pagination .ant-pagination-item-active {
+          background: #7F56D9 !important;
+          box-shadow: 0px 4px 8px rgba(127, 86, 217, 0.25) !important;
+        }
+        .custom-center-pagination .ant-pagination-item-active a {
+          color: white !important;
+        }
+        
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
         }
       `}</style>
     </div>

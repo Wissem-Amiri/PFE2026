@@ -3,12 +3,10 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/api/supabase'
-import { getJobApplications, updateCandidatureStatus, deleteAllOtherCandidatures } from '@/api/candidatures'
-import { updateUserStatus } from '@/api/profile'
-import { decrementJobSeats, isJobOpen } from '@/api/job'
+import { isJobOpen } from '@/api/job'
+import { useInView } from 'react-intersection-observer'
 import type { Job } from '@/api/database.types'
-import { message, Table, Tag, Space, Avatar, Button as AntButton, Modal } from 'antd'
-import { CheckCircleOutlined, CloseCircleOutlined, UserOutlined } from '@ant-design/icons'
+import { message } from 'antd'
 
 export default function JobOverviewPage() {
   const router = useRouter()
@@ -17,10 +15,16 @@ export default function JobOverviewPage() {
 
   const [job, setJob] = useState<Job | null>(null)
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'brief' | 'applications' | 'members'>('brief')
-  const [applications, setApplications] = useState<any[]>([])
-  const [loadingApps, setLoadingApps] = useState(false)
+  const [activeTab, setActiveTab] = useState<'brief' | 'members'>('brief')
+  const [members, setMembers] = useState<any[]>([])
+  const [loadingMembers, setLoadingMembers] = useState(false)
+  const [page, setPage] = useState(0)
+  const [hasMore, setHasMore] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
   const [messageApi, contextHolder] = message.useMessage()
+
+  const { ref, inView } = useInView()
+  const PAGE_SIZE = 8
 
   useEffect(() => {
     async function loadJob() {
@@ -31,7 +35,7 @@ export default function JobOverviewPage() {
         .single()
 
       if (error || !data) {
-        messageApi.error("Impossible de charger l'offre.")
+        messageApi.error("Unable to load the job offer.")
         setTimeout(() => router.push('/dashboard/admin/jobs'), 1500)
       } else {
         setJob(data as Job)
@@ -42,104 +46,52 @@ export default function JobOverviewPage() {
   }, [jobId, router, messageApi])
 
   useEffect(() => {
-    if (activeTab === 'applications') {
-      loadApplications()
+    if (activeTab === 'members' && job) {
+      loadMembers(0)
     }
-  }, [activeTab, jobId])
+  }, [activeTab, job, searchQuery])
 
-  async function loadApplications() {
-    setLoadingApps(true)
-    const { data, error } = await getJobApplications(jobId)
-    if (!error) {
-      setApplications(data || [])
+  useEffect(() => {
+    if (inView && hasMore && !loadingMembers && activeTab === 'members' && page >= 0) {
+      loadMembers(page + 1)
     }
-    setLoadingApps(false)
+  }, [inView, hasMore, loadingMembers, activeTab])
+
+  async function loadMembers(pageToLoad = 0) {
+    if (pageToLoad === 0) {
+      setMembers([])
+      setPage(0)
+      setHasMore(true)
+    }
+
+    setLoadingMembers(true)
+    const from = pageToLoad * PAGE_SIZE
+    const to = from + PAGE_SIZE - 1
+
+    let query = supabase
+      .from('employee')
+      .select('*, utilisateur!inner(*)')
+      .ilike('position', job?.title || '')
+      .range(from, to)
+    
+    if (searchQuery) {
+      query = query.ilike('utilisateur.user_name', `%${searchQuery}%`)
+    }
+
+    const { data, error } = await query
+    
+    if (!error && data) {
+      setMembers(prev => pageToLoad === 0 ? data : [...prev, ...data])
+      setPage(pageToLoad)
+      if (data.length < PAGE_SIZE) setHasMore(false)
+    }
+    setLoadingMembers(false)
   }
 
-  const handleStatusUpdate = async (application: any, status: 'accepted' | 'rejected') => {
-    Modal.confirm({
-      title: `${status === 'accepted' ? 'Accept' : 'Reject'} Application?`,
-      content: `Are you sure you want to ${status} this candidate for this specific job position?`,
-      okText: 'Yes',
-      cancelText: 'No',
-      onOk: async () => {
-        const { error } = await updateCandidatureStatus(application.id, status)
-        if (!error) {
-          if (status === 'accepted') {
-            // Simple transition: use defaults for hiring details
-            await updateUserStatus(application.candidat_id, 'approved')
-            await deleteAllOtherCandidatures(application.candidat_id, application.id)
-            await decrementJobSeats(jobId)
-            
-            // Reload job details to see new available seats
-            const { data } = await supabase.from('jobs').select('*').eq('id', jobId).single()
-            if (data) setJob(data as Job)
-          }
-          messageApi.success(`Candidature ${status} successfully`)
-          loadApplications()
-        } else {
-          messageApi.error("Failed to update status")
-        }
-      }
-    })
-  }
 
-  const columns = [
-    {
-      title: 'Candidate',
-      dataIndex: 'user',
-      key: 'user',
-      render: (user: any) => (
-        <Space>
-          <Avatar src={user?.avatar_url} icon={<UserOutlined />} />
-          <div>
-            <div className="font-medium text-[#101828]">{user?.user_name || 'Anonymous'}</div>
-            <div className="text-[12px] text-gray-500">{user?.email}</div>
-          </div>
-        </Space>
-      ),
-    },
-    {
-      title: 'Applied At',
-      dataIndex: 'applied_at',
-      key: 'applied_at',
-      render: (date: string) => new Date(date).toLocaleDateString(),
-    },
-    {
-      title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status: string) => {
-        let color = 'gold'
-        if (status === 'accepted') color = 'green'
-        if (status === 'rejected') color = 'red'
-        return <Tag color={color}>{status.toUpperCase()}</Tag>
-      },
-    },
-    {
-      title: 'Actions',
-      key: 'actions',
-      render: (_: any, record: any) => (
-        <Space size="middle">
-          <AntButton 
-            type="text" 
-            icon={<CheckCircleOutlined className="text-green-500" />} 
-            onClick={() => handleStatusUpdate(record, 'accepted')}
-            disabled={record.status === 'accepted'}
-          />
-          <AntButton 
-            type="text" 
-            icon={<CloseCircleOutlined className="text-red-500" />} 
-            onClick={() => handleStatusUpdate(record, 'rejected')}
-            disabled={record.status === 'rejected'}
-          />
-        </Space>
-      ),
-    },
-  ]
 
   if (loading) {
-    return <div className="p-10 text-center text-gray-500">Chargement...</div>
+    return <div className="p-10 text-center text-gray-500">Loading...</div>
   }
 
   if (!job) {
@@ -180,19 +132,24 @@ export default function JobOverviewPage() {
         </div>
         
         <div className="flex items-center gap-[12px]">
-          <button className="w-[40px] h-[40px] rounded-[8px] border border-[#D0D5DD] bg-white flex items-center justify-center text-[#475467] cursor-pointer hover:bg-gray-50">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="1"></circle>
-              <circle cx="19" cy="12" r="1"></circle>
-              <circle cx="5" cy="12" r="1"></circle>
-            </svg>
-          </button>
-          <button 
-            onClick={() => setActiveTab('applications')}
-            className="px-[20px] py-[10px] rounded-[8px] bg-white border border-[#D0D5DD] text-[#344054] font-medium text-[14px] cursor-pointer hover:bg-gray-50 transition-colors shadow-sm flex items-center gap-[8px]"
-          >
-            <span>+</span> View Applications
-          </button>
+          {activeTab === 'members' && (
+            <div className="relative group">
+              <svg 
+                className="absolute left-[12px] top-1/2 -translate-y-1/2 text-[#98A2B3] group-focus-within:text-[#7C3AED] transition-colors" 
+                width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+              >
+                <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input 
+                type="text"
+                placeholder="Search member..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-[36px] pr-[16px] py-[10px] rounded-[8px] border border-[#D0D5DD] bg-white text-[#101828] text-[14px] outline-none focus:border-[#7C3AED] focus:ring-4 focus:ring-[#7C3AED]/10 transition-all w-[240px] placeholder:text-[#98A2B3]"
+              />
+            </div>
+          )}
+          
           <button
             onClick={() => router.push(`/dashboard/admin/jobs/${jobId}/screening`)}
             className="px-[20px] py-[10px] rounded-[8px] bg-[#7C3AED] text-white font-medium text-[14px] cursor-pointer hover:bg-[#6D28D9] transition-colors border-none shadow-sm flex items-center gap-[8px]"
@@ -207,13 +164,6 @@ export default function JobOverviewPage() {
       <div className="mb-[24px]">
         <div className="flex justify-between items-center mb-[8px]">
           <h2 className="text-[20px] font-semibold text-[#101828] m-0">Job overview</h2>
-          <button className="text-[#98A2B3] bg-transparent border-none cursor-pointer hover:text-[#475467]">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="1"></circle>
-              <circle cx="12" cy="5" r="1"></circle>
-              <circle cx="12" cy="19" r="1"></circle>
-            </svg>
-          </button>
         </div>
         <p className="text-[#475467] text-[15px] max-w-3xl line-clamp-2 m-0">
           {job.description}
@@ -233,16 +183,6 @@ export default function JobOverviewPage() {
           Job brief
         </button>
         <button 
-          onClick={() => setActiveTab('applications')}
-          className={`px-[16px] py-[8px] rounded-[8px] text-[14px] font-medium transition-colors border-none cursor-pointer ${
-            activeTab === 'applications' 
-            ? 'bg-[#F5F3FF] text-[#7C3AED]' 
-            : 'bg-transparent text-[#475467] hover:bg-gray-50'
-          }`}
-        >
-          Applications
-        </button>
-        <button 
           onClick={() => setActiveTab('members')}
           className={`px-[16px] py-[8px] rounded-[8px] text-[14px] font-medium transition-colors border-none cursor-pointer ${
             activeTab === 'members' 
@@ -257,47 +197,79 @@ export default function JobOverviewPage() {
       {/* Tab Content */}
       {activeTab === 'brief' && (
         <div className="max-w-4xl">
-          {/* Highlight Box */}
-          <div className="bg-[#F9F5FF] p-[24px] rounded-[12px] mb-[40px]">
-            <p className="text-[#7C3AED] text-[16px] leading-[1.6] m-0">
-              Bienvenue sur la description détaillée du poste <b>{job.title}</b>. En tant qu'administrateur, vous pouvez visualiser et gérer les informations de ce recrutement depuis cet espace. Les candidatures reçues pour cette offre peuvent être auditées dans la section réservée.
-            </p>
-          </div>
-
           {/* Details */}
-          <div>
-            <h3 className="text-[18px] font-semibold text-[#101828] mb-[16px]">About the Job</h3>
-            <div className="text-[#475467] text-[15px] leading-[1.7]">
-              <p className="mb-4">
-                {job.description}
-              </p>
-              <ul className="list-disc pl-5 space-y-2">
-                <li>Catégorie du poste : <span className="font-medium text-[#101828]">{job.category}</span></li>
-                <li>Places disponibles : <span className="font-medium text-[#101828]">{job.open_seats}</span></li>
-                <li>Statut de l'offre : {isJobOpen(job) ? <span className="text-green-600 font-medium">Ouverte</span> : <span className="text-red-500 font-medium">Fermée</span>}</li>
-                <li>Clôture des candidatures : <span className="font-medium text-[#101828]">{new Date(job.deadline).toLocaleDateString()}</span></li>
-              </ul>
+          <div className="flex flex-col gap-8">
+            <div>
+              <h3 className="text-[18px] font-semibold text-[#101828] mb-[16px]">About the Job</h3>
+              <div className="text-[#475467] text-[15px] leading-[1.7]">
+                <p className="mb-4">
+                  {job.description}
+                </p>
+                <ul className="list-disc pl-5 space-y-2">
+                  <li>Position Category: <span className="font-medium text-[#101828]">{job.category}</span></li>
+                  <li>Available Seats: <span className="font-medium text-[#101828]">{job.open_seats}</span></li>
+                  <li>Offer Status: {isJobOpen(job) ? <span className="text-green-600 font-medium">Open</span> : <span className="text-red-500 font-medium">Closed</span>}</li>
+                  <li>Application Deadline: <span className="font-medium text-[#101828]">{new Date(job.deadline).toLocaleDateString()}</span></li>
+                </ul>
+              </div>
             </div>
+
+            {job.requirements && (
+              <div>
+                <h3 className="text-[18px] font-semibold text-[#101828] mb-[16px]">Requirements</h3>
+                <ul className="list-disc pl-5 space-y-3 m-0">
+                  {job.requirements.split('\n').filter(r => r.trim()).map((req, i) => (
+                    <li key={i} className="text-[#475467] text-[15px] leading-[1.5]">
+                      {req.trim()}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {activeTab === 'applications' && (
-        <div className="max-w-6xl">
-          <Table 
-            dataSource={applications} 
-            columns={columns} 
-            rowKey="id" 
-            loading={loadingApps}
-            pagination={{ pageSize: 10 }}
-            className="border border-[#F2F4F7] rounded-xl overflow-hidden"
-          />
-        </div>
-      )}
 
       {activeTab === 'members' && (
-        <div className="max-w-4xl py-10 text-center text-gray-500">
-          <p>Aucun membre affecté pour le moment.</p>
+        <div className="max-w-4xl">
+          {loadingMembers ? (
+            <div className="py-10 text-center text-gray-500">Loading members...</div>
+          ) : members.length === 0 ? (
+            <div className="py-10 text-center text-gray-500">
+              <p>No members assigned to this position yet.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {members.map((member) => (
+                <div key={member.id} className="bg-white border border-[#eaecf0] rounded-[12px] p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-all">
+                  <div className="w-[50px] h-[50px] rounded-full bg-[#f1f5f9] flex items-center justify-center overflow-hidden border border-[#e2e8f0]">
+                    {member.utilisateur?.avatar_url ? (
+                      <img src={member.utilisateur.avatar_url} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-[16px] font-bold text-[#64748b]">
+                        {member.utilisateur?.user_name?.substring(0, 2).toUpperCase() || 'EM'}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-[16px] font-semibold text-[#101828] m-0 truncate">
+                      {member.utilisateur?.user_name || 'Anonymous'}
+                    </h4>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[11px] font-medium text-[#94a3b8] uppercase tracking-wider block">Joined</span>
+                    <span className="text-[13px] font-medium text-[#101828]">
+                      {member.hire_date ? new Date(member.hire_date).toLocaleDateString() : 'N/A'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+              
+              {/* Scroll Trigger */}
+              <div ref={ref} className="col-span-full py-4 h-10" />
+            </div>
+          )}
         </div>
       )}
 

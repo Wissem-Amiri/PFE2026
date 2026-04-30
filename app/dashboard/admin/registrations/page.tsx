@@ -29,6 +29,7 @@ import {
   HiOutlineDownload
 } from 'react-icons/hi'
 import { BiExport } from 'react-icons/bi'
+import { exportTableToPDF } from '@/lib/export'
 import { getAllUsers, updateUserStatus as updateGlobalUserStatus, exportToCSV, downloadCSV } from '@/api/profile'
 import { getAllCandidaturesDetailed, updateCandidatureStatus, archiveCandidatures, restoreCandidatures, deleteAllOtherCandidatures, hardDeleteCandidatures } from '@/api/candidatures'
 import { getAllJobs, decrementJobSeats } from '@/api/job'
@@ -91,7 +92,7 @@ export default function RegistrationsPage() {
 
   const handleDeleteSelected = async () => {
     if (selectedIds.size === 0) return
-    
+
     Modal.confirm({
       title: 'Delete Registrations?',
       content: `Are you sure you want to permanently delete these ${selectedIds.size} registration(s)? This action cannot be undone.`,
@@ -104,7 +105,7 @@ export default function RegistrationsPage() {
         try {
           const { error } = await hardDeleteCandidatures(ids)
           if (error) throw error
-          
+
           message.success(`${ids.length} registration(s) deleted permanently`)
           setSelectedIds(new Set())
           queryClient.invalidateQueries({ queryKey: queryKeys.candidatures })
@@ -172,14 +173,33 @@ export default function RegistrationsPage() {
     await handleAction(appToApprove, 'accepted', {
       hire_date,
       department: hiringData.department,
-      monthly_rate: hiringData.monthly_rate
+      monthly_rate: hiringData.monthly_rate,
+      position: appToApprove.job?.title || 'Employee'
     })
   }
 
   const handleExport = () => {
-    const usersToExport = Array.from(new Set(applications.map(app => app.candidat?.user)))
-    const csv = exportToCSV(usersToExport as any[])
-    downloadCSV(csv, 'registrations.csv')
+    if (applications.length === 0) {
+      message.info('No registrations to export')
+      return
+    }
+
+    const headers = ['Candidate', 'Email', 'Position', 'Submission Date', 'Status']
+    const rows = applications.map(app => [
+      app.candidat?.user?.user_name || 'Unknown',
+      app.candidat?.user?.email || '—',
+      app.job?.title || 'Candidate',
+      dayjs(app.applied_at || app.created_at).format('MM/DD/YYYY'),
+      app.status || '-'
+    ])
+
+    exportTableToPDF(
+      'Registration Report',
+      headers,
+      rows,
+      'Registrations_Report'
+    )
+    message.success('PDF Export successful')
   }
 
   // Server-side filtered data is directly available in 'applications'
@@ -198,18 +218,18 @@ export default function RegistrationsPage() {
       <div className="bg-white px-[27px] py-[24px] border-b border-[#e2e8f0] flex justify-between items-center shrink-0">
         <h1 className="text-[20px] font-bold text-[#0f172a]">Registrations</h1>
         <div className="flex gap-[8px]">
-          <Link 
+          <Link
             href="/dashboard/admin/registrations/archive"
             className="flex items-center gap-[8px] px-[17px] py-[9px] border border-[#e2e8f0] rounded-[8px] text-[14px] font-semibold text-[#334155] bg-white shadow-sm transition-all hover:bg-gray-50"
           >
             <HiOutlineArchive className="text-[18px]" />
             Archive
           </Link>
-          <button 
+          <button
             onClick={handleExport}
             className="flex items-center gap-[8px] px-[17px] py-[9px] border border-[#e2e8f0] rounded-[8px] bg-white text-[#334155] text-[14px] font-semibold hover:bg-gray-50 transition-all shadow-sm"
           >
-           <HiOutlineDownload className="text-[18px]" />
+            <HiOutlineDownload className="text-[18px]" />
             Export
           </button>
         </div>
@@ -229,7 +249,7 @@ export default function RegistrationsPage() {
             <div className="absolute left-[12px] top-1/2 -translate-y-1/2 w-[15px] h-[15px]">
               <img src="/assets/search.svg" alt="" className="w-full h-full opacity-60" />
             </div>
-            <input 
+            <input
               placeholder="Search ..."
               value={search}
               onChange={e => setSearch(e.target.value)}
@@ -239,7 +259,7 @@ export default function RegistrationsPage() {
 
           <div className="flex gap-[16px] items-center">
             <div className="w-[180px]">
-              <Select 
+              <Select
                 value={statusFilter}
                 onChange={(val) => setStatusFilter(val)}
                 className="w-full !h-[44px] !rounded-[12px] font-['Inter']"
@@ -250,7 +270,7 @@ export default function RegistrationsPage() {
                   { value: 'accepted', label: 'Approved' },
                   { value: 'rejected', label: 'Rejected' },
                 ]}
-                style={{ 
+                style={{
                   borderRadius: '12px',
                   border: '1px solid rgba(203,195,213,0.2)'
                 }}
@@ -258,7 +278,7 @@ export default function RegistrationsPage() {
             </div>
 
             <div className="w-[280px]">
-              <DatePicker.RangePicker 
+              <DatePicker.RangePicker
                 value={dateRange}
                 onChange={(dates) => setDateRange(dates as any)}
                 className="w-full !rounded-[12px] !py-[11px] !border-[rgba(203,195,213,0.2)] hover:!border-[#7f56d9] focus:!border-[#7f56d9] !shadow-none font-['Inter']"
@@ -274,7 +294,7 @@ export default function RegistrationsPage() {
           <div className="mx-[16px] mb-[16px] p-[12px] bg-[#FFFBFA] border border-[#FDA29B] rounded-[12px] flex justify-between items-center animate-in fade-in slide-in-from-top-4 duration-300">
             <div className="flex items-center gap-[12px]">
               <span className="text-[14px] font-semibold text-[#B42318]">{selectedIds.size} registration(s) selected</span>
-              <button 
+              <button
                 onClick={toggleSelectAll}
                 className="text-[14px] font-semibold text-[#7F56D9] bg-transparent border-0 cursor-pointer hover:underline"
               >
@@ -282,7 +302,7 @@ export default function RegistrationsPage() {
               </button>
             </div>
             <div className="flex gap-[8px]">
-              <button 
+              <button
                 onClick={handleArchiveSelected}
                 className="h-[40px] px-[16px] rounded-[8px] border border-[#FDA29B] bg-white text-[#B42318] font-semibold flex items-center gap-[8px] hover:bg-[#FFF1F0] hover:border-[#F97066] transition-all cursor-pointer shadow-sm"
               >
@@ -290,7 +310,7 @@ export default function RegistrationsPage() {
                 Archive Selected
               </button>
 
-              <button 
+              <button
                 onClick={handleDeleteSelected}
                 className="h-[40px] px-[16px] rounded-[8px] border border-[#FDA29B] bg-[#FEF3F2] text-[#B42318] font-semibold flex items-center gap-[8px] hover:bg-[#FEE4E2] hover:border-[#F97066] transition-all cursor-pointer shadow-sm"
               >
@@ -362,7 +382,7 @@ export default function RegistrationsPage() {
                     <td className="px-[24px] py-[26px] text-[14px] text-[#475569]">{app.candidat?.user?.email || '—'}</td>
                     <td className="px-[24px] py-[26px] text-[14px] text-[#475569]">{app.candidat?.user?.phone || '—'}</td>
                     <td className="px-[24px] py-[26px] text-[14px] text-[#475569]">
-                      {new Date(app.applied_at || app.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })} {new Date(app.applied_at || app.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(app.applied_at || app.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })} {new Date(app.applied_at || app.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
                     </td>
                     <td className="px-[24px] py-[26px]">
                       {app.status === 'pending' && (
@@ -429,7 +449,7 @@ export default function RegistrationsPage() {
               )}
             </tbody>
           </table>
-          
+
           {/* ── PAGINATION ── */}
           {totalItems > pageSize && (
             <div className="px-6 py-4 flex items-center justify-between border-t border-[#f1f5f9] bg-white">
@@ -440,17 +460,16 @@ export default function RegistrationsPage() {
               >
                 <HiOutlineChevronLeft /> Previous
               </button>
-              
+
               <div className="flex gap-[4px]">
                 {Array.from({ length: totalPages }).map((_, i) => (
                   <button
                     key={i + 1}
                     onClick={() => setCurrentPage(i + 1)}
-                    className={`w-[40px] h-[40px] rounded-[8px] text-[14px] font-semibold transition-all ${
-                      currentPage === i + 1 
-                      ? 'bg-[#f9f5ff] text-[#7f56d9] ring-1 ring-[#7f56d9]' 
+                    className={`w-[40px] h-[40px] rounded-[8px] text-[14px] font-semibold transition-all ${currentPage === i + 1
+                      ? 'bg-[#f9f5ff] text-[#7f56d9] ring-1 ring-[#7f56d9]'
                       : 'text-[#667085] hover:bg-gray-50'
-                    }`}
+                      }`}
                   >
                     {i + 1}
                   </button>
@@ -551,7 +570,7 @@ export default function RegistrationsPage() {
       >
         <div className="space-y-6 pt-2">
           <div className="space-y-2">
-            <label className="text-[14px] font-semibold text-[#344054]">Hiring Date</label>
+            <label className="text-[14px] font-semibold text-[#344054]">Hiring Date <span className="text-red-500">*</span></label>
             <DatePicker
               className="w-full"
               placeholder="Select date..."
@@ -561,7 +580,7 @@ export default function RegistrationsPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-[14px] font-semibold text-[#344054]">Department</label>
+            <label className="text-[14px] font-semibold text-[#344054]">Department <span className="text-red-500">*</span></label>
             <Select
               className="w-full"
               placeholder="Select department..."
@@ -580,7 +599,7 @@ export default function RegistrationsPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-[14px] font-semibold text-[#344054]">Vacation Balance Accrual (days/month)</label>
+            <label className="text-[14px] font-semibold text-[#344054]">Vacation Balance Accrual (days/month) <span className="text-red-500">*</span></label>
             <Input
               className="w-full"
               placeholder="Ex: 2.1"
