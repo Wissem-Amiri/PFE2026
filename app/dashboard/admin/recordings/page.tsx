@@ -21,6 +21,10 @@ import { supabase } from '@/api/supabase'
 import { useQueryClient } from '@tanstack/react-query'
 import dayjs from 'dayjs'
 import { downloadCSV } from '@/api/export'
+import { Modal, Tag, Badge } from 'antd'
+import { HiOutlineSparkles, HiOutlineEye, HiOutlineUserGroup, HiOutlineShieldCheck, HiOutlineXCircle } from 'react-icons/hi'
+import { processImagePresence, processVideoPresence, getPresenceFileUrl } from '@/api/presence'
+import { enrichDetections, type EnrichedDetection } from '@/lib/presenceUtils'
 
 export default function RecordingsPage() {
   const { user } = useAuth()
@@ -77,6 +81,53 @@ export default function RecordingsPage() {
       message.error(error.message || 'Error uploading file')
     } finally {
       setUploading(false)
+    }
+  }
+
+  // AI Analysis State
+  const [analyzingId, setAnalyzingId] = useState<string | null>(null)
+  const [isResultModalVisible, setIsResultModalVisible] = useState(false)
+  const [analysisResults, setAnalysisResults] = useState<{
+    detections: EnrichedDetection[];
+    imagePath?: string;
+    videoPath?: string;
+  } | null>(null)
+
+  const handleAnalyze = async (file: any) => {
+    setAnalyzingId(file.id)
+    try {
+      // 1. Determine if it's image or video
+      const isVideo = file.type?.startsWith('video/') || file.name.toLowerCase().endsWith('.mp4') || file.name.toLowerCase().endsWith('.mov')
+      
+      // 2. We need to send a File object to the AI API. 
+      // Since the file is already on Supabase, we download it first to get a Blob
+      const response = await fetch(file.url)
+      const blob = await response.blob()
+      const apiFile = new File([blob], file.name, { type: file.type || 'image/jpeg' })
+
+      // 3. Call AI API
+      let aiResult;
+      if (isVideo) {
+        aiResult = await processVideoPresence(apiFile)
+      } else {
+        aiResult = await processImagePresence(apiFile)
+      }
+
+      // 4. Enrich detections with Binome profile data
+      const enriched = await enrichDetections(aiResult.detected_users)
+      
+      setAnalysisResults({
+        detections: enriched,
+        imagePath: aiResult.image_file_path,
+        videoPath: aiResult.video_file_path
+      })
+      setIsResultModalVisible(true)
+      message.success('AI Analysis complete!')
+    } catch (error: any) {
+      console.error('AI Analysis error:', error)
+      message.error('Failed to analyze presence: ' + (error.message || 'Unknown error'))
+    } finally {
+      setAnalyzingId(null)
     }
   }
 
@@ -282,8 +333,16 @@ export default function RecordingsPage() {
                     </td>
                     <td className="pr-[24px] pl-[12px] py-[16px]">
                       <div className="flex items-center gap-[12px] justify-end">
-                        <button className="text-[14px] font-semibold text-[#6941C6] hover:text-[#53389E] bg-transparent border-0 cursor-pointer p-2">View</button>
-                        <button className="text-[14px] font-semibold text-[#6941C6] hover:text-[#53389E] bg-transparent border-0 cursor-pointer p-2">Edit</button>
+                        <Button 
+                          type="text"
+                          loading={analyzingId === file.id}
+                          onClick={() => handleAnalyze(file)}
+                          className="text-[14px] font-semibold text-[#7F56D9] hover:text-[#6941C6] flex items-center gap-1.5 p-2 h-auto"
+                        >
+                          {!analyzingId && <HiOutlineSparkles className="w-4 h-4" />}
+                          Analyze AI
+                        </Button>
+                        <button className="text-[14px] font-semibold text-[#667085] hover:text-[#344054] bg-transparent border-0 cursor-pointer p-2">View</button>
                         <button className="text-[14px] font-semibold text-[#D92D20] hover:text-[#B42318] bg-transparent border-0 cursor-pointer p-2">Delete</button>
                       </div>
                     </td>
@@ -332,6 +391,101 @@ export default function RecordingsPage() {
           </div>
         )}
       </div>
+
+      {/* ── AI RESULTS MODAL ── */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2 py-2">
+            <div className="w-10 h-10 rounded-full bg-[#F4EBFF] flex items-center justify-center text-[#7F56D9]">
+              <HiOutlineSparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-[#101828] mb-0">AI Presence Analysis</h3>
+              <p className="text-sm font-normal text-[#667085] mb-0">Detected employees and presence verification</p>
+            </div>
+          </div>
+        }
+        open={isResultModalVisible}
+        onCancel={() => setIsResultModalVisible(false)}
+        width={900}
+        footer={[
+          <Button key="close" onClick={() => setIsResultModalVisible(false)} className="rounded-lg h-10 px-6 font-semibold">
+            Close
+          </Button>
+        ]}
+        className="presence-modal"
+      >
+        <div className="flex flex-col lg:flex-row gap-6 py-4">
+          {/* Left: Processed Media */}
+          <div className="flex-1">
+            <h4 className="text-sm font-semibold text-[#344054] mb-3 flex items-center gap-2">
+              <HiOutlineEye className="w-4 h-4" />
+              Visual Analysis
+            </h4>
+            <div className="rounded-xl border border-[#EAECF0] overflow-hidden bg-gray-50 min-h-[300px] flex items-center justify-center relative shadow-inner">
+              {analysisResults?.imagePath ? (
+                <img 
+                  src={getPresenceFileUrl(analysisResults.imagePath)} 
+                  alt="Analysis" 
+                  className="w-full h-auto object-contain max-h-[500px]"
+                />
+              ) : (
+                <div className="text-center p-8">
+                  <HiOutlineFilm className="w-12 h-12 text-[#D0D5DD] mb-3 mx-auto" />
+                  <p className="text-[#667085]">Video analyzed. View detected list for results.</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right: Detected List */}
+          <div className="w-full lg:w-[350px] flex flex-col">
+            <h4 className="text-sm font-semibold text-[#344054] mb-3 flex items-center gap-2">
+              <HiOutlineUserGroup className="w-4 h-4" />
+              Detected Members ({analysisResults?.detections.length || 0})
+            </h4>
+            <div className="flex-1 overflow-y-auto max-h-[500px] pr-2 custom-scrollbar">
+              <div className="flex flex-col gap-3">
+                {analysisResults?.detections.map((det, idx) => (
+                  <div key={idx} className="p-3 rounded-xl border border-[#EAECF0] bg-white flex items-center justify-between hover:border-[#D6BBFB] transition-all">
+                    <div className="flex items-center gap-3">
+                      <Avatar 
+                        src={det.profile?.avatar_url}
+                        size={40}
+                        className="bg-[#F2F4F7] text-[#344054] border border-[#EAECF0]"
+                      >
+                        {det.name.charAt(0).toUpperCase()}
+                      </Avatar>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-[#101828] mb-0 truncate">{det.profile?.user_name || det.name}</p>
+                        <p className="text-xs text-[#667085] mb-0 truncate">{det.email}</p>
+                      </div>
+                    </div>
+                    <div>
+                      {det.attendance ? (
+                        <Tag color="success" className="rounded-full border-0 font-medium px-2.5 flex items-center gap-1">
+                          <HiOutlineShieldCheck className="w-3 h-3" />
+                          Present
+                        </Tag>
+                      ) : (
+                        <Tag color="error" className="rounded-full border-0 font-medium px-2.5 flex items-center gap-1">
+                          <HiOutlineXCircle className="w-3 h-3" />
+                          Absent
+                        </Tag>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {(!analysisResults?.detections || analysisResults.detections.length === 0) && (
+                  <div className="text-center py-10 px-4 bg-gray-50 rounded-xl border border-dashed border-[#D0D5DD]">
+                    <p className="text-[#667085] text-sm mb-0">No employees recognized in this file.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }
