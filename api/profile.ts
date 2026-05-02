@@ -17,6 +17,17 @@ export async function getProfileByEmail(email: string) {
   return { data: data as FullProfile | null, error }
 }
 
+/** Check if an email is already registered in the users table */
+export async function checkEmailExists(email: string) {
+  const { data, error } = await supabase
+    .from('users')
+    .select('id')
+    .eq('email', email)
+    .maybeSingle()
+  
+  return { exists: !!data, error }
+}
+
 /** Get a single user profile with all role-specific data using joins */
 export async function getProfile(userId: string) {
   const { data, error } = await supabase

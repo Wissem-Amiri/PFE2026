@@ -252,8 +252,8 @@ export default function RegistrationDetailPage() {
       <div className="flex flex-col gap-[12px]">
          <h3 className="text-[16px] font-semibold text-[#101828] m-0">Requirements</h3>
          <ul className="text-[14px] text-[#475467] leading-[28px] m-0 pl-[20px]">
-           {job?.requirements ? (
-             job.requirements.split('\n').filter(r => r.trim()).map((req: string, idx: number) => (
+            {job?.requirements ? (
+              job.requirements.split('\n').filter((r: string) => r.trim()).map((req: string, idx: number) => (
                <li key={idx}>{req}</li>
              ))
            ) : (

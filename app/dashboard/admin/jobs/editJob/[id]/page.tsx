@@ -57,20 +57,21 @@ export default function EditJobPage() {
   useEffect(() => {
     async function loadJob() {
       const { data, error } = await supabase.from('jobs').select('*').eq('id', jobId).single()
-      if (error || !data) {
+      const jobData = data as any
+      if (error || !jobData) {
         messageApi.error("Unable to load the job offer.")
         router.push('/dashboard/admin/jobs')
       } else {
         reset({
-          title: data.title,
-          description: data.description,
-          requirements: data.requirements || '',
-          category: data.category,
-          deadline: dayjs(data.deadline) as any,
-          open_seats: data.open_seats || 1,
-          is_open: data.is_open
+          title: jobData.title,
+          description: jobData.description,
+          requirements: jobData.requirements || '',
+          category: jobData.category,
+          deadline: dayjs(jobData.deadline) as any,
+          open_seats: jobData.open_seats || 1,
+          is_open: jobData.is_open
         })
-        if (data.job_picture) setImageUrl(data.job_picture)
+        if (jobData.job_picture) setImageUrl(jobData.job_picture)
       }
       setLoading(false)
     }

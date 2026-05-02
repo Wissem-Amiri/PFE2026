@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import type { Recording } from './database.types'
 
 export async function getAllRecordings(params: {
   page: number;
@@ -31,7 +32,7 @@ export async function getAllRecordings(params: {
     .order('created_at', { ascending: false })
     .range(from, to);
     
-  return { data, count: count || 0, error };
+  return { data: data as unknown as Recording[], count: count || 0, error };
 }
 
 export async function uploadRecording(recording: any) {

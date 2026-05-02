@@ -57,6 +57,8 @@ export type FullProfile = BaseUser & {
   candidate?: Candidate | null
   employee?: Employee | null
   admin?: Admin | null
+  department?: string | null
+  position?: string | null
 }
 
 export interface Job {
@@ -91,6 +93,22 @@ export interface Leave {
   status: 'pending' | 'approved' | 'rejected'
   rejection_reason?: string | null
   created_at: string
+}
+
+export interface Recording {
+  id: string
+  name: string
+  url: string
+  size: string
+  type: string
+  uploaded_by: string
+  created_at: string
+  updated_at: string
+  uploader?: {
+    user_name: string | null
+    email: string | null
+    avatar_url: string | null
+  }
 }
 
 export interface Database {

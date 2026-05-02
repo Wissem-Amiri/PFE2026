@@ -36,6 +36,8 @@ export default function EmployeeDashboardPage() {
   const [statusFilter, setStatusFilter] = useState<string[]>([])
   const [typeFilter, setTypeFilter] = useState<string[]>([])
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(null)
+  const [sortOrder, setSortOrder] = useState<'ascend' | 'descend'>('descend')
+  const [isApplying, setIsApplying] = useState(false)
   const pageSize = 5
 
   const { data: result, isLoading: loading } = useMyLeaves(user?.id || '', {
@@ -46,7 +48,7 @@ export default function EmployeeDashboardPage() {
     leaveType: typeFilter.length > 0 ? typeFilter : undefined,
     startDate: dateRange?.[0]?.format('YYYY-MM-DD'),
     endDate: dateRange?.[1]?.format('YYYY-MM-DD'),
-    sortOrder: 'descend'
+    sortOrder: sortOrder
   })
   const leaves = result?.data || []
   const totalItems = result?.count || 0
@@ -82,7 +84,7 @@ export default function EmployeeDashboardPage() {
   const handleApplyLeave = async (values: any) => {
     if (!user?.id) return
 
-    setLoading(true)
+    setIsApplying(true)
     const [start, end] = values.dates
 
     const leaveData = {
@@ -101,9 +103,9 @@ export default function EmployeeDashboardPage() {
       messageApi.success("Leave request submitted successfully!")
       setIsModalOpen(false)
       form.resetFields()
-      queryClient.invalidateQueries({ queryKey: queryKeys.myLeaves })
+      queryClient.invalidateQueries({ queryKey: queryKeys.myLeaves() })
     }
-    setLoading(false)
+    setIsApplying(false)
   }
 
   const stats = [
@@ -453,7 +455,7 @@ export default function EmployeeDashboardPage() {
 
             <div className="flex gap-4 mt-4">
               <Button onClick={() => setIsModalOpen(false)} className="flex-1 h-12 rounded-xl font-bold border-gray-200">Cancel</Button>
-              <Button type="primary" htmlType="submit" loading={loading} className="flex-1 h-12 rounded-xl font-bold bg-[#7F56D9] hover:bg-[#6941C6] border-none">
+              <Button type="primary" htmlType="submit" loading={isApplying} className="flex-1 h-12 rounded-xl font-bold bg-[#7F56D9] hover:bg-[#6941C6] border-none">
                 Submit Request
               </Button>
             </div>

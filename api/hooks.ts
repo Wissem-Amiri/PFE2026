@@ -7,12 +7,12 @@ import { getEmployeesPaginated } from './profile'
 import { getMyLeaves } from './leaves'
 
 export const queryKeys = {
-  leaves: ['leaves'] as const,
+  leaves: (params?: any) => (params ? ['leaves', params] : ['leaves']) as const,
   applications: ['applications'] as const,
   recordings: ['recordings'] as const,
   jobs: ['jobs'] as const,
   employees: ['employees'] as const,
-  myLeaves: ['myLeaves'] as const,
+  myLeaves: (userId?: string) => (userId ? ['myLeaves', userId] : ['myLeaves']) as const,
 }
 
 export function useLeaves(params: {
@@ -21,11 +21,12 @@ export function useLeaves(params: {
   showArchived?: boolean;
   status?: string | string[];
   search?: string;
+  leaveType?: string | string[];
   startDate?: string;
   endDate?: string;
 } = { page: 1, pageSize: 20 }) {
   return useQuery({
-    queryKey: [...queryKeys.leaves, params],
+    queryKey: queryKeys.leaves(params),
     queryFn: async () => {
       const { data, count, error } = await getAllLeavesDetailed(params)
       if (error) throw error
@@ -143,7 +144,7 @@ export function useMyLeaves(userId: string, params: {
   sortOrder?: 'ascend' | 'descend'
 } = { page: 1, pageSize: 5 }) {
   return useQuery({
-    queryKey: [...queryKeys.myLeaves, userId, params],
+    queryKey: [...queryKeys.myLeaves(userId), params],
     queryFn: async () => {
       const { data, count, error } = await getMyLeaves(userId, params)
       if (error) throw error

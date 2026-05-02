@@ -96,7 +96,7 @@ export default function AdminLeavesPage() {
       messageApi.error(`Failed to ${type} leave request`)
     } else {
       messageApi.success(`Leave request ${type} successfully`)
-      queryClient.invalidateQueries({ queryKey: queryKeys.leaves })
+      queryClient.invalidateQueries({ queryKey: queryKeys.leaves() })
     }
     setActionModal({ open: false, type: 'approved', leave: null })
   }

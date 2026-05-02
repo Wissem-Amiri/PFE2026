@@ -195,7 +195,7 @@ export default function AdminDashboardPage() {
 
       message.success(`${selectedRowKeys.length} activity items deleted`)
       setSelectedRowKeys([])
-      queryClient.invalidateQueries({ queryKey: queryKeys.leaves })
+      queryClient.invalidateQueries({ queryKey: queryKeys.leaves() })
       queryClient.invalidateQueries({ queryKey: queryKeys.applications })
     } catch (err) {
       message.error('Failed to delete activities')
