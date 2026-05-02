@@ -2,25 +2,19 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { message, Modal, DatePicker, Select, Input } from 'antd'
+import { message, Modal, Select } from 'antd'
 import dayjs from 'dayjs'
 import {
   HiOutlineEye,
-  HiOutlineCheck,
-  HiOutlineX,
   HiOutlineChevronLeft,
   HiOutlineChevronRight,
   HiOutlineSearch,
-  HiOutlineFilter,
-  HiOutlineCalendar,
   HiOutlineTrash,
-  HiOutlineDownload,
-  HiOutlineArchive,
   HiOutlineRefresh,
   HiOutlineArrowLeft
 } from 'react-icons/hi'
-import { restoreCandidatures, hardDeleteCandidatures } from '@/api/candidatures'
-import { useCandidatures, queryKeys } from '@/api/hooks'
+import { restoreApplications, hardDeleteApplications } from '@/api/applications'
+import { useApplications, queryKeys } from '@/api/hooks'
 import { useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
 
@@ -30,10 +24,10 @@ export default function RegistrationsArchivePage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('All Status')
-  const [dateRange, setDateRange] = useState<[any, any] | null>(null)
+  const [dateRange] = useState<[any, any] | null>(null)
   const pageSize = 10
 
-  const { data: result, isLoading: loading } = useCandidatures({
+  const { data: result, isLoading: loading } = useApplications({
     page: currentPage,
     pageSize,
     showArchived: true, // Always true for this page
@@ -53,11 +47,11 @@ export default function RegistrationsArchivePage() {
     if (selectedIds.size === 0) return
     const ids = Array.from(selectedIds)
     try {
-      const { error } = await restoreCandidatures(ids)
+      const { error } = await restoreApplications(ids)
       if (error) throw error
       message.success(`${ids.length} registration(s) restored successfully`)
       setSelectedIds(new Set())
-      queryClient.invalidateQueries({ queryKey: queryKeys.candidatures })
+      queryClient.invalidateQueries({ queryKey: queryKeys.applications })
     } catch (error: any) {
       message.error(error.message || 'Failed to restore registrations')
     }
@@ -76,11 +70,11 @@ export default function RegistrationsArchivePage() {
       onOk: async () => {
         const ids = Array.from(selectedIds)
         try {
-          const { error } = await hardDeleteCandidatures(ids)
+          const { error } = await hardDeleteApplications(ids)
           if (error) throw error
           message.success(`${ids.length} registration(s) deleted permanently`)
           setSelectedIds(new Set())
-          queryClient.invalidateQueries({ queryKey: queryKeys.candidatures })
+          queryClient.invalidateQueries({ queryKey: queryKeys.applications })
         } catch (error: any) {
           message.error(error.message || 'Failed to delete registrations')
         }
@@ -228,21 +222,21 @@ export default function RegistrationsArchivePage() {
                     <td className="px-[24px] py-[16px]">
                       <div className="flex items-center gap-[12px]">
                         <div className="w-[40px] h-[40px] rounded-full bg-[#f1f5f9] border border-[#e2e8f0] flex items-center justify-center shrink-0 overflow-hidden">
-                          {app.candidat?.user?.avatar_url ? (
-                            <img src={app.candidat.user.avatar_url} alt="" className="w-full h-full object-cover" />
+                          {app.candidate?.user?.avatar_url ? (
+                            <img src={app.candidate.user.avatar_url} alt="" className="w-full h-full object-cover" />
                           ) : (
                             <span className="text-[12px] font-bold text-[#64748b]">
-                              {app.candidat?.user?.user_name?.substring(0, 2).toUpperCase() || 'UN'}
+                              {app.candidate?.user?.user_name?.substring(0, 2).toUpperCase() || 'UN'}
                             </span>
                           )}
                         </div>
                         <div className="flex flex-col">
-                          <span className="text-[14px] font-semibold text-[#0f172a]">{app.candidat?.user?.user_name || 'Anonymous'}</span>
+                          <span className="text-[14px] font-semibold text-[#0f172a]">{app.candidate?.user?.user_name || 'Anonymous'}</span>
                           <span className="text-[12px] text-[#64748b]">{app.job?.title || 'Candidate'}</span>
                         </div>
                       </div>
                     </td>
-                    <td className="px-[24px] py-[26px] text-[14px] text-[#475569]">{app.candidat?.user?.email || '—'}</td>
+                    <td className="px-[24px] py-[26px] text-[14px] text-[#475569]">{app.candidate?.user?.email || '—'}</td>
                     <td className="px-[24px] py-[26px] text-[14px] text-[#475569]">
                       {dayjs(app.applied_at || app.created_at).format('DD/MM/YYYY HH:mm')}
                     </td>
@@ -262,7 +256,7 @@ export default function RegistrationsArchivePage() {
                         <div className="grid grid-cols-[32px_32px_32px] gap-[4px] items-center">
                           <div className="w-[32px]" />
                           <button
-                            onClick={() => router.push(`/dashboard/admin/registrations/${app.candidat_id}?jobId=${app.job_id}`)}
+                            onClick={() => router.push(`/dashboard/admin/registrations/${app.candidate_id}?jobId=${app.job_id}`)}
                             className="w-[32px] h-[32px] rounded-[6px] text-[#7f56d9] hover:bg-[#f9f5ff] transition-all flex items-center justify-center"
                             title="View Details"
                           >

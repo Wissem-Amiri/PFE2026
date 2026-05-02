@@ -1,7 +1,7 @@
 /**
  * AI Scoring Library
  * Calculates a deterministic match score for a candidate against a job.
- * Based on real candidat data from Supabase.
+ * Based on real candidate data from Supabase.
  */
 
 export interface Experience {
@@ -55,7 +55,7 @@ export function getTotalYears(experiences: Experience[]): number {
 
 // ─── Format experience label ──────────────────────────────────────────────────
 export function formatYearsLabel(experiences: Experience[]): string {
-  if (!experiences || experiences.length === 0) return 'Aucune expérience'
+  if (!experiences || experiences.length === 0) return 'No experience'
   const years = getTotalYears(experiences)
   if (years === 0) return '< 1 Year'
   if (years === 1) return '1 Year'
@@ -98,7 +98,7 @@ function keywordOverlapScore(candidateText: string, jobText: string): number {
 
 // ─── Main scoring function ────────────────────────────────────────────────────
 export function calculateAIScore(
-  candidat: {
+  candidate: {
     bio?: string | null
     position?: string | null
     experiences?: Experience[]
@@ -113,9 +113,9 @@ export function calculateAIScore(
 ): number {
   let score = 0
 
-  const bio = candidat.bio || ''
-  const position = candidat.position || ''
-  const experiences = candidat.experiences || []
+  const bio = candidate.bio || ''
+  const position = candidate.position || ''
+  const experiences = candidate.experiences || []
   const jobText = `${job.title} ${job.description} ${job.requirements || ''}`
 
   // 1. Bio + position keyword match vs job (max 40 pts)
@@ -137,8 +137,8 @@ export function calculateAIScore(
   score += Math.min(20, matchedTitle.length * 7)
 
   // 4. Profile completeness bonus (max 10 pts)
-  if (candidat.resume_url) score += 5
-  if (candidat.portfolio) score += 3
+  if (candidate.resume_url) score += 5
+  if (candidate.portfolio) score += 3
   if (bio.length > 50) score += 2
 
   return Math.min(Math.max(score, 10), 99)
@@ -146,7 +146,7 @@ export function calculateAIScore(
 
 // ─── Full scoring pipeline ────────────────────────────────────────────────────
 export function scoreCandidate(
-  candidat: {
+  candidate: {
     bio?: string | null
     position?: string | null
     experiences?: Experience[]
@@ -159,11 +159,11 @@ export function scoreCandidate(
     requirements?: string | null
   }
 ): ScoredCandidate {
-  const experiences = candidat.experiences || []
+  const experiences = candidate.experiences || []
   return {
-    score: calculateAIScore(candidat, job),
+    score: calculateAIScore(candidate, job),
     yearsLabel: formatYearsLabel(experiences),
     prevCompanies: getPrevCompanies(experiences),
-    strengths: extractStrengths(candidat.bio || '', candidat.position || '', experiences),
+    strengths: extractStrengths(candidate.bio || '', candidate.position || '', experiences),
   }
 }

@@ -31,12 +31,12 @@ import {
 import { BiExport } from 'react-icons/bi'
 import { exportTableToPDF } from '@/lib/export'
 import { getAllUsers, updateUserStatus as updateGlobalUserStatus, exportToCSV, downloadCSV } from '@/api/profile'
-import { getAllCandidaturesDetailed, updateCandidatureStatus, archiveCandidatures, restoreCandidatures, deleteAllOtherCandidatures, hardDeleteCandidatures } from '@/api/candidatures'
+import { getAllApplicationsDetailed, updateApplicationStatus, archiveApplications, restoreApplications, deleteAllOtherApplications, hardDeleteApplications } from '@/api/applications'
 import { getAllJobs, decrementJobSeats } from '@/api/job'
 import { HiOutlineArchive, HiOutlineRefresh } from 'react-icons/hi'
 import type { FullProfile } from '@/api/database.types'
 
-import { useCandidatures, queryKeys } from '@/api/hooks'
+import { useApplications, queryKeys } from '@/api/hooks'
 import { useQueryClient } from '@tanstack/react-query'
 
 export default function RegistrationsPage() {
@@ -47,7 +47,7 @@ export default function RegistrationsPage() {
   const [dateRange, setDateRange] = useState<[any, any] | null>(null)
   const pageSize = 10
 
-  const { data: result, isLoading: loading } = useCandidatures({
+  const { data: result, isLoading: loading } = useApplications({
     page: currentPage,
     pageSize,
     showArchived: false,
@@ -80,11 +80,11 @@ export default function RegistrationsPage() {
     if (selectedIds.size === 0) return
     const ids = Array.from(selectedIds)
     try {
-      const { error } = await archiveCandidatures(ids)
+      const { error } = await archiveApplications(ids)
       if (error) throw error
       message.success(`${ids.length} registration(s) archived successfully`)
       setSelectedIds(new Set())
-      queryClient.invalidateQueries({ queryKey: queryKeys.candidatures })
+      queryClient.invalidateQueries({ queryKey: queryKeys.applications })
     } catch (error: any) {
       message.error(error.message || 'Failed to archive registrations')
     }
@@ -103,12 +103,12 @@ export default function RegistrationsPage() {
       onOk: async () => {
         const ids = Array.from(selectedIds)
         try {
-          const { error } = await hardDeleteCandidatures(ids)
+          const { error } = await hardDeleteApplications(ids)
           if (error) throw error
 
           message.success(`${ids.length} registration(s) deleted permanently`)
           setSelectedIds(new Set())
-          queryClient.invalidateQueries({ queryKey: queryKeys.candidatures })
+          queryClient.invalidateQueries({ queryKey: queryKeys.applications })
         } catch (error: any) {
           message.error(error.message || 'Failed to delete registrations')
         }
@@ -135,14 +135,14 @@ export default function RegistrationsPage() {
   }
 
   const handleAction = async (application: any, status: 'accepted' | 'rejected', hiringDetails?: any) => {
-    const { error: appError } = await updateCandidatureStatus(application.id, status)
+    const { error: appError } = await updateApplicationStatus(application.id, status)
 
     if (!appError) {
       if (status === 'accepted') {
-        const { error: statusError } = await updateGlobalUserStatus(application.candidat_id, 'approved', hiringDetails)
+        const { error: statusError } = await updateGlobalUserStatus(application.candidate_id, 'approved', hiringDetails)
 
         if (!statusError) {
-          await deleteAllOtherCandidatures(application.candidat_id, application.id)
+          await deleteAllOtherApplications(application.candidate_id, application.id)
           if (application.job_id) {
             await decrementJobSeats(application.job_id)
           }
@@ -153,7 +153,7 @@ export default function RegistrationsPage() {
       setIsHiringModal(false)
       setIsDeleteModalVisible(false)
       message.success(`Application ${status === 'accepted' ? 'accepted' : 'rejected'} successfully`)
-      queryClient.invalidateQueries({ queryKey: queryKeys.candidatures })
+      queryClient.invalidateQueries({ queryKey: queryKeys.applications })
     } else {
       message.error('Failed to update application status')
     }
@@ -186,8 +186,8 @@ export default function RegistrationsPage() {
 
     const headers = ['Candidate', 'Email', 'Position', 'Submission Date', 'Status']
     const rows = applications.map(app => [
-      app.candidat?.user?.user_name || 'Unknown',
-      app.candidat?.user?.email || '—',
+      app.candidate?.user?.user_name || 'Unknown',
+      app.candidate?.user?.email || '—',
       app.job?.title || 'Candidate',
       dayjs(app.applied_at || app.created_at).format('MM/DD/YYYY'),
       app.status || '-'
@@ -362,17 +362,17 @@ export default function RegistrationsPage() {
                     <td className="px-[24px] py-[16px]">
                       <div className="flex items-center gap-[12px]">
                         <div className="w-[40px] h-[40px] rounded-full bg-[#f1f5f9] border border-[#e2e8f0] flex items-center justify-center shrink-0 overflow-hidden">
-                          {app.candidat?.user?.avatar_url ? (
-                            <img src={app.candidat.user.avatar_url} alt="" className="w-full h-full object-cover" />
+                          {app.candidate?.user?.avatar_url ? (
+                            <img src={app.candidate.user.avatar_url} alt="" className="w-full h-full object-cover" />
                           ) : (
                             <span className="text-[12px] font-bold text-[#64748b]">
-                              {app.candidat?.user?.user_name?.substring(0, 2).toUpperCase() || 'UN'}
+                              {app.candidate?.user?.user_name?.substring(0, 2).toUpperCase() || 'UN'}
                             </span>
                           )}
                         </div>
                         <div className="flex flex-col min-w-0">
                           <span className="text-[14px] font-semibold text-[#0f172a] truncate">
-                            {app.candidat?.user?.user_name || 'Anonymous'}
+                            {app.candidate?.user?.user_name || 'Anonymous'}
                           </span>
                           <span className="text-[12px] text-[#64748b] truncate leading-[16px]">
                             {app.job?.title || 'Candidate'}
@@ -380,8 +380,8 @@ export default function RegistrationsPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-[24px] py-[26px] text-[14px] text-[#475569]">{app.candidat?.user?.email || '—'}</td>
-                    <td className="px-[24px] py-[26px] text-[14px] text-[#475569]">{app.candidat?.user?.phone || '—'}</td>
+                    <td className="px-[24px] py-[26px] text-[14px] text-[#475569]">{app.candidate?.user?.email || '—'}</td>
+                    <td className="px-[24px] py-[26px] text-[14px] text-[#475569]">{app.candidate?.user?.phone || '—'}</td>
                     <td className="px-[24px] py-[26px] text-[14px] text-[#475569]">
                       {new Date(app.applied_at || app.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })} {new Date(app.applied_at || app.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
                     </td>
@@ -412,7 +412,7 @@ export default function RegistrationsPage() {
                                 <HiOutlineCheck size={20} />
                               </button>
                               <button
-                                onClick={() => router.push(`/dashboard/admin/registrations/${app.candidat_id}?jobId=${app.job_id}`)}
+                                onClick={() => router.push(`/dashboard/admin/registrations/${app.candidate_id}?jobId=${app.job_id}`)}
                                 className="w-[32px] h-[32px] rounded-[6px] text-[#7f56d9] hover:bg-[#f9f5ff] transition-all flex items-center justify-center"
                                 title="View Details"
                               >
@@ -433,7 +433,7 @@ export default function RegistrationsPage() {
                             <>
                               <div className="w-[32px]" />
                               <button
-                                onClick={() => router.push(`/dashboard/admin/registrations/${app.candidat_id}?jobId=${app.job_id}`)}
+                                onClick={() => router.push(`/dashboard/admin/registrations/${app.candidate_id}?jobId=${app.job_id}`)}
                                 className="w-[32px] h-[32px] rounded-[6px] text-[#7f56d9] hover:bg-[#f9f5ff] transition-all flex items-center justify-center"
                                 title="View Details"
                               >
@@ -522,7 +522,7 @@ export default function RegistrationsPage() {
               <div className="w-[64px] h-[64px] rounded-[14px] bg-[#ecfdf5] border border-[#abefc6] flex items-center justify-center mb-6">
                 <HiOutlineCheck className="text-[#10b981] text-[32px]" />
               </div>
-              <h3 className="text-[24px] font-bold text-[#101828] mb-3">Accept {appToApprove.candidat?.user?.user_name}?</h3>
+              <h3 className="text-[24px] font-bold text-[#101828] mb-3">Accept {appToApprove.candidate?.user?.user_name}?</h3>
               <p className="text-[16px] text-[#667085] leading-relaxed mb-8 max-w-[440px]">
                 Confirm accepting this registration for the role of <span className="font-bold text-[#101828]">{appToApprove.job?.title}</span>.
               </p>
@@ -544,7 +544,7 @@ export default function RegistrationsPage() {
               </div>
               <h3 className="text-[24px] font-bold text-[#101828] mb-3">Reject Registration?</h3>
               <p className="text-[16px] text-[#667085] leading-relaxed mb-8 max-w-[400px]">
-                Are you sure you want to reject <span className="font-bold text-[#101828]">{appToDelete.candidat?.user?.user_name}</span>? This action is irreversible.
+                Are you sure you want to reject <span className="font-bold text-[#101828]">{appToDelete.candidate?.user?.user_name}</span>? This action is irreversible.
               </p>
               <div className="flex gap-4 w-full">
                 <button onClick={() => setIsDeleteModalVisible(false)} className="flex-1 h-[48px] border border-[#d0d5dd] rounded-[10px] font-bold text-[#344054] hover:bg-gray-50 transition-all">Cancel</button>

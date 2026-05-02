@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/api/supabase'
-import { getJobApplications, updateCandidatureStatus } from '@/api/candidatures'
+import { getJobApplications, updateApplicationStatus } from '@/api/applications'
 import { Avatar, Spin, message } from 'antd'
 import { UserOutlined } from '@ant-design/icons'
 import type { Job } from '@/api/database.types'
@@ -93,23 +93,23 @@ export default function AIScreeningPage() {
         .from('jobs').select('*').eq('id', jobId).single()
       if (jobData) setJob(jobData as Job)
 
-      // 2. Load applications with full candidat data
+      // 2. Load applications with full candidate data
       const { data: apps } = await getJobApplications(jobId)
 
       if (apps && jobData) {
         const mapped: Candidate[] = apps.map((app: any) => {
-          // Real data structure: app.candidat.user (from candidatures API)
-          const candidat = app.candidat || {}
-          const user = candidat.user || {}
-          const experiences = candidat.experiences || []
+          // Real data structure: app.candidate.user (from applications API)
+          const candidate = app.candidate || {}
+          const user = candidate.user || {}
+          const experiences = candidate.experiences || []
 
           const scored = scoreCandidate(
             {
-              bio: candidat.bio,
-              position: candidat.position,
+              bio: candidate.bio,
+              position: candidate.position,
               experiences,
-              portfolio: candidat.portfolio,
-              resume_url: candidat.resume_url,
+              portfolio: candidate.portfolio,
+              resume_url: candidate.resume_url,
             },
             {
               title: jobData.title,
@@ -177,7 +177,7 @@ export default function AIScreeningPage() {
     .map(([label, count]) => ({ label, pct: Math.round((count / Math.max(candidates.length, 1)) * 100) }))
 
   const handleApprove = async (c: Candidate) => {
-    const { error } = await updateCandidatureStatus(c.id, 'accepted')
+    const { error } = await updateApplicationStatus(c.id, 'accepted')
     if (!error) {
       messageApi.success(`${c.name} approved`)
       setCandidates(p => p.map(x => x.id === c.id ? { ...x, status: 'accepted' } : x))
@@ -185,7 +185,7 @@ export default function AIScreeningPage() {
   }
 
   const handleReject = async (c: Candidate) => {
-    const { error } = await updateCandidatureStatus(c.id, 'rejected')
+    const { error } = await updateApplicationStatus(c.id, 'rejected')
     if (!error) {
       messageApi.success(`${c.name} rejected`)
       setCandidates(p => p.map(x => x.id === c.id ? { ...x, status: 'rejected' } : x))

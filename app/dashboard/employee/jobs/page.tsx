@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/api/AuthContext'
 import { getAllJobs } from '@/api/job'
-import { getUserCandidatures } from '@/api/candidatures'
+import { getUserApplications } from '@/api/applications'
 import type { Job } from '@/api/database.types'
 
 export default function EmployeeJobsPage() {
@@ -25,10 +25,10 @@ export default function EmployeeJobsPage() {
       setJobs(openJobs)
 
       if (user) {
-        const { data: candidatures } = await getUserCandidatures(user.id)
+        const { data: applications } = await getUserApplications(user.id)
         const statusMap = new Map<string, string>()
-        candidatures?.forEach(can => {
-          statusMap.set(can.job_id, can.status)
+        applications?.forEach(app => {
+          statusMap.set(app.job_id, app.status)
         })
         setAppliedJobsStatus(statusMap)
       }
@@ -39,15 +39,15 @@ export default function EmployeeJobsPage() {
   }, [user])
 
   const handleApplyClick = (jobId: string) => {
-    if (!user) return messageApi.error("Vous devez être connecté pour postuler.")
+    if (!user) return messageApi.error("You must be logged in to apply.")
     // For employees, we stay in the employee dashboard
     router.push(`/dashboard/employee/profile?applyTo=${jobId}`)
   }
 
-  const categories = ['Tous les postes', ...Array.from(new Set(jobs.map(j => j.category)))]
-  const [activeTab, setActiveTab] = useState('Tous les postes')
+  const categories = ['All Positions', ...Array.from(new Set(jobs.map(j => j.category)))]
+  const [activeTab, setActiveTab] = useState('All Positions')
 
-  const filteredJobs = (activeTab === 'Tous les postes' ? jobs : jobs.filter(j => j.category === activeTab))
+  const filteredJobs = (activeTab === 'All Positions' ? jobs : jobs.filter(j => j.category === activeTab))
     .filter(job => {
       const status = appliedJobsStatus.get(job.id)
       return status !== 'rejected' && status !== 'accepted'
@@ -99,8 +99,8 @@ export default function EmployeeJobsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredJobs.map(job => {
-            const candidatureStatus = appliedJobsStatus.get(job.id)
-            const hasApplied = !!candidatureStatus
+            const applicationStatus = appliedJobsStatus.get(job.id)
+            const hasApplied = !!applicationStatus
             return (
               <div key={job.id} className="bg-white rounded-2xl border border-[#E4E7EC] p-6 text-left shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
                 <div>

@@ -4,22 +4,22 @@ import { useAuth } from '@/api/AuthContext'
 import { ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons'
 import { Tag } from 'antd'
 import { useState, useEffect } from 'react'
-import { getUserCandidatures } from '@/api/candidatures'
+import { getUserApplications } from '@/api/applications'
 
-export default function CandidatCandidaturePage() {
+export default function CandidateApplicationsPage() {
   const { user } = useAuth()
-  const [candidatures, setCandidatures] = useState<any[]>([])
+  const [applications, setApplications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    async function loadCandidatures() {
+    async function loadApplications() {
       if (user) {
-        const { data } = await getUserCandidatures(user.id)
-        setCandidatures(data ?? [])
+        const { data } = await getUserApplications(user.id)
+        setApplications(data ?? [])
       }
       setLoading(false)
     }
-    loadCandidatures()
+    loadApplications()
   }, [user])
 
   const getStatusConfig = (status: string) => {
@@ -43,22 +43,22 @@ export default function CandidatCandidaturePage() {
 
       {loading ? (
         <div className="text-center py-12 text-[#475467]">Loading your applications...</div>
-      ) : candidatures.length === 0 ? (
+      ) : applications.length === 0 ? (
         <div className="bg-white rounded-2xl border border-[#E4E7EC] shadow-sm p-6 text-center text-[#475467]">
           You haven&apos;t applied to any job offers yet.
         </div>
       ) : (
         <div className="grid gap-4 max-w-3xl">
-          {candidatures.map((cand) => {
-            const config = getStatusConfig(cand.status)
+          {applications.map((app) => {
+            const config = getStatusConfig(app.status)
             return (
-              <div key={cand.id} className="bg-white rounded-2xl border border-[#E4E7EC] shadow-sm p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div key={app.id} className="bg-white rounded-2xl border border-[#E4E7EC] shadow-sm p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                  <h3 className="font-bold text-[#101828] text-[16px] mb-1">{cand.job?.title || 'Deleted offer'}</h3>
+                  <h3 className="font-bold text-[#101828] text-[16px] mb-1">{app.job?.title || 'Deleted offer'}</h3>
                   <div className="flex gap-2 items-center text-sm text-[#475467]">
-                    <span className="font-medium">{cand.job?.category}</span>
+                    <span className="font-medium">{app.job?.category}</span>
                     <span>•</span>
-                    <span>Applied on {new Date(cand.applied_at).toLocaleDateString('en-GB')}</span>
+                    <span>Applied on {new Date(app.applied_at).toLocaleDateString('en-GB')}</span>
                   </div>
                 </div>
 

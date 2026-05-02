@@ -6,12 +6,12 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/api/AuthContext'
 import { getAllJobs, isJobOpen } from '@/api/job'
-import { getUserCandidatures } from '@/api/candidatures'
+import { getUserApplications } from '@/api/applications'
 import type { Job } from '@/api/database.types'
 
 const PAGE_SIZE = 8
 
-export default function CandidatJobsPage() {
+export default function CandidateJobsPage() {
   const { user } = useAuth()
   const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
@@ -31,10 +31,10 @@ export default function CandidatJobsPage() {
       setJobs(openJobs)
 
       if (user) {
-        const { data: candidatures } = await getUserCandidatures(user.id)
+        const { data: applications } = await getUserApplications(user.id)
         const statusMap = new Map<string, string>()
-        candidatures?.forEach(can => {
-          statusMap.set(can.job_id, can.status)
+        applications?.forEach(app => {
+          statusMap.set(app.job_id, app.status)
         })
         setAppliedJobsStatus(statusMap)
       }
@@ -46,7 +46,7 @@ export default function CandidatJobsPage() {
 
   const handleApplyClick = (jobId: string) => {
     if (!user) return messageApi.error("You must be logged in to apply.")
-    router.push(`/dashboard/candidat/profile?applyTo=${jobId}`)
+    router.push(`/dashboard/candidate/profile?applyTo=${jobId}`)
   }
 
   // Categories
@@ -140,8 +140,8 @@ export default function CandidatJobsPage() {
           {/* Jobs Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {paginatedJobs.map(job => {
-              const candidatureStatus = appliedJobsStatus.get(job.id)
-              const hasApplied = !!candidatureStatus
+              const applicationStatus = appliedJobsStatus.get(job.id)
+              const hasApplied = !!applicationStatus
               return (
                 <div key={job.id} className="bg-white rounded-2xl border border-[#E4E7EC] p-6 text-left shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
                   <div>
@@ -163,7 +163,7 @@ export default function CandidatJobsPage() {
                     </div>
 
                     {hasApplied ? (
-                      candidatureStatus === 'rejected' ? (
+                      applicationStatus === 'rejected' ? (
                         <button disabled className="w-full py-2.5 rounded-xl border border-red-500 bg-red-50 text-red-700 font-medium text-sm flex items-center justify-center gap-2">
                           <CloseCircleOutlined /> Application Rejected
                         </button>

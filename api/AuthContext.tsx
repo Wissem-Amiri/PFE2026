@@ -40,7 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!error && data.session) {
         setSession(data.session)
         setUser(data.session.user)
-        // Fetch profile from utilisateur table
+        // Fetch profile from users table
         const { data: profileData } = await getProfile(data.session.user.id)
         setProfile(profileData)
       } else {
@@ -72,7 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const updateStatus = async (status: boolean) => {
       try {
-        await supabase.from('utilisateur').update({ is_online: status }).eq('id', user.id)
+        await supabase.from('users').update({ is_online: status }).eq('id', user.id)
       } catch (err) {
         console.error('Error updating online status:', err)
       }
@@ -143,7 +143,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signout = async () => {
     if (user?.id) {
-      await supabase.from('utilisateur').update({ is_online: false }).eq('id', user.id)
+      await supabase.from('users').update({ is_online: false }).eq('id', user.id)
     }
     await supabase.auth.signOut()
     setSession(null)
@@ -173,7 +173,7 @@ export function useAuth() {
 export function getDashboardByRole(role: string | null | undefined): string {
   if (role === 'admin') return '/dashboard/admin'
   if (role === 'employee') return '/dashboard/employee'
-  return '/dashboard/candidat'
+  return '/dashboard/candidate'
 }
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -197,7 +197,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       const role = profile?.role || user.user_metadata?.role
       const dashboardPath = getDashboardByRole(role)
       
-      if (applyTo && (role === 'candidat' || !role)) {
+      if (applyTo && (role === 'candidate' || !role)) {
         router.push(`${dashboardPath}/profile?applyTo=${applyTo}`)
       } else {
         router.push(dashboardPath)

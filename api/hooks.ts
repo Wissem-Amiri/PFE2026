@@ -1,14 +1,14 @@
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query'
-import { getAllLeavesDetailed } from './conge'
-import { getAllCandidaturesDetailed } from './candidatures'
+import { getAllLeavesDetailed } from './leaves'
+import { getAllApplicationsDetailed } from './applications'
 import { getAllRecordings } from './recordings'
 import { getAllJobs } from './job'
 import { getEmployeesPaginated } from './profile'
-import { getMyLeaves } from './conge'
+import { getMyLeaves } from './leaves'
 
 export const queryKeys = {
   leaves: ['leaves'] as const,
-  candidatures: ['candidatures'] as const,
+  applications: ['applications'] as const,
   recordings: ['recordings'] as const,
   jobs: ['jobs'] as const,
   employees: ['employees'] as const,
@@ -44,7 +44,7 @@ export function useLeaves(params: {
   })
 }
 
-export function useCandidatures(params: {
+export function useApplications(params: {
   page: number;
   pageSize: number;
   showArchived?: boolean;
@@ -55,9 +55,9 @@ export function useCandidatures(params: {
   endDate?: string;
 } = { page: 1, pageSize: 20 }) {
   return useQuery({
-    queryKey: [...queryKeys.candidatures, params],
+    queryKey: [...queryKeys.applications, params],
     queryFn: async () => {
-      const { data, count, error } = await getAllCandidaturesDetailed(params)
+      const { data, count, error } = await getAllApplicationsDetailed(params)
       if (error) throw error
       return { data: data || [], count }
     }

@@ -5,7 +5,7 @@ import { SearchOutlined, TeamOutlined, MailOutlined, BankOutlined, UserOutlined,
 import { Input, Avatar, Card, Tag, Spin, Button, Modal, InputNumber, message, DatePicker, Select } from 'antd'
 import { deleteUser, getAllUsers, updateUserStatus, getProfile, createEmployeeAccount, archiveUsers, unarchiveUsers, exportToCSV, downloadCSV } from '@/api/profile'
 import { getAllJobs } from '@/api/job'
-import { adjustEmployeeBalance } from '@/api/conge'
+import { adjustEmployeeBalance } from '@/api/leaves'
 import type { FullProfile } from '@/api/database.types'
 import { useRouter } from 'next/navigation'
 import { HiOutlineX, HiOutlineTrash, HiOutlineDownload, HiOutlineChevronLeft, HiOutlineChevronRight, HiOutlineArchive, HiOutlineRefresh, HiOutlineViewGrid, HiOutlineViewList } from 'react-icons/hi'

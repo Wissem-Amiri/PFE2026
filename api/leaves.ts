@@ -1,10 +1,10 @@
 import { supabase } from './supabase'
-import type { Conge } from './database.types'
+import type { Leave } from './database.types'
 import { getProfile } from './profile'
 import dayjs from 'dayjs'
 
 /** Request a new leave (Employee) */
-export async function requestLeave(leaveData: Omit<Conge, 'id' | 'created_at' | 'status'>) {
+export async function requestLeave(leaveData: Omit<Leave, 'id' | 'created_at' | 'status'>) {
   // 1. Validation for ALL leave types
   const { data: profile } = await getProfile(leaveData.employee_id)
   if (profile?.employee) {
@@ -17,7 +17,7 @@ export async function requestLeave(leaveData: Omit<Conge, 'id' | 'created_at' | 
   }
 
   const { data, error } = await supabase
-    .from('conges')
+    .from('leaves')
     .insert([leaveData])
     .select()
 
@@ -30,7 +30,7 @@ export async function requestLeave(leaveData: Omit<Conge, 'id' | 'created_at' | 
     })
   }
 
-  return { data: data?.[0] as Conge | null | undefined, error }
+  return { data: data?.[0] as Leave | null | undefined, error }
 }
 
 /** Get leaves for a specific user (Employee) */
@@ -45,7 +45,7 @@ export async function getMyLeaves(employeeId: string, params?: {
   sortOrder?: 'ascend' | 'descend'
 }) {
   let query = supabase
-    .from('conges')
+    .from('leaves')
     .select('*', { count: 'exact' })
     .eq('employee_id', employeeId);
 
@@ -93,7 +93,7 @@ export async function getMyLeaves(employeeId: string, params?: {
   const { data, error, count } = await query
     .order('created_at', { ascending: sortAscending })
 
-  return { data: data as Conge[], count: count || 0, error }
+  return { data: data as Leave[], count: count || 0, error }
 }
 
 /** Get all leaves with user details (Admin) - Server Side Pagination & Filters */
@@ -177,7 +177,7 @@ export async function getAllLeavesDetailed(params: {
 
 export async function archiveLeaves(ids: string[]) {
   const { data, error } = await supabase
-    .from('conges')
+    .from('leaves')
     .update({ is_archived: true })
     .in('id', ids)
     .select()
@@ -186,7 +186,7 @@ export async function archiveLeaves(ids: string[]) {
 
 export async function deleteLeavesPermanently(ids: string[]) {
   const { data, error } = await supabase
-    .from('conges')
+    .from('leaves')
     .delete()
     .in('id', ids)
   return { data, error }
@@ -194,7 +194,7 @@ export async function deleteLeavesPermanently(ids: string[]) {
 
 export async function unarchiveLeaves(ids: string[]) {
   const { data, error } = await supabase
-    .from('conges')
+    .from('leaves')
     .update({ is_archived: false })
     .in('id', ids)
     .select()
@@ -204,7 +204,7 @@ export async function unarchiveLeaves(ids: string[]) {
 /** Update leave status (Admin) */
 export async function updateLeaveStatus(leaveId: string, status: 'approved' | 'rejected', rejectionReason?: string) {
   // Fetch leave to get employee_id for notification and duration
-  const { data: leave } = await supabase.from('conges').select('*').eq('id', leaveId).single()
+  const { data: leave } = await supabase.from('leaves').select('*').eq('id', leaveId).single()
 
   if (!leave) return { data: null, error: { message: "Leave not found" } }
 
@@ -227,7 +227,7 @@ export async function updateLeaveStatus(leaveId: string, status: 'approved' | 'r
   }
 
   const { data, error } = await supabase
-    .from('conges')
+    .from('leaves')
     .update(updatePayload)
     .eq('id', leaveId)
     .select()
@@ -251,7 +251,7 @@ export async function updateLeaveStatus(leaveId: string, status: 'approved' | 'r
     }])
   }
 
-  return { data: data?.[0] as Conge | null | undefined, error }
+  return { data: data?.[0] as Leave | null | undefined, error }
 }
 
 /** Adjust an employee's leave balance manually (Admin) */

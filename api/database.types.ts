@@ -7,11 +7,11 @@ export interface Experience {
   projectUrl?: string
 }
 
-export interface BaseUtilisateur {
+export interface BaseUser {
   id: string
   user_name: string | null
   email: string | null
-  role: 'candidat' | 'employee' | 'admin'
+  role: 'candidate' | 'employee' | 'admin'
   status: 'pending' | 'approved' | 'rejected'
   phone: string | null
   avatar_url: string | null
@@ -20,9 +20,9 @@ export interface BaseUtilisateur {
   created_at: string | null
 }
 
-export type Utilisateur = BaseUtilisateur;
+export type User = BaseUser;
 
-export interface Candidat {
+export interface Candidate {
   id: string
   bio: string | null
   country: string | null
@@ -44,7 +44,7 @@ export interface Employee {
   monthly_rate: number | null
   bio: string | null
   country: string | null
-  candidat_id: string | null
+  candidate_id: string | null
 }
 
 export interface Admin {
@@ -53,8 +53,8 @@ export interface Admin {
 }
 
 /** Combined type for convenience in some views */
-export type FullProfile = BaseUtilisateur & {
-  candidat?: Candidat | null
+export type FullProfile = BaseUser & {
+  candidate?: Candidate | null
   employee?: Employee | null
   admin?: Admin | null
 }
@@ -72,16 +72,16 @@ export interface Job {
   created_at: string
 }
 
-export interface Candidature {
+export interface Application {
   id: string
-  candidat_id: string
+  candidate_id: string
   job_id: string
   status: 'pending' | 'accepted' | 'rejected'
   is_archived: boolean
   applied_at: string
 }
 
-export interface Conge {
+export interface Leave {
   id: string
   employee_id: string
   type: string
@@ -96,16 +96,16 @@ export interface Conge {
 export interface Database {
   public: {
     Tables: {
-      utilisateur: {
-        Row: BaseUtilisateur
-        Insert: Partial<BaseUtilisateur> & { id: string }
-        Update: Partial<BaseUtilisateur>
+      users: {
+        Row: BaseUser
+        Insert: Partial<BaseUser> & { id: string }
+        Update: Partial<BaseUser>
         Relationships: []
       }
-      candidat: {
-        Row: Candidat
-        Insert: Partial<Candidat> & { id: string }
-        Update: Partial<Candidat>
+      candidates: {
+        Row: Candidate
+        Insert: Partial<Candidate> & { id: string }
+        Update: Partial<Candidate>
         Relationships: []
       }
       employee: {
@@ -126,16 +126,16 @@ export interface Database {
         Update: Partial<Omit<Job, 'id'>>
         Relationships: []
       }
-      candidatures: {
-        Row: Candidature
-        Insert: Omit<Candidature, 'id' | 'applied_at' | 'status' | 'is_archived'> & { id?: string; applied_at?: string; status?: 'pending' | 'accepted' | 'rejected'; is_archived?: boolean }
-        Update: Partial<Omit<Candidature, 'id'>>
+      applications: {
+        Row: Application
+        Insert: Omit<Application, 'id' | 'applied_at' | 'status' | 'is_archived'> & { id?: string; applied_at?: string; status?: 'pending' | 'accepted' | 'rejected'; is_archived?: boolean }
+        Update: Partial<Omit<Application, 'id'>>
         Relationships: []
       }
-      conges: {
-        Row: Conge
-        Insert: Omit<Conge, 'id' | 'created_at' | 'status'> & { id?: string; created_at?: string; status?: 'pending' | 'approved' | 'rejected' }
-        Update: Partial<Omit<Conge, 'id'>>
+      leaves: {
+        Row: Leave
+        Insert: Omit<Leave, 'id' | 'created_at' | 'status'> & { id?: string; created_at?: string; status?: 'pending' | 'approved' | 'rejected' }
+        Update: Partial<Omit<Leave, 'id'>>
         Relationships: []
       }
     }

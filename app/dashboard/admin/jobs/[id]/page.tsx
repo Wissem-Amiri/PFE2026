@@ -70,12 +70,12 @@ export default function JobOverviewPage() {
 
     let query = supabase
       .from('employee')
-      .select('*, utilisateur!inner(*)')
+      .select('*, users!inner(*)')
       .ilike('position', job?.title || '')
       .range(from, to)
     
     if (searchQuery) {
-      query = query.ilike('utilisateur.user_name', `%${searchQuery}%`)
+      query = query.ilike('users.user_name', `%${searchQuery}%`)
     }
 
     const { data, error } = await query
@@ -244,17 +244,17 @@ export default function JobOverviewPage() {
               {members.map((member) => (
                 <div key={member.id} className="bg-white border border-[#eaecf0] rounded-[12px] p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-all">
                   <div className="w-[50px] h-[50px] rounded-full bg-[#f1f5f9] flex items-center justify-center overflow-hidden border border-[#e2e8f0]">
-                    {member.utilisateur?.avatar_url ? (
-                      <img src={member.utilisateur.avatar_url} alt="" className="w-full h-full object-cover" />
+                    {member.users?.avatar_url ? (
+                      <img src={member.users.avatar_url} alt="" className="w-full h-full object-cover" />
                     ) : (
                       <span className="text-[16px] font-bold text-[#64748b]">
-                        {member.utilisateur?.user_name?.substring(0, 2).toUpperCase() || 'EM'}
+                        {member.users?.user_name?.substring(0, 2).toUpperCase() || 'EM'}
                       </span>
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="text-[16px] font-semibold text-[#101828] m-0 truncate">
-                      {member.utilisateur?.user_name || 'Anonymous'}
+                      {member.users?.user_name || 'Anonymous'}
                     </h4>
                   </div>
                   <div className="text-right">

@@ -18,7 +18,7 @@ import {
   HiOutlineFilter,
   HiOutlineTrash
 } from 'react-icons/hi'
-import { requestLeave, deleteLeavesPermanently } from '@/api/conge'
+import { requestLeave, deleteLeavesPermanently } from '@/api/leaves'
 import { useMyLeaves, queryKeys } from '@/api/hooks'
 import { useQueryClient } from '@tanstack/react-query'
 

@@ -1,13 +1,13 @@
 import { supabase } from './supabase'
-import type { BaseUtilisateur, FullProfile, Employee } from './database.types'
+import type { BaseUser, FullProfile, Employee, Candidate, Admin } from './database.types'
 
 /** Get a single user profile by email with all role-specific data using joins */
 export async function getProfileByEmail(email: string) {
   const { data, error } = await supabase
-    .from('utilisateur')
+    .from('users')
     .select(`
       *,
-      candidat(*),
+      candidate(*),
       employee(*),
       admin(*)
     `)
@@ -20,10 +20,10 @@ export async function getProfileByEmail(email: string) {
 /** Get a single user profile with all role-specific data using joins */
 export async function getProfile(userId: string) {
   const { data, error } = await supabase
-    .from('utilisateur')
+    .from('users')
     .select(`
       *,
-      candidat(*),
+      candidate(*),
       employee(*),
       admin(*)
     `)
@@ -33,17 +33,17 @@ export async function getProfile(userId: string) {
   return { data: data as FullProfile | null, error }
 }
 
-export async function updateProfile(userId: string, updates: Partial<BaseUtilisateur> & {
-  candidat?: Partial<Candidat> | null,
+export async function updateProfile(userId: string, updates: Partial<BaseUser> & {
+  candidate?: Partial<Candidate> | null,
   employee?: Partial<Employee> | null,
   admin?: Partial<Admin> | null
 }) {
-  const { candidat, employee, admin, ...baseUpdates } = updates
+  const { candidate, employee, admin, ...baseUpdates } = updates
 
-  // 1. Update Base utilisateur if there are base fields
+  // 1. Update Base user if there are base fields
   if (Object.keys(baseUpdates).length > 0) {
     const { error: baseError } = await supabase
-      .from('utilisateur')
+      .from('users')
       .update(baseUpdates)
       .eq('id', userId)
     
@@ -51,8 +51,8 @@ export async function updateProfile(userId: string, updates: Partial<BaseUtilisa
   }
 
   // 2. Update Role-specific tables
-  if (candidat) {
-    const { error: pError } = await supabase.from('candidat').upsert({ id: userId, ...candidat })
+  if (candidate) {
+    const { error: pError } = await supabase.from('candidates').upsert({ id: userId, ...candidate })
     if (pError) return { data: null, error: pError }
   }
   
@@ -69,13 +69,13 @@ export async function updateProfile(userId: string, updates: Partial<BaseUtilisa
   return getProfile(userId)
 }
 
-/** Get all users (Admin view) - base info + essential employee/candidat fields */
+/** Get all users (Admin view) - base info + essential employee/candidate fields */
 export async function getAllUsers() {
   const { data, error } = await supabase
-    .from('utilisateur')
+    .from('users')
     .select(`
       *,
-      candidat(id, country),
+      candidate(id, country),
       employee(id, department, position, hire_date, vacation_balance, monthly_rate)
     `)
     .order('created_at', { ascending: false })
@@ -120,7 +120,7 @@ export async function getEmployeesPaginated(params: {
 
 export async function archiveUsers(ids: string[]) {
   const { data, error } = await supabase
-    .from('utilisateur')
+    .from('users')
     .update({ is_archived: true })
     .in('id', ids)
     .select()
@@ -129,7 +129,7 @@ export async function archiveUsers(ids: string[]) {
 
 export async function unarchiveUsers(ids: string[]) {
   const { data, error } = await supabase
-    .from('utilisateur')
+    .from('users')
     .update({ is_archived: false })
     .in('id', ids)
     .select()
@@ -140,17 +140,17 @@ export async function unarchiveUsers(ids: string[]) {
 export async function updateUserStatus(
   userId: string,
   status: 'approved' | 'rejected',
-  hiringDetails?: { hire_date?: string; department?: string; monthly_rate?: number; position?: string }
+  hiringDetails?: { hire_date?: string; department?: string; monthly_rate?: number; position?: string; candidate_id?: string }
 ) {
   // 1. Update status in Base table
-  const baseUpdates: Partial<BaseUtilisateur> = { status }
+  const baseUpdates: Partial<BaseUser> = { status }
   
   if (status === 'approved') {
     baseUpdates.role = 'employee'
   }
 
   const { error: baseError } = await supabase
-    .from('utilisateur')
+    .from('users')
     .update(baseUpdates)
     .eq('id', userId)
 
@@ -165,7 +165,7 @@ export async function updateUserStatus(
       position: hiringDetails?.position || 'Employee',
       monthly_rate: Number(hiringDetails?.monthly_rate) || 0,
       vacation_balance: 0, // Will be accumulated monthly by the cron job (with prorata)
-      candidat_id: hiringDetails?.candidat_id || null // link back to its candidat self if exists
+      candidate_id: hiringDetails?.candidate_id || null // link back to its candidate self if exists
     }
 
     const { error: empError } = await supabase
@@ -181,7 +181,7 @@ export async function updateUserStatus(
 /** Delete a user permanently (Admin only) - cascades to child tables */
 export async function deleteUser(userId: string) {
   const { error } = await supabase
-    .from('utilisateur')
+    .from('users')
     .delete()
     .eq('id', userId)
   
@@ -191,7 +191,7 @@ export async function deleteUser(userId: string) {
 /** Delete multiple users permanently (Admin only) */
 export async function deleteUsers(userIds: string[]) {
   const { error, count } = await supabase
-    .from('utilisateur')
+    .from('users')
     .delete({ count: 'exact' })
     .in('id', userIds)
   

@@ -1,11 +1,11 @@
 'use client'
 import { useEffect, useState, useMemo } from 'react'
 import { getAllUsers, getProfile } from '@/api/profile'
-import { getAllLeavesDetailed } from '@/api/conge'
-import { getAllCandidaturesDetailed } from '@/api/candidatures'
+import { getAllLeavesDetailed } from '@/api/leaves'
+import { getAllApplicationsDetailed } from '@/api/applications'
 import { useAuth } from '@/api/AuthContext'
-import { archiveLeaves } from '@/api/conge'
-import { archiveCandidatures } from '@/api/candidatures'
+import { archiveLeaves } from '@/api/leaves'
+import { archiveApplications } from '@/api/applications'
 import { useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@/api/hooks'
 import Link from 'next/link'
@@ -48,7 +48,7 @@ import {
 } from 'react-icons/hi'
 import dayjs from 'dayjs'
 
-import { useLeaves, useCandidatures } from '@/api/hooks'
+import { useLeaves, useApplications } from '@/api/hooks'
 
 export default function AdminDashboardPage() {
   const { user } = useAuth()
@@ -61,14 +61,14 @@ export default function AdminDashboardPage() {
   const showLeaves = typeFilter.length === 0 || typeFilter.includes('Leave requests');
   const showRegistrationRequests = typeFilter.includes('Registration requests');
   const showJobSubmissions = typeFilter.length === 0 || typeFilter.includes('Job submissions');
-  const fetchCandidatures = showJobSubmissions || showRegistrationRequests;
+  const fetchApplications = showJobSubmissions || showRegistrationRequests;
   
-  let candidaturesStatus = statusFilter.length > 0 ? statusFilter : undefined;
+  let applicationsStatus = statusFilter.length > 0 ? statusFilter : undefined;
   if (!showJobSubmissions && showRegistrationRequests) {
-    if (candidaturesStatus) {
-      candidaturesStatus = candidaturesStatus.includes('pending') ? ['pending'] : ['__NONE__'];
+    if (applicationsStatus) {
+      applicationsStatus = applicationsStatus.includes('pending') ? ['pending'] : ['__NONE__'];
     } else {
-      candidaturesStatus = ['pending'];
+      applicationsStatus = ['pending'];
     }
   }
 
@@ -80,19 +80,19 @@ export default function AdminDashboardPage() {
     startDate: dateRange?.[0]?.format('YYYY-MM-DD'),
     endDate: dateRange?.[1]?.format('YYYY-MM-DD')
   })
-  const { data: candidaturesResult, isLoading: candidaturesLoading } = useCandidatures({ 
+  const { data: applicationsResult, isLoading: applicationsLoading } = useApplications({ 
     page: 1, 
-    pageSize: fetchCandidatures ? 50 : 0, 
+    pageSize: fetchApplications ? 50 : 0, 
     search,
-    status: candidaturesStatus,
+    status: applicationsStatus,
     startDate: dateRange?.[0]?.format('YYYY-MM-DD'),
     endDate: dateRange?.[1]?.format('YYYY-MM-DD')
   })
 
   const leaves = showLeaves ? (leavesResult?.data || []) : [];
-  const candidatures = fetchCandidatures ? (candidaturesResult?.data || []) : [];
+  const applications = fetchApplications ? (applicationsResult?.data || []) : [];
 
-  const loading = leavesLoading || candidaturesLoading
+  const loading = leavesLoading || applicationsLoading
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([])
 
@@ -125,11 +125,11 @@ export default function AdminDashboardPage() {
       status: l.status,
       leaveType: l.type
     })),
-    ...candidatures.map(c => ({
+    ...applications.map(c => ({
       id: c.id,
       date: c.applied_at,
-      type: 'candidature',
-      user: c.candidat?.user,
+      type: 'application',
+      user: c.candidate?.user,
       details: `Applied for ${c.job?.title}`,
       status: c.status
     }))
@@ -147,7 +147,7 @@ export default function AdminDashboardPage() {
   const stats = [
     {
       title: 'Registration requests',
-      count: candidatures.filter(c => c.status === 'pending').length.toString(),
+      count: applications.filter(c => c.status === 'pending').length.toString(),
       href: '/dashboard/admin/registrations'
     },
     {
@@ -157,7 +157,7 @@ export default function AdminDashboardPage() {
     },
     {
       title: 'Job submissions',
-      count: candidatures.length.toString(),
+      count: applications.length.toString(),
       href: '/dashboard/admin/jobs'
     },
   ]
@@ -182,21 +182,21 @@ export default function AdminDashboardPage() {
         .filter(key => String(key).startsWith('leave-'))
         .map(key => String(key).replace('leave-', ''))
       
-      const candidatureIds = selectedRowKeys
-        .filter(key => String(key).startsWith('candidature-'))
-        .map(key => String(key).replace('candidature-', ''))
+      const applicationIds = selectedRowKeys
+        .filter(key => String(key).startsWith('application-'))
+        .map(key => String(key).replace('application-', ''))
 
       if (leaveIds.length > 0) {
         await archiveLeaves(leaveIds)
       }
-      if (candidatureIds.length > 0) {
-        await archiveCandidatures(candidatureIds)
+      if (applicationIds.length > 0) {
+        await archiveApplications(applicationIds)
       }
 
       message.success(`${selectedRowKeys.length} activity items deleted`)
       setSelectedRowKeys([])
       queryClient.invalidateQueries({ queryKey: queryKeys.leaves })
-      queryClient.invalidateQueries({ queryKey: queryKeys.candidatures })
+      queryClient.invalidateQueries({ queryKey: queryKeys.applications })
     } catch (err) {
       message.error('Failed to delete activities')
     } finally {

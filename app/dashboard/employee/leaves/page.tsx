@@ -3,15 +3,15 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@/api/AuthContext'
 import { Table, Button, Modal, Form, Select, DatePicker, Input, Tag, message, Tooltip } from 'antd'
 import { PlusOutlined, CalendarOutlined, InfoCircleOutlined } from '@ant-design/icons'
-import { getMyLeaves, requestLeave } from '@/api/conge'
-import type { Conge } from '@/api/database.types'
+import { getMyLeaves, requestLeave } from '@/api/leaves'
+import type { Leave } from '@/api/database.types'
 
 const { RangePicker } = DatePicker
 const { TextArea } = Input
 
 export default function EmployeeLeavesPage() {
   const { user, profile } = useAuth()
-  const [leaves, setLeaves] = useState<Conge[]>([])
+  const [leaves, setLeaves] = useState<Leave[]>([])
   const [loading, setLoading] = useState(true)
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [form] = Form.useForm()
@@ -79,7 +79,7 @@ export default function EmployeeLeavesPage() {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
-      render: (status: string, record: Conge) => {
+      render: (status: string, record: Leave) => {
         let color = 'gold'
         if (status === 'approved') color = 'green'
         if (status === 'rejected') color = 'red'

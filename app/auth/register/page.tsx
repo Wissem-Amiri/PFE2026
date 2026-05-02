@@ -56,7 +56,7 @@ export default function RegisterPage() {
     const { error } = await signUp(values.email, values.password, {
       data: {
         full_name: values.name,
-        role: 'candidat',
+        role: 'candidate',
       },
     })
 

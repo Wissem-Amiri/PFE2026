@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/api/AuthContext'
 import { getAllJobs } from '@/api/job'
-import { getUserCandidatures } from '@/api/candidatures'
+import { getUserApplications } from '@/api/applications'
 import type { Job } from '@/api/database.types'
 
 export default function EmployeeRegistrationsPage() {
@@ -37,10 +37,10 @@ export default function EmployeeRegistrationsPage() {
       setJobs(data ?? [])
 
       if (user) {
-        const { data: candidatures } = await getUserCandidatures(user.id)
+        const { data: applications } = await getUserApplications(user.id)
         const statusMap = new Map<string, string>()
-        candidatures?.forEach(can => {
-          statusMap.set(can.job_id, can.status)
+        applications?.forEach(app => {
+          statusMap.set(app.job_id, app.status)
         })
         setAppliedJobsStatus(statusMap)
       }
@@ -121,8 +121,8 @@ export default function EmployeeRegistrationsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredJobs.map(job => {
-            const candidatureStatus = appliedJobsStatus.get(job.id)
-            const hasApplied = !!candidatureStatus
+            const applicationStatus = appliedJobsStatus.get(job.id)
+            const hasApplied = !!applicationStatus
             return (
               <div key={job.id} className="bg-white rounded-2xl border border-[#E4E7EC] p-6 text-left shadow-sm flex flex-col justify-between hover:shadow-md hover:border-[#7c3aed] transition-all">
                 <div>

@@ -34,9 +34,9 @@ export async function POST(request: Request) {
 
     const userId = authData.user.id
 
-    // 2. Insert into public.utilisateur
-    const { error: utilError } = await supabaseAdmin
-      .from('utilisateur')
+    // 2. Insert into public.users
+    const { error: userError } = await supabaseAdmin
+      .from('users')
       .upsert({
         id: userId,
         user_name,
@@ -45,9 +45,9 @@ export async function POST(request: Request) {
         status: 'approved'
       })
 
-    if (utilError) {
-      console.error('❌ Utilisateur Insert Error:', utilError)
-      return NextResponse.json({ error: utilError.message }, { status: 500 })
+    if (userError) {
+      console.error('❌ Users Insert Error:', userError)
+      return NextResponse.json({ error: userError.message }, { status: 500 })
     }
 
     // 3. Insert into public.employee

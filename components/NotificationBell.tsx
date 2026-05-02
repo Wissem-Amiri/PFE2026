@@ -17,7 +17,7 @@ dayjs.locale('en-gb')
 const { Text } = Typography
 
 export default function NotificationBell() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(true)
   const [open, setOpen] = useState(false)
@@ -70,16 +70,18 @@ export default function NotificationBell() {
     // 4. Navigate based on notification title/content
     const title = item.title.toLowerCase()
     const message = item.message.toLowerCase()
-    const role = (user as any)?.role
+    const role = profile?.role || (user as any)?.user_metadata?.role
 
     if (role === 'admin') {
-      if (title.includes('congé') || message.includes('congé') || title.includes('leave') || message.includes('leave')) {
+      if (title.includes('leave') || message.includes('leave') || title.includes('congé') || message.includes('congé')) {
         router.push('/dashboard/admin/leaves')
-      } else if (title.includes('candidature') || message.includes('postulé') || title.includes('application') || message.includes('applied')) {
+      } else if (title.includes('application') || message.includes('applied') || title.includes('candidature') || message.includes('postulé')) {
         router.push('/dashboard/admin/registrations')
       }
-    } else {
+    } else if (role === 'employee') {
       router.push('/dashboard/employee')
+    } else {
+      router.push('/dashboard/candidate')
     }
   }
 

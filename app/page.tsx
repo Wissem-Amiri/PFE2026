@@ -61,9 +61,9 @@ export default function LandingPage() {
   const handleApplyClick = (jobId?: string) => {
     if (user) {
       if (jobId) {
-        router.push(`/dashboard/candidat/profile?applyTo=${jobId}`)
+        router.push(`/dashboard/candidate/profile?applyTo=${jobId}`)
       } else {
-        router.push('/dashboard/candidat')
+        router.push('/dashboard/candidate')
       }
     } else {
       const loginPath = jobId ? `/login?applyTo=${jobId}` : '/login'

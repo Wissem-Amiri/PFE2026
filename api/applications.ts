@@ -1,63 +1,63 @@
 import { supabase } from './supabase'
-import type { Candidature } from './database.types'
+import type { Application } from './database.types'
 
 /** Apply to a Job */
-export async function applyToJob(candidatId: string, jobId: string) {
+export async function applyToJob(candidateId: string, jobId: string) {
   const { data, error } = await supabase
-    .from('candidatures')
-    .insert([{ candidat_id: candidatId, job_id: jobId }])
+    .from('applications')
+    .insert([{ candidate_id: candidateId, job_id: jobId }])
     .select()
     .single()
   
   if (!error && data) {
-    // 1. Fetch Candidate Name (Candidate has access to their own profile in utilisateur)
+    // 1. Fetch Candidate Name
     const { data: userData } = await supabase
-      .from('utilisateur')
+      .from('users')
       .select('user_name')
-      .eq('id', candidatId)
+      .eq('id', candidateId)
       .single()
 
-    // 2. Fetch Job Title (Jobs are public/readable by all authenticated)
+    // 2. Fetch Job Title
     const { data: jobData } = await supabase
       .from('jobs')
       .select('title')
       .eq('id', jobId)
       .single()
 
-    // 3. Send Notification to Admins via RPC
+    // 3. Send Notification to Admins
     if (userData && jobData) {
-      // @ts-ignore - Database types might need a refresh to pick up the RPC
+      // @ts-ignore
       await supabase.rpc('create_admin_notification', {
-        p_title: 'Nouvelle candidature',
-        p_message: `${userData.user_name || 'Un candidat'} a postulé pour le poste de "${jobData.title}".`
+        p_title: 'New Application',
+        p_message: `${userData.user_name || 'A candidate'} has applied for the "${jobData.title}" position.`
       })
     }
   }
 
-  return { data: data as Candidature | null, error }
+  return { data: data as Application | null, error }
 }
 
 /** Check if user applied to a Job */
-export async function checkIfApplied(candidatId: string, jobId: string) {
+export async function checkIfApplied(candidateId: string, jobId: string) {
   const { data, error } = await supabase
-    .from('candidatures')
+    .from('applications')
     .select('id')
-    .eq('candidat_id', candidatId)
+    .eq('candidate_id', candidateId)
     .eq('job_id', jobId)
     .maybeSingle()
   
   return { applied: !!data, error }
 }
 
-/** Get all candidatures for a user, including job details */
-export async function getUserCandidatures(candidatId: string) {
+/** Get all applications for a user, including job details */
+export async function getUserApplications(candidateId: string) {
   const { data, error } = await supabase
-    .from('candidatures')
+    .from('applications')
     .select(`
       *,
       job:jobs(*)
     `)
-    .eq('candidat_id', candidatId)
+    .eq('candidate_id', candidateId)
     .order('applied_at', { ascending: false })
   
   return { data: data as any[], error }
@@ -66,12 +66,12 @@ export async function getUserCandidatures(candidatId: string) {
 /** Get all applicants for a specific job (Admin) */
 export async function getJobApplications(jobId: string) {
   const { data, error } = await supabase
-    .from('candidatures')
+    .from('applications')
     .select(`
       *,
-      candidat:candidat(
+      candidate:candidates(
         *,
-        user:utilisateur(*)
+        user:users(*)
       )
     `)
     .eq('job_id', jobId)
@@ -80,20 +80,20 @@ export async function getJobApplications(jobId: string) {
   return { data: data as any[], error }
 }
 
-/** Update the status of a specific candidature */
-export async function updateCandidatureStatus(candidatureId: string, status: 'pending' | 'accepted' | 'rejected') {
+/** Update the status of a specific application */
+export async function updateApplicationStatus(applicationId: string, status: 'pending' | 'accepted' | 'rejected') {
   const { data, error } = await supabase
-    .from('candidatures')
+    .from('applications')
     .update({ status })
-    .eq('id', candidatureId)
+    .eq('id', applicationId)
     .select()
     .single()
   
-  return { data: data as Candidature | null, error }
+  return { data: data as Application | null, error }
 }
 
-/** Get all candidatures with user and job info (Admin) - Server Side Pagination & Filters */
-export async function getAllCandidaturesDetailed(params: {
+/** Get all applications with user and job info (Admin) - Server Side Pagination & Filters */
+export async function getAllApplicationsDetailed(params: {
   page: number;
   pageSize: number;
   showArchived?: boolean;
@@ -113,7 +113,7 @@ export async function getAllCandidaturesDetailed(params: {
   } = params;
 
   let query = supabase
-    .from('v_candidatures_activities')
+    .from('v_applications_activities')
     .select('*', { count: 'exact' })
     .eq('is_archived', showArchived);
 
@@ -139,11 +139,6 @@ export async function getAllCandidaturesDetailed(params: {
     query = query.lte('applied_at', endDate);
   }
 
-  // Note: Search across joined tables (user_name, job_title) 
-  // is best handled via a View or RPC for performance,
-  // but for now we'll handle the basic filters server-side.
-  // If search is present, we might need a more complex query.
-
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
@@ -154,8 +149,8 @@ export async function getAllCandidaturesDetailed(params: {
   return { 
     data: (data || []).map(item => ({
       ...item,
-      candidat: {
-        id: item.candidat_id,
+      candidate: {
+        id: item.candidate_id,
         user: {
           user_name: item.user_name,
           avatar_url: item.avatar_url,
@@ -173,15 +168,15 @@ export async function getAllCandidaturesDetailed(params: {
   };
 }
 
-/** Get all ARCHIVED candidatures with user and job info (Admin) */
-export async function getArchivedCandidaturesDetailed() {
+/** Get all ARCHIVED applications with user and job info (Admin) */
+export async function getArchivedApplicationsDetailed() {
   const { data, error } = await supabase
-    .from('candidatures')
+    .from('applications')
     .select(`
       *,
-      candidat:candidat(
+      candidate:candidates(
         *,
-        user:utilisateur(*)
+        user:users(*)
       ),
       job:jobs(*)
     `)
@@ -191,43 +186,43 @@ export async function getArchivedCandidaturesDetailed() {
   return { data: data as any[], error }
 }
 
-/** Soft delete (Archive) candidatures */
-export async function archiveCandidatures(ids: string[]) {
+/** Soft delete (Archive) applications */
+export async function archiveApplications(ids: string[]) {
   const { error } = await supabase
-    .from('candidatures')
+    .from('applications')
     .update({ is_archived: true })
     .in('id', ids)
   
   return { error }
 }
 
-/** Restore archived candidatures */
-export async function restoreCandidatures(ids: string[]) {
+/** Restore archived applications */
+export async function restoreApplications(ids: string[]) {
   const { error } = await supabase
-    .from('candidatures')
+    .from('applications')
     .update({ is_archived: false })
     .in('id', ids)
   
   return { error }
 }
 
-/** Permanent delete candidatures from database (Hard Delete) */
-export async function hardDeleteCandidatures(ids: string[]) {
+/** Permanent delete applications from database (Hard Delete) */
+export async function hardDeleteApplications(ids: string[]) {
   const { error } = await supabase
-    .from('candidatures')
+    .from('applications')
     .delete()
     .in('id', ids)
   
   return { error }
 }
 
-/** Permanent delete all other candidatures for a user (Maintenance/Cleanup) */
-export async function deleteAllOtherCandidatures(candidatId: string, excludeCandidatureId: string) {
+/** Permanent delete all other applications for a user (Maintenance/Cleanup) */
+export async function deleteAllOtherApplications(candidateId: string, excludeApplicationId: string) {
   const { error } = await supabase
-    .from('candidatures')
+    .from('applications')
     .delete()
-    .eq('candidat_id', candidatId)
-    .neq('id', excludeCandidatureId)
+    .eq('candidate_id', candidateId)
+    .neq('id', excludeApplicationId)
   
   return { error }
 }

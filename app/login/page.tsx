@@ -46,7 +46,7 @@ export default function LoginPage() {
         const role = profile?.role || fallbackRole
         
         const dashboardPath = getDashboardByRole(role)
-        if (applyTo && (role === 'candidat' || !role)) {
+        if (applyTo && (role === 'candidate' || !role)) {
             router.push(`${dashboardPath}/profile?applyTo=${applyTo}`)
         } else {
             router.push(dashboardPath)

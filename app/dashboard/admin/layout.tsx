@@ -19,7 +19,7 @@ import {
 import { Avatar } from 'antd'
 import NotificationBell from '../../../components/NotificationBell'
 
-import { useLeaves, useCandidatures } from '@/api/hooks'
+import { useLeaves, useApplications } from '@/api/hooks'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { profile, user, signout } = useAuth()
@@ -27,10 +27,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const { data: leavesData } = useLeaves()
-  const { data: candidaturesData } = useCandidatures()
+  const { data: applicationsData } = useApplications()
 
   const totalLeaves = leavesData?.count || 0
-  const totalRegistrations = candidaturesData?.count || 0
+  const totalRegistrations = applicationsData?.count || 0
   const totalActivities = totalLeaves + totalRegistrations
 
   const navItems = [
@@ -161,6 +161,3 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     </div>
   )
 }
-
-
-

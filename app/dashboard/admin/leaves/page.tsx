@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { updateLeaveStatus } from '@/api/conge'
+import { updateLeaveStatus } from '@/api/leaves'
 import {
   message,
   Modal,

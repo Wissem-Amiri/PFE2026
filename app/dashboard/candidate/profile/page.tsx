@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/api/AuthContext'
 import { getProfile, updateProfile, uploadDocument } from '@/api/profile'
 import { uploadJobPicture, getJobById } from '@/api/job'
-import { applyToJob, getUserCandidatures } from '@/api/candidatures'
+import { applyToJob, getUserApplications } from '@/api/applications'
 import type { FullProfile } from '@/api/database.types'
 import { Input, Select, Upload, Button, message, Spin } from 'antd'
 import {
@@ -109,7 +109,7 @@ export default function CompleteProfilePage() {
         const firstName = names[0] || ''
         const lastName = names.slice(1).join(' ') || ''
 
-        let resolvedPosition = data.candidat?.position || '';
+        let resolvedPosition = data.candidate?.position || '';
 
         if (applyToJobId) {
           const { data: jobDetails } = await getJobById(applyToJobId)
@@ -118,9 +118,9 @@ export default function CompleteProfilePage() {
             setTargetJobTitle(jobDetails.title)
           }
         } else {
-          const { data: candidatures } = await getUserCandidatures(user.id)
-          if (candidatures && candidatures.length > 0) {
-            resolvedPosition = candidatures[0].job?.title || resolvedPosition
+          const { data: applications } = await getUserApplications(user.id)
+          if (applications && applications.length > 0) {
+            resolvedPosition = applications[0].job?.title || resolvedPosition
           }
         }
 
@@ -128,17 +128,17 @@ export default function CompleteProfilePage() {
           firstName,
           lastName,
           position: resolvedPosition,
-          country: data.candidat?.country || '',
-          timezone: data.candidat?.timezone || '',
-          bio: data.candidat?.bio || '',
-          website: data.candidat?.website || '',
-          portfolio: data.candidat?.portfolio || '',
-          experiences: (data.candidat?.experiences as any[]) || [],
+          country: data.candidate?.country || '',
+          timezone: data.candidate?.timezone || '',
+          bio: data.candidate?.bio || '',
+          website: data.candidate?.website || '',
+          portfolio: data.candidate?.portfolio || '',
+          experiences: (data.candidate?.experiences as any[]) || [],
         })
 
         setAvatarUrl(data.avatar_url || null)
-        setResumeUrl(data.candidat?.resume_url || null)
-        setLetterUrl(data.candidat?.motivational_letter_url || null)
+        setResumeUrl(data.candidate?.resume_url || null)
+        setLetterUrl(data.candidate?.motivational_letter_url || null)
       }
       setLoading(false)
     })
@@ -153,7 +153,7 @@ export default function CompleteProfilePage() {
     const updatePayload = {
       user_name: fullName,
       avatar_url: avatarUrl,
-      candidat: {
+      candidate: {
         position: values.position,
         country: values.country,
         timezone: values.timezone,
@@ -187,7 +187,7 @@ export default function CompleteProfilePage() {
         }
       } else {
         messageApi.success("Profile saved and application submitted!")
-        setTimeout(() => router.push('/dashboard/candidat'), 1500)
+        setTimeout(() => router.push('/dashboard/candidate'), 1500)
       }
     } else {
       messageApi.success("Profile updated successfully.")
@@ -238,7 +238,7 @@ export default function CompleteProfilePage() {
             <p className="text-[14px] text-[#475467] m-0">Manage your personal and professional information.</p>
           </div>
           <div className="flex gap-3">
-            <Button onClick={() => router.push('/dashboard/candidat')} className="h-10 px-5 rounded-lg font-medium border-[#D0D5DD]">Cancel</Button>
+            <Button onClick={() => router.push('/dashboard/candidate')} className="h-10 px-5 rounded-lg font-medium border-[#D0D5DD]">Cancel</Button>
             <Button type="primary" onClick={handleSubmit(handleSave)} loading={saving} className="h-10 px-5 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] border-none font-medium text-white shadow-sm transition-colors">
               Save {applyToJobId && '& Apply'}
             </Button>
@@ -388,8 +388,8 @@ export default function CompleteProfilePage() {
                   <div className="w-12 h-12 rounded-full bg-[#F2F4F7] flex items-center justify-center mb-3">
                     <span className="text-2xl">💼</span>
                   </div>
-                  <p className="text-[14px] font-bold text-[#344054] m-0">Aucune expérience ajoutée</p>
-                  <p className="text-[13px] text-[#667085] mt-1 m-0">Ajoutez vos expériences professionnelles pour enrichir votre profil.</p>
+                  <p className="text-[14px] font-bold text-[#344054] m-0">No experience added</p>
+                  <p className="text-[13px] text-[#667085] mt-1 m-0">Add your professional experiences to enrich your profile.</p>
                 </div>
               )}
 
@@ -442,7 +442,7 @@ export default function CompleteProfilePage() {
 
           {/* Bottom Actions */}
           <div className="flex justify-end gap-3 pt-10 border-t border-[#EAECF0] mt-10">
-            <Button onClick={() => router.push('/dashboard/candidat')} className="h-11 px-6 rounded-lg font-medium border-[#D0D5DD]">Cancel</Button>
+            <Button onClick={() => router.push('/dashboard/candidate')} className="h-11 px-6 rounded-lg font-medium border-[#D0D5DD]">Cancel</Button>
             <Button type="primary" onClick={handleSubmit(handleSave)} loading={saving} className="h-11 px-6 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] border-none font-medium text-white shadow-md transition-all">
               Save {applyToJobId && '& Apply'}
             </Button>
