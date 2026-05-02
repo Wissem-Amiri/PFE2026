@@ -174,7 +174,8 @@ export default function RegistrationsPage() {
       hire_date,
       department: hiringData.department,
       monthly_rate: hiringData.monthly_rate,
-      position: appToApprove.job?.title || 'Employee'
+      position: appToApprove.job?.title || 'Employee',
+      candidate_id: appToApprove.candidate_id
     })
   }
 

@@ -7,7 +7,7 @@ export async function getProfileByEmail(email: string) {
     .from('users')
     .select(`
       *,
-      candidate(*),
+      candidates(*),
       employee(*),
       admin(*)
     `)
@@ -34,7 +34,7 @@ export async function getProfile(userId: string) {
     .from('users')
     .select(`
       *,
-      candidate(*),
+      candidates(*),
       employee(*),
       admin(*)
     `)
@@ -86,7 +86,7 @@ export async function getAllUsers() {
     .from('users')
     .select(`
       *,
-      candidate(id, country),
+      candidates(id, country),
       employee(id, department, position, hire_date, vacation_balance, monthly_rate)
     `)
     .order('created_at', { ascending: false })
@@ -184,6 +184,37 @@ export async function updateUserStatus(
       .upsert(employeeData)
     
     if (empError) return { data: null, error: empError }
+
+    // 3. Congratulatory notification → new employee
+    await supabase.from('notifications').insert({
+      user_id: userId,
+      title: '🎉 Welcome to the team!',
+      message: `Congratulations! Your application has been approved. You are now part of the ${employeeData.department} department as ${employeeData.position}.`,
+      is_read: false
+    })
+
+    // 4. Info notification → all admins
+    const { data: admins } = await supabase
+      .from('users')
+      .select('id')
+      .eq('role', 'admin')
+
+    if (admins && admins.length > 0) {
+      const { data: newUser } = await supabase
+        .from('users')
+        .select('user_name')
+        .eq('id', userId)
+        .single()
+
+      await supabase.from('notifications').insert(
+        admins.map((a: { id: string }) => ({
+          user_id: a.id,
+          title: '👤 New employee onboarded',
+          message: `${newUser?.user_name || 'A candidate'} has been approved and joined the ${employeeData.department} department.`,
+          is_read: false
+        }))
+      )
+    }
   }
 
   return getProfile(userId)

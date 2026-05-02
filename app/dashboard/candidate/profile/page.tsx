@@ -26,12 +26,12 @@ import * as yup from 'yup'
 const profileSchema = yup.object().shape({
   firstName: yup.string().required('First name is required'),
   lastName: yup.string().required('Last name is required'),
-  position: yup.string().required('Position is required'),
-  country: yup.string().required('Country is required'),
-  timezone: yup.string().required('Timezone is required'),
-  bio: yup.string().required('Bio is required').max(500, 'Bio is too long (max 500 chars)'),
-  website: yup.string().url('Invalid URL format').nullable(),
-  portfolio: yup.string().url('Invalid URL format').nullable(),
+  position: yup.string().nullable().optional(),
+  country: yup.string().nullable().optional(),
+  timezone: yup.string().nullable().optional(),
+  bio: yup.string().nullable().optional().max(500, 'Bio is too long (max 500 chars)'),
+  website: yup.string().url('Invalid URL format').nullable().optional(),
+  portfolio: yup.string().url('Invalid URL format').nullable().optional(),
   experiences: yup.array().of(
     yup.object().shape({
       title: yup.string().required('Title is required'),
@@ -42,12 +42,8 @@ const profileSchema = yup.object().shape({
           const { startDate } = this.parent
           if (!startDate || !value) return true
           return new Date(value) >= new Date(startDate)
-        })
-        .test('no-future', 'End date cannot be in the future', function (value) {
-          if (!value) return true
-          return new Date(value) <= new Date()
         }),
-      projectUrl: yup.string().url('Invalid URL format').nullable(),
+      projectUrl: yup.string().url('Invalid URL format').nullable().optional(),
     })
   ).default([]),
 })
@@ -239,7 +235,10 @@ export default function CompleteProfilePage() {
           </div>
           <div className="flex gap-3">
             <Button onClick={() => router.push('/dashboard/candidate')} className="h-10 px-5 rounded-lg font-medium border-[#D0D5DD]">Cancel</Button>
-            <Button type="primary" onClick={handleSubmit(handleSave)} loading={saving} className="h-10 px-5 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] border-none font-medium text-white shadow-sm transition-colors">
+            <Button type="primary" onClick={handleSubmit(handleSave, (errs) => {
+              const firstError = Object.values(errs)[0] as any
+              messageApi.error(firstError?.message || 'Please fix the errors in the form before saving.')
+            })} loading={saving} className="h-10 px-5 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] border-none font-medium text-white shadow-sm transition-colors">
               Save {applyToJobId && '& Apply'}
             </Button>
           </div>
@@ -300,15 +299,23 @@ export default function CompleteProfilePage() {
 
           {/* 2. Profil Professionnel */}
           <Section title="Professional Profile" subtitle="Highlight your skills and background.">
-            <FormRow label="Current / target position" required>
+            <FormRow label="Current / target position">
               <div className="flex flex-col gap-2">
                 <Controller name="position" control={control} render={({ field }) => (
-                  <Input {...field} disabled={!!applyToJobId} className="h-11 rounded-lg bg-[#F9FAFB] cursor-not-allowed border-[#EAECF0]" placeholder="Developer, Designer..." />
+                  <Input
+                    {...field}
+                    value={field.value || ''}
+                    disabled={!!applyToJobId}
+                    className={`h-11 rounded-lg ${applyToJobId ? 'bg-[#F9FAFB] cursor-not-allowed border-[#EAECF0]' : 'border-[#D0D5DD]'}`}
+                    placeholder="Developer, Designer..."
+                  />
                 )} />
-                <p className="text-[11px] text-[#667085] flex items-center gap-1.5 italic">
-                  <CheckCircleFilled className="text-green-500 text-[10px]" />
-                  Position is locked based on your application.
-                </p>
+                {applyToJobId && (
+                  <p className="text-[11px] text-[#667085] flex items-center gap-1.5 italic">
+                    <CheckCircleFilled className="text-green-500 text-[10px]" />
+                    Position is locked based on your application.
+                  </p>
+                )}
               </div>
             </FormRow>
 
@@ -443,7 +450,10 @@ export default function CompleteProfilePage() {
           {/* Bottom Actions */}
           <div className="flex justify-end gap-3 pt-10 border-t border-[#EAECF0] mt-10">
             <Button onClick={() => router.push('/dashboard/candidate')} className="h-11 px-6 rounded-lg font-medium border-[#D0D5DD]">Cancel</Button>
-            <Button type="primary" onClick={handleSubmit(handleSave)} loading={saving} className="h-11 px-6 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] border-none font-medium text-white shadow-md transition-all">
+            <Button type="primary" onClick={handleSubmit(handleSave, (errs) => {
+              const firstError = Object.values(errs)[0] as any
+              messageApi.error(firstError?.message || 'Please fix the errors in the form before saving.')
+            })} loading={saving} className="h-11 px-6 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] border-none font-medium text-white shadow-md transition-all">
               Save {applyToJobId && '& Apply'}
             </Button>
           </div>
