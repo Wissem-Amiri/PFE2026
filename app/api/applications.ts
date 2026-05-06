@@ -1,9 +1,9 @@
-import { supabase } from './supabase'
-import type { Application } from './database.types'
+import { supabase } from '@/lib/supabase'
+import type { Application, DetailedApplication, ApplicationWithJob, ApplicationActivityItem } from '@/lib/database.types'
 
 /** Apply to a Job */
 export async function applyToJob(candidateId: string, jobId: string) {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('applications')
     .insert([{ candidate_id: candidateId, job_id: jobId }])
     .select()
@@ -26,10 +26,12 @@ export async function applyToJob(candidateId: string, jobId: string) {
 
     // 3. Send Notification to Admins
     if (userData && jobData) {
+      const user = userData as any
+      const job = jobData as any
       // @ts-ignore
       await supabase.rpc('create_admin_notification', {
         p_title: 'New Application',
-        p_message: `${userData.user_name || 'A candidate'} has applied for the "${jobData.title}" position.`
+        p_message: `${user.user_name || 'A candidate'} has applied for the "${job.title}" position.`
       })
     }
   }
@@ -60,7 +62,7 @@ export async function getUserApplications(candidateId: string) {
     .eq('candidate_id', candidateId)
     .order('applied_at', { ascending: false })
   
-  return { data: data as any[], error }
+  return { data: data as ApplicationWithJob[] | null, error }
 }
 
 /** Get all applicants for a specific job (Admin) */
@@ -77,12 +79,12 @@ export async function getJobApplications(jobId: string) {
     .eq('job_id', jobId)
     .order('applied_at', { ascending: false })
   
-  return { data: data as any[], error }
+  return { data: data as DetailedApplication[] | null, error }
 }
 
 /** Update the status of a specific application */
 export async function updateApplicationStatus(applicationId: string, status: 'pending' | 'accepted' | 'rejected') {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('applications')
     .update({ status })
     .eq('id', applicationId)
@@ -147,10 +149,11 @@ export async function getAllApplicationsDetailed(params: {
     .range(from, to);
   
   return { 
-    data: (data || []).map(item => ({
+    data: (data || []).map((item: ApplicationActivityItem) => ({
       ...item,
       candidate: {
         id: item.candidate_id,
+        resume_url: item.resume_url,
         user: {
           user_name: item.user_name,
           avatar_url: item.avatar_url,
@@ -188,7 +191,7 @@ export async function getArchivedApplicationsDetailed() {
 
 /** Soft delete (Archive) applications */
 export async function archiveApplications(ids: string[]) {
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from('applications')
     .update({ is_archived: true })
     .in('id', ids)
@@ -198,7 +201,7 @@ export async function archiveApplications(ids: string[]) {
 
 /** Restore archived applications */
 export async function restoreApplications(ids: string[]) {
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from('applications')
     .update({ is_archived: false })
     .in('id', ids)
@@ -294,7 +297,7 @@ export async function analyzeApplication(applicationId: string) {
     // Handle both 'match_score' and any detailed report returned
     const finalScore = analysisResult.match_score || analysisResult.score || 0
 
-    const { error: updateError } = await supabase
+    const { error: updateError } = await (supabase as any)
       .from('applications')
       .update({
         match_score: finalScore,
@@ -310,3 +313,4 @@ export async function analyzeApplication(applicationId: string) {
     return { error: err.message || 'An error occurred during analysis' }
   }
 }
+

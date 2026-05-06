@@ -5,11 +5,11 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { MailOutlined, ArrowLeftOutlined } from '@ant-design/icons'
 import { Button } from 'antd'
-import CheckLayout from '@/CheckLayout'
+import CheckLayout from '@/app/CheckLayout'
 import { useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { getDashboardByRole } from '@/lib/auth'
-import { getProfile } from '@/lib/profile'
+import { getProfile } from '@/app/api/profile'
 
 export default function VerifyEmailPage() {
   const searchParams = useSearchParams()
@@ -70,3 +70,4 @@ export default function VerifyEmailPage() {
     </CheckLayout>
   )
 }
+

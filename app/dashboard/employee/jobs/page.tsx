@@ -5,8 +5,8 @@ import { Input, message } from 'antd'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth'
-import { getAllJobs } from '@/lib/job'
-import { getUserApplications } from '@/lib/applications'
+import { getAllJobs } from '@/app/api/job'
+import { getUserApplications } from '@/app/api/applications'
 import type { Job } from '@/lib/database.types'
 
 export default function EmployeeJobsPage() {
@@ -140,3 +140,4 @@ export default function EmployeeJobsPage() {
     </div>
   )
 }
+

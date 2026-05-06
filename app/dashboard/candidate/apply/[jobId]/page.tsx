@@ -18,13 +18,14 @@ import {
   HiOutlinePencil
 } from 'react-icons/hi'
 import { useAuth } from '@/lib/auth'
-import { getProfile, updateProfile, uploadAvatar, uploadDocument } from '@/lib/profile'
-import { applyToJob } from '@/lib/applications'
-import { getJobById } from '@/lib/job'
-import { countries } from '@/lib/countries'
+import { getProfile, updateProfile, uploadAvatar, uploadDocument } from '@/app/api/profile'
+import { applyToJob } from '@/app/api/applications'
+import { getJobById } from '@/app/api/job'
+import { countries } from '@/app/api/countries'
 import { useForm, Controller } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
+import type { FullProfile, Job, Experience } from '@/lib/database.types'
 
 const { TextArea } = Input
 const { Option } = Select

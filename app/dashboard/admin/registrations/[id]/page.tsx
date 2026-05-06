@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useParams, useSearchParams } from 'next/navigation'
-import { getProfile } from '@/lib/profile'
-import { getAllJobs } from '@/lib/job'
+import { getProfile } from '@/app/api/profile'
+import { getAllJobs } from '@/app/api/job'
 import type { FullProfile } from '@/lib/database.types'
 import { Button, Tag, Tabs, Skeleton, message, Tooltip } from 'antd'
 import { ArrowLeftOutlined, EllipsisOutlined, FileTextOutlined, LinkOutlined, GlobalOutlined, MailOutlined } from '@ant-design/icons'

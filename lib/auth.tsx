@@ -5,7 +5,7 @@ import { createContext, useEffect, useState, useContext } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Spin } from "antd";
-import { getProfile } from "@/lib/profile";
+import { getProfile } from "@/app/api/profile";
 import type { FullProfile } from "@/lib/database.types";
 
 
@@ -72,7 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const updateStatus = async (status: boolean) => {
       try {
-        await supabase.from('users').update({ is_online: status }).eq('id', user.id)
+        await (supabase as any).from('users').update({ is_online: status }).eq('id', user.id)
       } catch (err) {
         console.error('Error updating online status:', err)
       }
@@ -143,7 +143,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signout = async () => {
     if (user?.id) {
-      await supabase.from('users').update({ is_online: false }).eq('id', user.id)
+      await (supabase as any).from('users').update({ is_online: false }).eq('id', user.id)
     }
     await supabase.auth.signOut()
     setSession(null)
@@ -235,3 +235,4 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   return <>{children}</>
 }
+

@@ -20,3 +20,4 @@ export async function extractCVData(file: File) {
     return null
   }
 }
+

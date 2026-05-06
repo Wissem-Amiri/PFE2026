@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { updateLeaveStatus } from '@/lib/leaves'
+import { updateLeaveStatus } from '@/app/api/leaves'
 import {
   message,
   Modal,
@@ -24,7 +24,7 @@ import { useLeaves, queryKeys } from '@/lib/hooks'
 
 import { useQueryClient } from '@tanstack/react-query'
 
-import { exportTableToPDF } from '@/lib/export'
+import { exportTableToPDF } from '@/app/api/export'
 
 export default function AdminLeavesPage() {
   const queryClient = useQueryClient()
@@ -578,3 +578,4 @@ export default function AdminLeavesPage() {
     </div>
   )
 }
+

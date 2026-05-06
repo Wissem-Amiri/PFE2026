@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react'
 import { SearchOutlined, TeamOutlined, MailOutlined, BankOutlined, UserOutlined, ArrowLeftOutlined } from '@ant-design/icons'
 import { Input, Avatar, Card, Tag, Spin, Button, Modal, InputNumber, message, DatePicker, Select } from 'antd'
-import { deleteUser, getAllUsers, updateUserStatus, getProfile, createEmployeeAccount, archiveUsers, unarchiveUsers, exportToCSV, downloadCSV } from '@/lib/profile'
-import { getAllJobs } from '@/lib/job'
-import { adjustEmployeeBalance } from '@/lib/leaves'
+import { deleteUser, getAllUsers, updateUserStatus, getProfile, createEmployeeAccount, archiveUsers, unarchiveUsers, exportToCSV, downloadCSV } from '@/app/api/profile'
+import { getAllJobs } from '@/app/api/job'
+import { adjustEmployeeBalance } from '@/app/api/leaves'
 import type { FullProfile } from '@/lib/database.types'
 import { useRouter } from 'next/navigation'
 import { HiOutlineX, HiOutlineTrash, HiOutlineDownload, HiOutlineChevronLeft, HiOutlineChevronRight, HiOutlineArchive, HiOutlineRefresh, HiOutlineViewGrid, HiOutlineViewList } from 'react-icons/hi'
@@ -14,7 +14,7 @@ import dayjs from 'dayjs'
 import { useEmployees, useInfiniteEmployees, queryKeys } from '@/lib/hooks'
 import { useQueryClient } from '@tanstack/react-query'
 import { useInView } from 'react-intersection-observer'
-import { exportEmployeesToPDF } from '@/lib/export'
+import { exportEmployeesToPDF } from '@/app/api/export'
 
 export default function AdminEmployeeListPage() {
   const queryClient = useQueryClient()
@@ -833,3 +833,4 @@ export default function AdminEmployeeListPage() {
     </div>
   );
 }
+

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense, useRef } from 'react'
 import { useAuth } from '@/lib/auth'
-import { getProfile, updateProfile, uploadAvatar } from '@/lib/profile'
+import { getProfile, updateProfile, uploadAvatar } from '@/app/api/profile'
 import { 
   Form, 
   Input, 
@@ -403,3 +403,4 @@ export default function AdminSettingsPage() {
     </Suspense>
   )
 }
+

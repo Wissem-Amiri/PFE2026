@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/lib/auth'
-import { checkEmailExists } from '@/lib/profile'
+import { checkEmailExists } from '@/app/api/profile'
 import { Form, Input, Button, Alert } from 'antd'
 import { UserOutlined, MailOutlined, LockOutlined } from '@ant-design/icons'
 import { useForm, Controller } from 'react-hook-form'
@@ -193,3 +193,4 @@ function GoogleIcon() {
     </svg>
   )
 }
+

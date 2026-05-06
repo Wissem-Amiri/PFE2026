@@ -167,3 +167,4 @@ export function scoreCandidate(
     strengths: extractStrengths(candidate.bio || '', candidate.position || '', experiences),
   }
 }
+

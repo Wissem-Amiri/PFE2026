@@ -1,5 +1,5 @@
-import { supabase } from './supabase'
-import type { Database, Job } from './database.types'
+import { supabase } from '@/lib/supabase'
+import type { Database, Job } from '@/lib/database.types'
 
 export async function getAllJobs(params?: {
   page?: number;
@@ -66,7 +66,7 @@ export async function getJobById(id: string) {
 }
 
 export async function createJob(jobData: Database['public']['Tables']['jobs']['Insert']) {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('jobs')
     .insert([jobData])
     .select()
@@ -76,7 +76,7 @@ export async function createJob(jobData: Database['public']['Tables']['jobs']['I
 }
 
 export async function updateJob(id: string, jobData: Database['public']['Tables']['jobs']['Update']) {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('jobs')
     .update(jobData)
     .eq('id', id)
@@ -146,3 +146,4 @@ export function isJobOpen(job: Job): boolean {
   // Dynamic check: must have seats and deadline must be strictly in the future
   return deadlineDate > today
 }
+

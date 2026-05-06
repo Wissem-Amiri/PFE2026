@@ -1,4 +1,4 @@
-import { supabase } from './supabase'
+import { supabase } from '@/lib/supabase'
 
 export interface Notification {
   id: string
@@ -6,7 +6,7 @@ export interface Notification {
   title: string
   message: string
   is_read: boolean
-  type: 'new_candidate' | 'job_application' | 'leave_request' | 'leave_status' | 'congrats'
+  type: 'new_candidate' | 'job_application' | 'leave_request' | 'leave_status' | 'congrats' | 'info' | 'default'
   metadata?: any
   created_at: string
 }
@@ -56,7 +56,7 @@ export async function getUnreadNotifications(userId: string) {
  * Mark a single notification as read.
  */
 export async function markNotificationAsRead(notificationId: string) {
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from('notifications')
     .update({ is_read: true })
     .eq('id', notificationId)
@@ -73,7 +73,7 @@ export async function markNotificationAsRead(notificationId: string) {
  * Mark all unread notifications as read for a specific user.
  */
 export async function markAllNotificationsAsRead(userId: string) {
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from('notifications')
     .update({ is_read: true })
     .eq('user_id', userId)
@@ -103,3 +103,4 @@ export async function deleteNotification(notificationId: string) {
 
   return { error: null }
 }
+

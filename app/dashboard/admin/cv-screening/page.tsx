@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { message, Modal, Spin, Tag } from 'antd'
 import { HiOutlineDocumentSearch, HiOutlineEye, HiOutlineSearch, HiOutlineCheckCircle, HiOutlineExclamationCircle } from 'react-icons/hi'
 import { useApplications, queryKeys } from '@/lib/hooks'
-import { analyzeApplication } from '@/lib/applications'
+import { analyzeApplication } from '@/app/api/applications'
 import { useQueryClient } from '@tanstack/react-query'
 
 export default function CVScreeningPage() {
@@ -181,7 +181,7 @@ export default function CVScreeningPage() {
 
                           {app.candidate?.resume_url && (
                             <a
-                              href={app.candidate.resume_url}
+                              href={app.candidate?.resume_url || '#'}
                               target="_blank"
                               rel="noreferrer"
                               className="w-[36px] h-[36px] rounded-[8px] border border-[#d0d5dd] text-[#344054] hover:bg-gray-50 flex items-center justify-center transition-all"
@@ -295,3 +295,4 @@ export default function CVScreeningPage() {
     </div>
   )
 }
+

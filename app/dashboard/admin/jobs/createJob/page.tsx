@@ -7,7 +7,7 @@ import { useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
-import { createJob, uploadJobPicture } from '@/lib/job'
+import { createJob, uploadJobPicture } from '@/app/api/job'
 import dayjs from 'dayjs'
 
 // --- YUP SCHEMA ---
@@ -399,3 +399,4 @@ export default function CreateJobPage() {
     </div>
   )
 }
+

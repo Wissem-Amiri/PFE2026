@@ -1,11 +1,11 @@
 'use client'
 import { useEffect, useState, useMemo } from 'react'
-import { getAllUsers, getProfile } from '@/lib/profile'
-import { getAllLeavesDetailed } from '@/lib/leaves'
-import { getAllApplicationsDetailed } from '@/lib/applications'
+import { getAllUsers, getProfile } from '@/app/api/profile'
+import { getAllLeavesDetailed } from '@/app/api/leaves'
+import { getAllApplicationsDetailed } from '@/app/api/applications'
 import { useAuth } from '@/lib/auth'
-import { archiveLeaves } from '@/lib/leaves'
-import { archiveApplications } from '@/lib/applications'
+import { archiveLeaves } from '@/app/api/leaves'
+import { archiveApplications } from '@/app/api/applications'
 import { useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@/lib/hooks'
 import Link from 'next/link'
@@ -579,3 +579,4 @@ export default function AdminDashboardPage() {
     </div>
   )
 }
+
