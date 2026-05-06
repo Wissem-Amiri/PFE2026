@@ -226,3 +226,87 @@ export async function deleteAllOtherApplications(candidateId: string, excludeApp
   
   return { error }
 }
+
+/** Analyze application using external AI API (3-step protocol) */
+export async function analyzeApplication(applicationId: string) {
+  const API_BASE = 'https://cv-ocr-2k25.onrender.com/api'
+
+  // 1. Get application details from Supabase
+  const { data: application, error: fetchError } = await supabase
+    .from('applications')
+    .select(`
+      *,
+      candidate:candidates(resume_url),
+      job:jobs(title, description, requirements)
+    `)
+    .eq('id', applicationId)
+    .single()
+
+  if (fetchError || !application) {
+    return { error: fetchError?.message || 'Application not found' }
+  }
+
+  const resumeUrl = (application as any).candidate?.resume_url
+  const jobTitle = (application as any).job?.title || ''
+  const jobDesc = (application as any).job?.description || ''
+  const jobReq = (application as any).job?.requirements || ''
+
+  if (!resumeUrl) return { error: 'No resume found' }
+
+  try {
+    // --- STEP 1: PARSE CV ---
+    const fileRes = await fetch(resumeUrl)
+    const blob = await fileRes.blob()
+    const file = new File([blob], 'resume.pdf', { type: 'application/pdf' })
+
+    const resumeFormData = new FormData()
+    resumeFormData.append('file', file)
+
+    const parseRes = await fetch(`${API_BASE}/resume/parse`, {
+      method: 'POST',
+      body: resumeFormData
+    })
+    if (!parseRes.ok) throw new Error('CV Parsing failed')
+    const parseData = await parseRes.json()
+    const resumeId = parseData.id
+
+    // --- STEP 2: CREATE JOB ---
+    const jobRes = await fetch(`${API_BASE}/job/jobs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: jobTitle,
+        description: jobDesc,
+        required_skills: [jobReq] // External API expects an array
+      })
+    })
+    if (!jobRes.ok) throw new Error('Job Creation failed')
+    const jobData = await jobRes.json()
+    const jobId = jobData.id
+
+    // --- STEP 3: MATCH ---
+    const matchRes = await fetch(`${API_BASE}/job/match/${jobId}/${resumeId}`)
+    if (!matchRes.ok) throw new Error('Matching failed')
+    
+    const analysisResult = await matchRes.json()
+
+    // 4. Update Supabase with the final score
+    // Handle both 'match_score' and any detailed report returned
+    const finalScore = analysisResult.match_score || analysisResult.score || 0
+
+    const { error: updateError } = await supabase
+      .from('applications')
+      .update({
+        match_score: finalScore,
+        ai_analysis: analysisResult
+      })
+      .eq('id', applicationId)
+
+    if (updateError) throw updateError
+
+    return { data: analysisResult, error: null }
+  } catch (err: any) {
+    console.error('Analysis Error:', err)
+    return { error: err.message || 'An error occurred during analysis' }
+  }
+}

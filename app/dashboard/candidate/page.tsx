@@ -46,7 +46,7 @@ export default function CandidateJobsPage() {
 
   const handleApplyClick = (jobId: string) => {
     if (!user) return messageApi.error("You must be logged in to apply.")
-    router.push(`/dashboard/candidate/profile?applyTo=${jobId}`)
+    router.push(`/dashboard/candidate/apply/${jobId}`)
   }
 
   // Categories

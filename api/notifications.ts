@@ -6,7 +6,31 @@ export interface Notification {
   title: string
   message: string
   is_read: boolean
+  type: 'new_candidate' | 'job_application' | 'leave_request' | 'leave_status' | 'congrats'
+  metadata?: any
   created_at: string
+}
+
+/**
+ * Fetch notifications for a specific user with pagination.
+ */
+export async function getNotificationsPaginated(userId: string, { page = 1, pageSize = 10 }) {
+  const from = (page - 1) * pageSize
+  const to = from + pageSize - 1
+
+  const { data, count, error } = await supabase
+    .from('notifications')
+    .select('*', { count: 'exact' })
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .range(from, to)
+
+  if (error) {
+    console.error('Error fetching notifications:', error)
+    return { data: null, count: 0, error }
+  }
+
+  return { data: data as Notification[], count: count || 0, error: null }
 }
 
 /**
@@ -21,7 +45,7 @@ export async function getUnreadNotifications(userId: string) {
     .order('created_at', { ascending: false })
 
   if (error) {
-    console.error('Error fetching notifications:', error)
+    console.error('Error fetching unread notifications:', error)
     return { data: null, error }
   }
 

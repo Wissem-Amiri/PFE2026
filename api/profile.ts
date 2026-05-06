@@ -7,7 +7,7 @@ export async function getProfileByEmail(email: string) {
     .from('users')
     .select(`
       *,
-      candidates(*),
+      candidate:candidates(*),
       employee(*),
       admin(*)
     `)
@@ -34,7 +34,7 @@ export async function getProfile(userId: string) {
     .from('users')
     .select(`
       *,
-      candidates(*),
+      candidate:candidates(*),
       employee(*),
       admin(*)
     `)
@@ -86,7 +86,7 @@ export async function getAllUsers() {
     .from('users')
     .select(`
       *,
-      candidates(id, country),
+      candidate:candidates(id, country),
       employee(id, department, position, hire_date, vacation_balance, monthly_rate)
     `)
     .order('created_at', { ascending: false })

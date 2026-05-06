@@ -14,7 +14,8 @@ import {
   HiOutlineCog,
   HiOutlineLogout,
   HiOutlineMenu,
-  HiOutlineX
+  HiOutlineX,
+  HiOutlineDocumentSearch
 } from 'react-icons/hi'
 import { Avatar } from 'antd'
 import NotificationBell from '../../../components/NotificationBell'
@@ -54,6 +55,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     },
     { href: '/dashboard/admin/employee', label: 'Employee', icon: HiOutlineUsers },
     { href: '/dashboard/admin/jobs', label: 'Jobs', icon: HiOutlineBriefcase },
+    { href: '/dashboard/admin/cv-screening', label: 'CV Screening', icon: HiOutlineDocumentSearch },
     { href: '/dashboard/admin/recordings', label: 'Recordings', icon: HiOutlineVideoCamera },
   ]
 
@@ -80,7 +82,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       )}
 
       {/* ── SIDEBAR ── */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-[243px] min-w-[243px] bg-[#fcfcfd] border-r border-[#eaecf0] flex flex-col h-screen transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed inset-y-0 left-0 z-50 w-[243px] min-w-[243px] bg-[#fcfcfd] border-r border-[#eaecf0] flex flex-col h-screen transform transition-transform duration-300 ease-in-out lg:sticky lg:top-0 lg:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
 
         {/* Logo */}
         <div className="pt-[10px] pb-[10px] px-[10px]">

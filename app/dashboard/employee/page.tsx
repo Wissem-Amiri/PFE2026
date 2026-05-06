@@ -129,42 +129,6 @@ export default function EmployeeDashboardPage() {
     {
       title: <span className="uppercase tracking-wider text-[11px] font-bold text-[#667085]">From - to</span>,
       key: 'dates',
-      filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }: any) => (
-        <div className="p-4 bg-white rounded-xl shadow-xl border border-gray-100 flex flex-col gap-3">
-          <RangePicker
-            value={dateRange}
-            onChange={(dates) => {
-              setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs] | null)
-              setSelectedKeys(dates ? [dates] : [])
-            }}
-            className="custom-range-picker"
-          />
-          <div className="flex justify-between items-center mt-2 border-t pt-3">
-            <button
-              onClick={() => {
-                setDateRange(null)
-                setSelectedKeys([])
-                clearFilters()
-                confirm()
-              }}
-              className="text-[12px] text-gray-500 font-medium hover:text-red-500 transition-colors"
-            >
-              Reset
-            </button>
-            <Button
-              type="primary"
-              size="small"
-              onClick={() => confirm()}
-              className="bg-[#7C3AED] hover:bg-[#6D28D9] border-none rounded-lg px-4"
-            >
-              Apply
-            </Button>
-          </div>
-        </div>
-      ),
-      filterIcon: (filtered: boolean) => (
-        <HiOutlineCalendar className={`text-[16px] ${filtered ? 'text-[#7C3AED]' : 'text-gray-400'}`} />
-      ),
       render: (record: any) => (
         <div className="flex flex-col">
           <span className="text-[14px] text-[#475467] font-medium">
@@ -180,13 +144,6 @@ export default function EmployeeDashboardPage() {
       title: <span className="uppercase tracking-wider text-[11px] font-bold text-[#667085]">Type</span>,
       dataIndex: 'type',
       key: 'type',
-      filters: [
-        { text: 'Vacation', value: 'Vacation' },
-        { text: 'Casual', value: 'Casual' },
-        { text: 'Personal', value: 'Personal' },
-        { text: 'Sick', value: 'Sick' },
-      ],
-      filteredValue: typeFilter.length > 0 ? typeFilter : null,
       render: (type: string) => {
         let icon = <HiOutlineSun />;
         let color = '#F97316';
@@ -205,12 +162,6 @@ export default function EmployeeDashboardPage() {
       title: <span className="uppercase tracking-wider text-[11px] font-bold text-[#667085]">Status</span>,
       dataIndex: 'status',
       key: 'status',
-      filters: [
-        { text: 'Pending', value: 'pending' },
-        { text: 'Approved', value: 'approved' },
-        { text: 'Rejected', value: 'rejected' },
-      ],
-      filteredValue: statusFilter.length > 0 ? statusFilter : null,
       render: (status: string) => (
         <Tag color={status === 'approved' ? 'success' : status === 'rejected' ? 'error' : 'warning'} className="rounded-full px-3 py-0.5 font-bold capitalize border-none">
           {status}
@@ -231,19 +182,23 @@ export default function EmployeeDashboardPage() {
 
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <h1 className="text-[28px] md:text-[32px] font-bold text-[#101828] m-0">Home</h1>
-            <div className="relative group">
-              <HiOutlineSearch className="absolute left-[12px] top-1/2 -translate-y-1/2 text-[#667085] group-focus-within:text-[#7C3AED] transition-colors" />
-              <input
-                type="text"
-                placeholder="Search Leaves..."
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value)
-                  setCurrentPage(1)
-                }}
-                className="pl-[36px] pr-[16px] py-[8px] rounded-[8px] border border-[#D0D5DD] bg-white text-[#101828] text-[14px] outline-none focus:border-[#7C3AED] focus:ring-4 focus:ring-[#7C3AED]/10 transition-all w-full sm:w-[240px] placeholder:text-[#98A2B3]"
-              />
+            <h1 className="text-[28px] md:text-[30px] font-medium text-[#101828] font-['Inter'] m-0 p-0 leading-none">Home</h1>
+            <div className="flex items-center w-full sm:w-auto">
+              <div className="flex items-center bg-white border border-[#eaecf0] rounded-[12px] h-[44px] w-full sm:w-[300px] shadow-sm focus-within:border-[#7f56d9] focus-within:ring-4 focus-within:ring-[#7f56d9]/10 transition-all duration-200">
+                <div className="w-[44px] h-[44px] flex items-center justify-center shrink-0">
+                  <HiOutlineSearch className="w-[20px] h-[20px] text-[#667085]" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search Leaves..."
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value)
+                    setCurrentPage(1)
+                  }}
+                  className="flex-1 bg-transparent border-none outline-none text-[14px] text-[#101828] placeholder:text-[#667085] font-medium font-['Inter'] pr-3"
+                />
+              </div>
             </div>
           </div>
 
@@ -279,23 +234,61 @@ export default function EmployeeDashboardPage() {
 
           {/* Table Card */}
           <div className="bg-white rounded-[24px] border border-[#F2F4F7] shadow-sm flex flex-col overflow-hidden max-w-full">
-            <div className="px-4 md:px-8 py-6 border-b border-[#F2F4F7] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 min-h-[88px]">
-              <h3 className="text-[18px] font-bold text-[#101828] m-0">Latest Leaves</h3>
+            <div className="px-4 md:px-8 py-6 border-b border-[#eaecf0] flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 min-h-[88px]">
+              <h3 className="text-[18px] font-medium text-[#101828] font-['Inter'] mb-0 leading-[28px]">Latest Leaves</h3>
               
-              {selectedRowKeys.length > 0 && (
-                <div className="flex items-center gap-4 animate-in fade-in slide-in-from-right-4 duration-300">
-                  <span className="text-[14px] text-[#667085] font-medium">{selectedRowKeys.length} selected</span>
-                  <Button 
-                    onClick={handleDeleteSelected}
-                    loading={isDeleting}
-                    danger
-                    className="h-[42px] px-6 rounded-xl font-bold flex items-center gap-2"
-                    icon={<HiOutlineTrash className="text-lg" />}
-                  >
-                    Delete selected
-                  </Button>
-                </div>
-              )}
+              <div className="flex flex-wrap items-center justify-end gap-2 w-full xl:w-auto">
+                <Select
+                  mode="multiple"
+                  placeholder="Filter by Status"
+                  value={statusFilter}
+                  onChange={setStatusFilter}
+                  className="w-[150px] h-[38px] custom-filter-select-small"
+                  maxTagCount="responsive"
+                  allowClear
+                  options={[
+                    { label: 'Pending', value: 'pending' },
+                    { label: 'Approved', value: 'approved' },
+                    { label: 'Rejected', value: 'rejected' },
+                  ]}
+                />
+
+                <Select
+                  mode="multiple"
+                  placeholder="Filter by Type"
+                  value={typeFilter}
+                  onChange={setTypeFilter}
+                  className="w-[170px] h-[38px] custom-filter-select-small"
+                  maxTagCount="responsive"
+                  allowClear
+                  options={[
+                    { label: 'Vacation', value: 'Vacation' },
+                    { label: 'Casual', value: 'Casual' },
+                    { label: 'Personal', value: 'Personal' },
+                    { label: 'Sick', value: 'Sick' },
+                  ]}
+                />
+
+                <RangePicker
+                  value={dateRange}
+                  onChange={(dates) => setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs] | null)}
+                  className="w-[240px] h-[38px] custom-filter-datepicker-small"
+                />
+
+                {selectedRowKeys.length > 0 && (
+                  <div className="flex items-center gap-4 animate-in fade-in slide-in-from-right-4 duration-300 ml-2">
+                    <Button 
+                      onClick={handleDeleteSelected}
+                      loading={isDeleting}
+                      danger
+                      className="h-[38px] px-4 rounded-xl font-bold flex items-center gap-2 border-none bg-rose-50 text-rose-600 hover:bg-rose-100"
+                      icon={<HiOutlineTrash className="text-lg" />}
+                    >
+                      Delete ({selectedRowKeys.length})
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
             <div className="flex-1 w-full overflow-x-auto">
               <div className="min-w-[800px]">
@@ -490,6 +483,24 @@ export default function EmployeeDashboardPage() {
         .ant-picker {
           border-radius: 12px !important;
           padding: 12px 16px !important;
+        }
+        .custom-filter-select-small .ant-select-selector,
+        .custom-filter-datepicker-small {
+          height: 38px !important;
+          border-radius: 10px !important;
+          border-color: #eaecf0 !important;
+          box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05) !important;
+          display: flex !important;
+          align-items: center !important;
+          background-color: white !important;
+        }
+        .custom-filter-datepicker-small .ant-picker-input > input {
+          font-size: 13px !important;
+          font-weight: 500 !important;
+          color: #101828 !important;
+        }
+        .custom-filter-datepicker-small .ant-picker-suffix {
+          color: #667085 !important;
         }
       `}</style>
     </div>

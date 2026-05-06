@@ -7,6 +7,7 @@ import {
   SaveOutlined, 
   UserOutlined, 
   MailOutlined, 
+  PhoneOutlined,
   BankOutlined, 
   IdcardOutlined,
   DollarOutlined,
@@ -195,17 +196,6 @@ export default function EmployeeDetailsPage({ params }: { params: Promise<{ id: 
               </div>
               <div className="space-y-2">
                 <label className="text-[14px] font-bold text-[#344054] flex items-center gap-2">
-                  <MailOutlined className="text-[#98a2b3]" /> Email (Read-only)
-                </label>
-                <Input 
-                  size="large"
-                  disabled
-                  value={profile?.email || ''}
-                  className="rounded-xl border-[#d0d5dd] h-[48px] font-medium bg-[#F9FAFB] cursor-not-allowed"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[14px] font-bold text-[#344054] flex items-center gap-2">
                   <BankOutlined className="text-[#98a2b3]" /> Department
                 </label>
                 <Select
@@ -244,6 +234,18 @@ export default function EmployeeDetailsPage({ params }: { params: Promise<{ id: 
                     ...availableJobs.map(j => ({ value: j.title, label: j.title })),
                     { value: 'General Employee', label: 'Other / General' }
                   ]}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[14px] font-bold text-[#344054] flex items-center gap-2">
+                  <PhoneOutlined className="text-[#98a2b3]" /> Phone Number
+                </label>
+                <Input 
+                  size="large"
+                  placeholder="Ex: +216 12 345 678"
+                  value={profile?.phone || ''}
+                  onChange={e => setProfile(prev => prev ? ({ ...prev, phone: e.target.value }) : null)}
+                  className="rounded-xl border-[#d0d5dd] h-[48px] font-medium"
                 />
               </div>
             </div>

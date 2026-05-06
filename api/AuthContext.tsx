@@ -198,7 +198,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       const dashboardPath = getDashboardByRole(role)
       
       if (applyTo && (role === 'candidate' || !role)) {
-        router.push(`${dashboardPath}/profile?applyTo=${applyTo}`)
+        router.push(`${dashboardPath}/apply/${applyTo}`)
       } else {
         router.push(dashboardPath)
       }

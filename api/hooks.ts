@@ -5,6 +5,7 @@ import { getAllRecordings } from './recordings'
 import { getAllJobs } from './job'
 import { getEmployeesPaginated } from './profile'
 import { getMyLeaves } from './leaves'
+import { getNotificationsPaginated } from './notifications'
 
 export const queryKeys = {
   leaves: (params?: any) => (params ? ['leaves', params] : ['leaves']) as const,
@@ -13,6 +14,7 @@ export const queryKeys = {
   jobs: ['jobs'] as const,
   employees: ['employees'] as const,
   myLeaves: (userId?: string) => (userId ? ['myLeaves', userId] : ['myLeaves']) as const,
+  notifications: (userId?: string) => (userId ? ['notifications', userId] : ['notifications']) as const,
 }
 
 export function useLeaves(params: {
@@ -150,6 +152,27 @@ export function useMyLeaves(userId: string, params: {
       if (error) throw error
       return { data: data || [], count }
     },
+    enabled: !!userId
+  })
+}
+
+export function useInfiniteNotifications(userId: string, pageSize = 10) {
+  return useInfiniteQuery({
+    queryKey: [...queryKeys.notifications(userId), 'infinite'],
+    queryFn: async ({ pageParam = 1 }) => {
+      const { data, count, error } = await getNotificationsPaginated(userId, {
+        page: pageParam as number,
+        pageSize,
+      })
+      if (error) throw error
+      return { 
+        data: data || [], 
+        count, 
+        nextPage: (data?.length || 0) < pageSize ? undefined : (pageParam as number) + 1 
+      }
+    },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => lastPage.nextPage,
     enabled: !!userId
   })
 }

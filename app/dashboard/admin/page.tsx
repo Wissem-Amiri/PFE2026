@@ -18,7 +18,8 @@ import {
   Button,
   message,
   Pagination,
-  DatePicker
+  DatePicker,
+  Select
 } from 'antd'
 import {
   UserOutlined,
@@ -210,26 +211,24 @@ export default function AdminDashboardPage() {
 
       {/* ── MAIN CONTENT ── */}
       <div className="flex-1 bg-[#FCFCFD] lg:rounded-tl-[40px] pt-[24px] md:pt-[32px] pb-[48px] overflow-y-auto no-scrollbar min-w-0">
-        {/* Header section (3024:10913) */}
+        {/* Header section */}
         <div className="px-4 md:px-[24px] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-[32px]">
           <h1 className="text-[28px] md:text-[30px] font-medium text-[#101828] font-['Inter'] m-0 p-0 leading-none">Home</h1>
           <div className="flex items-center w-full sm:w-auto">
-            {activities.length > 3 && (
-              <div className="relative flex items-center w-full sm:w-auto">
-                <div className="flex items-center bg-white border border-[#eaecf0] rounded-[12px] h-[44px] w-full sm:w-[300px] shadow-sm focus-within:border-[#7f56d9] focus-within:ring-4 focus-within:ring-[#7f56d9]/10 transition-all duration-200">
-                  <div className="w-[44px] h-[44px] flex items-center justify-center shrink-0">
-                    <img src="/assets/search.svg" className="w-[20px] h-[20px] opacity-60" alt="Search" />
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Search activities..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="flex-1 bg-transparent border-none outline-none text-[14px] text-[#101828] placeholder:text-[#667085] font-medium font-['Inter'] pr-3"
-                  />
+            <div className="relative flex items-center w-full sm:w-auto">
+              <div className="flex items-center bg-white border border-[#eaecf0] rounded-[12px] h-[44px] w-full sm:w-[300px] shadow-sm focus-within:border-[#7f56d9] focus-within:ring-4 focus-within:ring-[#7f56d9]/10 transition-all duration-200">
+                <div className="w-[44px] h-[44px] flex items-center justify-center shrink-0">
+                  <img src="/assets/search.svg" className="w-[20px] h-[20px] opacity-60" alt="Search" />
                 </div>
+                <input
+                  type="text"
+                  placeholder="Search activities..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="flex-1 bg-transparent border-none outline-none text-[14px] text-[#101828] placeholder:text-[#667085] font-medium font-['Inter'] pr-3"
+                />
               </div>
-            )}
+            </div>
           </div>
         </div>
 
@@ -249,7 +248,7 @@ export default function AdminDashboardPage() {
           ))}
         </div>
 
-        {/* ── TABLE (Strict Figma Activity 3024:10940) ── */}
+        {/* ── RECENT ACTIVITY TABLE ── */}
         <div className="mx-4 md:mx-[24px] bg-white rounded-[16px] border border-[#eaecf0] shadow-[0px_8px_16px_-4px_rgba(16,24,40,0.04)] overflow-hidden mb-[48px]">
           <div className="px-4 md:px-6 py-4 md:py-5 border-b border-[#eaecf0] flex flex-col sm:flex-row justify-between items-start sm:items-center min-h-[72px] gap-4">
             <h3 className="text-[18px] font-medium text-[#101828] font-['Inter'] mb-0 leading-[28px]">Recent activity</h3>
@@ -267,6 +266,50 @@ export default function AdminDashboardPage() {
                 </button>
               </div>
             )}
+          </div>
+
+          {/* Filters Bar (Integrated inside the card) */}
+          <div className="px-4 md:px-6 py-3 border-b border-[#eaecf0] flex flex-wrap items-center justify-end gap-2 bg-[#FCFCFD]/40">
+
+            {/* Status Filter */}
+            <Select
+              mode="multiple"
+              placeholder="Filter by Status"
+              value={statusFilter}
+              onChange={setStatusFilter}
+              className="w-[160px] h-[38px] custom-filter-select-small"
+              maxTagCount="responsive"
+              allowClear
+              options={[
+                { label: 'Pending', value: 'pending' },
+                { label: 'Approved', value: 'approved' },
+                { label: 'Rejected', value: 'rejected' },
+                { label: 'Accepted', value: 'accepted' },
+              ]}
+            />
+
+            {/* Type Filter */}
+            <Select
+              mode="multiple"
+              placeholder="Filter by Type"
+              value={typeFilter}
+              onChange={setTypeFilter}
+              className="w-[190px] h-[38px] custom-filter-select-small"
+              maxTagCount="responsive"
+              allowClear
+              options={[
+                { label: 'Registration requests', value: 'Registration requests' },
+                { label: 'Leave requests', value: 'Leave requests' },
+                { label: 'Job submissions', value: 'Job submissions' },
+              ]}
+            />
+
+            {/* Date Range */}
+            <DatePicker.RangePicker
+              value={dateRange}
+              onChange={(dates) => setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs] | null)}
+              className="w-[240px] h-[38px] rounded-[10px] border-[#e2e8f0] shadow-sm text-[13px]"
+            />
           </div>
 
           <div className="w-full overflow-x-auto no-scrollbar">
@@ -294,39 +337,6 @@ export default function AdminDashboardPage() {
                 {
                   title: <span className="text-[11px] font-bold text-[#667085] uppercase tracking-wider">Date</span>,
                   key: 'date_range',
-                  filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }: any) => (
-                    <div className="p-4 bg-white rounded-xl shadow-xl border border-gray-100 flex flex-col gap-3">
-                      <DatePicker.RangePicker
-                        value={dateRange}
-                        onChange={(dates) => {
-                          setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs] | null)
-                        }}
-                        className="custom-range-picker"
-                      />
-                      <div className="flex justify-between items-center mt-2 border-t pt-3">
-                        <button
-                          onClick={() => {
-                            setDateRange(null)
-                            confirm()
-                          }}
-                          className="text-[12px] text-gray-500 font-medium hover:text-red-500 transition-colors"
-                        >
-                          Reset
-                        </button>
-                        <Button
-                          type="primary"
-                          size="small"
-                          onClick={() => confirm()}
-                          className="bg-[#7C3AED] hover:bg-[#6D28D9] border-none rounded-lg px-4"
-                        >
-                          Apply
-                        </Button>
-                      </div>
-                    </div>
-                  ),
-                  filterIcon: (filtered: boolean) => (
-                    <CalendarOutlined className={`text-[16px] ${filtered ? 'text-[#7C3AED]' : 'text-gray-400'}`} />
-                  ),
                   render: (record: any) => (
                     <span className="text-[14px] text-[#667085] font-medium">
                       {record.type === 'leave'
@@ -338,34 +348,28 @@ export default function AdminDashboardPage() {
                 {
                   title: <span className="text-[11px] font-bold text-[#667085] uppercase tracking-wider">Activity</span>,
                   key: 'activity',
-                  filters: [
-                    { text: 'Registration requests', value: 'Registration requests' },
-                    { text: 'Leave requests', value: 'Leave requests' },
-                    { text: 'Job submissions', value: 'Job submissions' },
-                  ],
                   render: (record: any) => {
                     const isLeave = record.type === 'leave';
 
                     let config = {
                       icon: <HiOutlineBriefcase className="w-[14px] h-[14px]" />,
-                      color: '#3CB50D',
-                      bg: '#3CB50D11',
-                      border: '#3CB50D33'
+                      color: '#7F56D9', // Premium Purple/Indigo
+                      bg: '#F9F5FF',
+                      border: '#F4EBFF'
                     };
 
                     if (isLeave) {
                       const type = record.leaveType;
                       if (type === 'Vacation') {
-                        config = { icon: <HiOutlineSun className="w-[14px] h-[14px]" />, color: '#F97316', bg: '#F9731611', border: '#F9731633' };
+                        config = { icon: <HiOutlineSun className="w-[14px] h-[14px]" />, color: '#B45309', bg: '#FFFBEB', border: '#FEF3C7' };
                       } else if (type === 'Casual') {
-                        config = { icon: <HiOutlineBell className="w-[14px] h-[14px]" />, color: '#7C3AED', bg: '#7C3AED11', border: '#7C3AED33' };
+                        config = { icon: <HiOutlineBell className="w-[14px] h-[14px]" />, color: '#0F172A', bg: '#F8FAFC', border: '#F1F5F9' };
                       } else if (type === 'Personal') {
-                        config = { icon: <HiOutlineLockClosed className="w-[14px] h-[14px]" />, color: '#3B82F6', bg: '#3B82F611', border: '#3B82F633' };
+                        config = { icon: <HiOutlineLockClosed className="w-[14px] h-[14px]" />, color: '#0369A1', bg: '#F0F9FF', border: '#E0F2FE' };
                       } else if (type === 'Sick') {
-                        config = { icon: <HiOutlineHeart className="w-[14px] h-[14px]" />, color: '#EF4444', bg: '#EF444411', border: '#EF444433' };
+                        config = { icon: <HiOutlineHeart className="w-[14px] h-[14px]" />, color: '#BE123C', bg: '#FFF1F2', border: '#FFE4E6' };
                       } else {
-                        // Default leave color (Orange)
-                        config = { icon: <HiOutlineSun className="w-[14px] h-[14px]" />, color: '#F97316', bg: '#F9731611', border: '#F9731633' };
+                        config = { icon: <HiOutlineSun className="w-[14px] h-[14px]" />, color: '#B45309', bg: '#FFFBEB', border: '#FEF3C7' };
                       }
                     }
 
@@ -393,25 +397,34 @@ export default function AdminDashboardPage() {
                   title: <span className="text-[11px] font-bold text-[#667085] uppercase tracking-wider">Status</span>,
                   dataIndex: 'status',
                   key: 'status',
-                  filters: [
-                    { text: 'Pending', value: 'pending' },
-                    { text: 'Approved', value: 'approved' },
-                    { text: 'Rejected', value: 'rejected' },
-                    { text: 'Accepted', value: 'accepted' },
-                  ],
-                  render: (status: string) => (
-                    <Tag color={status === 'approved' || status === 'accepted' ? 'success' : status === 'rejected' ? 'error' : 'warning'} className="rounded-full px-3 py-0.5 font-bold capitalize border-none">
-                      {status}
-                    </Tag>
-                  )
+                  render: (status: string) => {
+                    let color = '#B45309';
+                    let bg = '#FFFBEB';
+                    let border = '#FEF3C7';
+                    
+                    if (status === 'approved' || status === 'accepted') {
+                      color = '#065F46';
+                      bg = '#ECFDF5';
+                      border = '#D1FAE5';
+                    } else if (status === 'rejected') {
+                      color = '#991B1B';
+                      bg = '#FEF2F2';
+                      border = '#FEE2E2';
+                    }
+
+                    return (
+                      <span 
+                        className="px-3 py-1 rounded-full text-[12px] font-semibold capitalize border"
+                        style={{ color, backgroundColor: bg, borderColor: border }}
+                      >
+                        {status}
+                      </span>
+                    );
+                  }
                 }
               ]}
               dataSource={paginatedActivities}
               pagination={false}
-              onChange={(pagination, filters) => {
-                setTypeFilter(filters.activity as string[] || []);
-                setStatusFilter(filters.status as string[] || []);
-              }}
               rowSelection={{
                 type: 'checkbox',
                 selectedRowKeys,

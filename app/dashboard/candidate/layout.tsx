@@ -30,7 +30,6 @@ export default function CandidateLayout({ children }: { children: React.ReactNod
   const navLinks = [
     { href: '/dashboard/candidate', label: 'Job Offers', icon: <HomeOutlined />, exact: true },
     { href: '/dashboard/candidate/applications', label: 'My Applications', icon: <FileTextOutlined />, exact: false },
-    { href: '/dashboard/candidate/profile', label: 'Settings', icon: <SettingOutlined />, exact: false },
   ]
 
   const isActive = (href: string, exact: boolean) =>
@@ -100,7 +99,7 @@ export default function CandidateLayout({ children }: { children: React.ReactNod
 
       {/* ── MAIN CONTENT AREA ── */}
       <main className="flex-1 min-w-0 h-screen overflow-y-auto bg-[#F9FAFB]">
-        <div className="w-full px-8 py-8">
+        <div className="w-full">
           {children}
         </div>
       </main>

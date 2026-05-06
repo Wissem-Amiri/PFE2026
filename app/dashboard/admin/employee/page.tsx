@@ -258,75 +258,83 @@ export default function AdminEmployeeListPage() {
       className="p-[32px] px-[40px] bg-[#fcfcfd] min-h-full"
       onClick={() => setFocusedEmployeeId(null)}
     >
-      {/* Header */}
-      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 mb-8">
-        <div className="flex items-start gap-6">
-          <div>
-            <div className="flex items-center gap-2 text-[#64748b] mb-2 cursor-pointer hover:text-[#7c3aed] transition-colors" onClick={() => router.push('/dashboard/admin')}>
-              <ArrowLeftOutlined className="text-[10px]" />
-              <span className="text-[12px] font-bold uppercase tracking-wider">Back to Dashboard</span>
-            </div>
-            <h1 className="text-[24px] font-bold text-[#0f172a] tracking-tight mb-4">Employees</h1>
-
-            <div className="flex bg-white border border-[#e2e8f0] rounded-[10px] p-[4px] shadow-sm w-fit">
-              <button
-                onClick={() => setViewType('grid')}
-                className={`p-[6px] rounded-[6px] transition-all ${viewType === 'grid' ? 'bg-purple-50 text-[#7c3aed]' : 'text-[#64748b] hover:bg-gray-50'}`}
-              >
-                <HiOutlineViewGrid className="text-[20px]" />
-              </button>
-              <button
-                onClick={() => setViewType('table')}
-                className={`p-[6px] rounded-[6px] transition-all ${viewType === 'table' ? 'bg-purple-50 text-[#7c3aed]' : 'text-[#64748b] hover:bg-gray-50'}`}
-              >
-                <HiOutlineViewList className="text-[20px]" />
-              </button>
-            </div>
+      {/* Header Row 1: Title & Add Button */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div>
+          <div className="flex items-center gap-2 text-[#64748b] mb-2 cursor-pointer hover:text-[#7c3aed] transition-colors" onClick={() => router.push('/dashboard/admin')}>
+            <ArrowLeftOutlined className="text-[10px]" />
+            <span className="text-[12px] font-bold uppercase tracking-wider">Back to Dashboard</span>
           </div>
+          <h1 className="text-[24px] font-bold text-[#0f172a] tracking-tight">Employees</h1>
         </div>
 
-        <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-[16px] w-full xl:w-auto">
-          <div className="flex items-center gap-[12px] px-[14px] py-[10px] border border-[#e2e8f0] rounded-[12px] bg-white shadow-sm w-full sm:w-[360px] focus-within:ring-2 focus-within:ring-purple-100 transition-all">
+        <button
+          onClick={openAddModal}
+          className="flex items-center gap-[8px] h-[44px] px-[20px] rounded-[12px] bg-[#7c3aed] border border-[#7c3aed] text-white text-[14px] font-bold hover:bg-[#6d28d9] transition-all shadow-md shadow-purple-100 whitespace-nowrap"
+        >
+          <PlusOutlined />
+          Add Employee
+        </button>
+      </div>
+
+      {/* Header Row 2: View Toggles & Filters (La zone encerclée en rouge) */}
+      <div className="bg-[rgba(248,248,248,0.31)] border border-[rgba(203,195,213,0.1)] rounded-[20px] p-4 mb-8 flex flex-col xl:flex-row items-stretch xl:items-center gap-4">
+        {/* View Toggles */}
+        <div className="flex bg-white border border-[#e2e8f0] rounded-[12px] p-[4px] shadow-sm w-fit shrink-0">
+          <button
+            onClick={() => setViewType('grid')}
+            className={`p-[8px] rounded-[8px] transition-all ${viewType === 'grid' ? 'bg-purple-50 text-[#7c3aed]' : 'text-[#64748b] hover:bg-gray-50'}`}
+            title="Grid View"
+          >
+            <HiOutlineViewGrid className="text-[20px]" />
+          </button>
+          <button
+            onClick={() => setViewType('table')}
+            className={`p-[8px] rounded-[8px] transition-all ${viewType === 'table' ? 'bg-purple-50 text-[#7c3aed]' : 'text-[#64748b] hover:bg-gray-50'}`}
+            title="Table View"
+          >
+            <HiOutlineViewList className="text-[20px]" />
+          </button>
+        </div>
+
+        {/* Filters Group */}
+        <div className="flex flex-col md:flex-row flex-1 items-stretch md:items-center gap-3">
+          {/* Search */}
+          <div className="flex items-center gap-[12px] px-[14px] h-[44px] border border-[#e2e8f0] rounded-[12px] bg-white shadow-sm flex-1 focus-within:ring-2 focus-within:ring-purple-100 transition-all">
             <SearchOutlined className="text-[#64748b]" />
             <input
-              placeholder="Search by name, position or department..."
+              placeholder="Search by name..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="border-none outline-none text-[14px] font-medium w-full text-[#101828] placeholder:text-[#98a2b3]"
+              className="border-none outline-none text-[14px] font-medium w-full text-[#101828] placeholder:text-[#98a2b3] bg-transparent"
             />
           </div>
 
+          {/* Department */}
           <Select
             value={deptFilter}
             onChange={value => setDeptFilter(value)}
-            className="w-full sm:w-[220px] h-[42px]"
-            styles={{ popup: { root: { borderRadius: '12px' } } }}
+            className="w-full md:w-[200px] h-[44px] custom-filter-select"
             options={departmentOptions.map(dept => ({ label: dept, value: dept }))}
           />
 
+          {/* Archive Toggle */}
           <button
             onClick={() => setShowArchived(!showArchived)}
-            className={`flex items-center gap-[8px] h-[42px] px-[17px] border rounded-[8px] text-[14px] font-semibold transition-all shadow-sm
+            className={`flex items-center justify-center gap-[8px] h-[44px] px-[17px] border rounded-[12px] text-[14px] font-bold transition-all shadow-sm whitespace-nowrap
               ${showArchived ? 'bg-[#F9FAFB] text-[#7c3aed] border-[#ddd6fe]' : 'bg-white text-[#334155] border-[#e2e8f0] hover:bg-gray-50'}`}
           >
             {showArchived ? <HiOutlineRefresh className="text-[18px]" /> : <HiOutlineArchive className="text-[18px]" />}
-            {showArchived ? 'Active' : 'Archive'}
+            {showArchived ? 'Active Only' : 'Show Archived'}
           </button>
 
+          {/* Export */}
           <button
             onClick={handleExportPDF}
-            className="flex items-center gap-[8px] h-[42px] px-[17px] bg-white border border-[#e2e8f0] rounded-[8px] text-[#334155] text-[14px] font-semibold hover:bg-gray-50 transition-all shadow-sm"
+            className="flex items-center justify-center gap-[8px] h-[44px] px-[17px] bg-white border border-[#e2e8f0] rounded-[12px] text-[#334155] text-[14px] font-bold hover:bg-gray-50 transition-all shadow-sm whitespace-nowrap"
           >
             <HiOutlineDownload className="text-[18px]" />
-            Export
-          </button>
-
-          <button
-            onClick={openAddModal}
-            className="flex items-center gap-[8px] h-[42px] px-[20px] rounded-[8px] bg-[#7c3aed] border border-[#7c3aed] text-white text-[14px] font-semibold hover:bg-[#6d28d9] transition-all shadow-sm whitespace-nowrap"
-          >
-            <PlusOutlined />
-            Add Employee
+            Export PDF
           </button>
         </div>
       </div>
@@ -463,9 +471,7 @@ export default function AdminEmployeeListPage() {
               <Spin size="small" />
             ) : hasNextPage ? (
               <div className="h-4 w-4" />
-            ) : employees.length > 0 && (
-              <span className="text-[12px] text-slate-400 font-medium italic">All employees have been loaded</span>
-            )}
+            ) : null}
           </div>
         </div>
       ) : (
@@ -532,17 +538,29 @@ export default function AdminEmployeeListPage() {
                     {emp.hire_date ? dayjs(emp.hire_date).format('MMM DD, YYYY') : '---'}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <Button
-                      type="text"
-                      danger
-                      icon={<HiOutlineTrash className="text-lg" />}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedEmployee(emp);
-                        setIsDeleteModalOpen(true);
-                      }}
-                      className="hover:bg-red-50 rounded-lg flex items-center justify-center ml-auto"
-                    />
+                    <div className="flex items-center justify-end gap-3">
+                      <Button
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/dashboard/admin/employee/${emp.id}`);
+                        }}
+                        className="h-[32px] px-3 rounded-lg bg-white border border-[#e2e8f0] text-[#475467] text-[12px] font-bold hover:text-[#7c3aed] hover:border-[#7c3aed] transition-all shadow-sm"
+                      >
+                        Details
+                      </Button>
+                      <Button
+                        type="text"
+                        danger
+                        icon={<HiOutlineTrash className="text-lg" />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedEmployee(emp);
+                          setIsDeleteModalOpen(true);
+                        }}
+                        className="hover:bg-red-50 rounded-lg flex items-center justify-center h-[32px] w-[32px] p-0"
+                      />
+                    </div>
                   </td>
                 </tr>
               ))}

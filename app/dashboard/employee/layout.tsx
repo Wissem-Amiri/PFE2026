@@ -59,7 +59,7 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
       )}
 
       {/* ── SIDEBAR (Figma Fidelity) ── */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-[243px] min-w-[243px] bg-[#FCFCFD] border-r border-[#EAECF0] flex flex-col h-screen transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 overflow-clip ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed inset-y-0 left-0 z-50 w-[243px] min-w-[243px] bg-[#FCFCFD] border-r border-[#EAECF0] flex flex-col h-screen transform transition-transform duration-300 ease-in-out lg:sticky lg:top-0 lg:translate-x-0 overflow-clip ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
 
         {/* Logo Section (UnifyRH) */}
         <div className="pt-[32px] pb-[24px] pl-[16px]">
