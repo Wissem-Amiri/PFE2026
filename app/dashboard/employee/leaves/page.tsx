@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/auth'
 import { Table, Button, Modal, Form, Select, DatePicker, Input, Tag, message, Tooltip } from 'antd'
 import { PlusOutlined, CalendarOutlined, InfoCircleOutlined } from '@ant-design/icons'
-import { getMyLeaves, requestLeave } from '@/lib/leaves'
+import { getMyLeaves, requestLeave } from '@/app/api/leaves'
 import type { Leave } from '@/lib/database.types'
 
 const { RangePicker } = DatePicker
@@ -237,3 +237,4 @@ export default function EmployeeLeavesPage() {
     </div>
   )
 }
+

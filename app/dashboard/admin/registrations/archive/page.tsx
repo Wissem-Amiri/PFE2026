@@ -13,7 +13,7 @@ import {
   HiOutlineRefresh,
   HiOutlineArrowLeft
 } from 'react-icons/hi'
-import { restoreApplications, hardDeleteApplications } from '@/lib/applications'
+import { restoreApplications, hardDeleteApplications } from '@/app/api/applications'
 import { useApplications, queryKeys } from '@/lib/hooks'
 import { useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
@@ -223,7 +223,7 @@ export default function RegistrationsArchivePage() {
                       <div className="flex items-center gap-[12px]">
                         <div className="w-[40px] h-[40px] rounded-full bg-[#f1f5f9] border border-[#e2e8f0] flex items-center justify-center shrink-0 overflow-hidden">
                           {app.candidate?.user?.avatar_url ? (
-                            <img src={app.candidate.user.avatar_url} alt="" className="w-full h-full object-cover" />
+                            <img src={app.candidate?.user?.avatar_url} alt="" className="w-full h-full object-cover" />
                           ) : (
                             <span className="text-[12px] font-bold text-[#64748b]">
                               {app.candidate?.user?.user_name?.substring(0, 2).toUpperCase() || 'UN'}
@@ -238,7 +238,7 @@ export default function RegistrationsArchivePage() {
                     </td>
                     <td className="px-[24px] py-[26px] text-[14px] text-[#475569]">{app.candidate?.user?.email || '—'}</td>
                     <td className="px-[24px] py-[26px] text-[14px] text-[#475569]">
-                      {dayjs(app.applied_at || app.created_at).format('DD/MM/YYYY HH:mm')}
+                      {dayjs(app.applied_at).format('DD/MM/YYYY HH:mm')}
                     </td>
                     <td className="px-[24px] py-[26px]">
                       {app.status === 'pending' && (
@@ -299,3 +299,4 @@ export default function RegistrationsArchivePage() {
     </div>
   )
 }
+

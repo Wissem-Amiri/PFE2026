@@ -1,5 +1,5 @@
-import { supabase } from './supabase'
-import type { Recording } from './database.types'
+import { supabase } from '@/lib/supabase'
+import type { Recording } from '@/lib/database.types'
 
 export async function getAllRecordings(params: {
   page: number;
@@ -36,7 +36,7 @@ export async function getAllRecordings(params: {
 }
 
 export async function uploadRecording(recording: any) {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('recordings')
     .insert([recording])
     .select()
@@ -50,3 +50,4 @@ export async function deleteRecording(id: string) {
     .eq('id', id)
   return { error }
 }
+

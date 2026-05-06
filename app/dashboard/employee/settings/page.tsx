@@ -2,8 +2,8 @@
 
 import { useEffect, useState, Suspense, useRef } from 'react'
 import { useAuth } from '@/lib/auth'
-import { getProfile, updateProfile, uploadAvatar } from '@/lib/profile'
-import { countries } from '@/lib/countries'
+import { getProfile, updateProfile, uploadAvatar } from '@/app/api/profile'
+import { countries } from '@/app/api/countries'
 import {
   Form,
   Input,
@@ -250,13 +250,22 @@ function EmployeeSettingsContent() {
                 showSearch
                 placeholder="Select your country"
                 className="w-full h-[44px]"
-                optionFilterProp="children"
+                optionFilterProp="label"
                 filterOption={(input, option) =>
-                  (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                  (option?.label ?? '').toString().toLowerCase().includes(input.toLowerCase())
                 }
                 options={countries.map(c => ({
                   value: c.name,
-                  label: `${c.emoji} ${c.name}`,
+                  label: (
+                    <div className="flex items-center gap-2">
+                      <img 
+                        src={`https://flagcdn.com/w20/${c.code.toLowerCase()}.png`} 
+                        alt={c.name}
+                        className="w-5 h-auto rounded-sm object-contain"
+                      />
+                      <span>{c.name}</span>
+                    </div>
+                  ),
                 }))}
               />
             </Form.Item>
@@ -451,3 +460,4 @@ export default function EmployeeSettingsPage() {
     </Suspense>
   )
 }
+

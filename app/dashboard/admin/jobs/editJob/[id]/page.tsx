@@ -8,7 +8,7 @@ import { useForm, Controller } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
 import { supabase } from '@/lib/supabase'
-import { updateJob, uploadJobPicture } from '@/lib/job'
+import { updateJob, uploadJobPicture } from '@/app/api/job'
 import dayjs from 'dayjs'
 
 // --- YUP SCHEMA ---

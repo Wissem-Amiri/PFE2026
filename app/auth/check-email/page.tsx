@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { MailOutlined, ArrowLeftOutlined } from '@ant-design/icons'
 import { Button } from 'antd'
-import CheckLayout from '@/CheckLayout'
+import CheckLayout from '@/app/CheckLayout'
 
 
 export default function CheckEmailPage() {

@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
-import { getJobApplications, updateApplicationStatus } from '@/lib/applications'
+import { getJobById } from '@/app/api/job'
+import { getJobApplications, updateApplicationStatus } from '@/app/api/applications'
 import { Avatar, Spin, message } from 'antd'
 import { UserOutlined } from '@ant-design/icons'
-import type { Job } from '@/lib/database.types'
-import { scoreCandidate, type Strength } from '@/lib/aiScoring'
+import type { Job, DetailedApplication } from '@/lib/database.types'
+import { scoreCandidate, type Strength } from '@/app/api/aiScoring'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Candidate {
@@ -89,27 +89,26 @@ export default function AIScreeningPage() {
   useEffect(() => {
     async function load() {
       // 1. Load job details
-      const { data: jobData } = await supabase
-        .from('jobs').select('*').eq('id', jobId).single()
-      if (jobData) setJob(jobData as Job)
+      const { data: jobData } = await getJobById(jobId)
+      if (jobData) setJob(jobData)
 
       // 2. Load applications with full candidate data
       const { data: apps } = await getJobApplications(jobId)
 
       if (apps && jobData) {
-        const mapped: Candidate[] = apps.map((app: any) => {
+        const mapped: Candidate[] = (apps as DetailedApplication[]).map((app) => {
           // Real data structure: app.candidate.user (from applications API)
-          const candidate = app.candidate || {}
-          const user = candidate.user || {}
-          const experiences = candidate.experiences || []
+          const candidate = app.candidate
+          const user = candidate?.user
+          const experiences = candidate?.experiences || []
 
           const scored = scoreCandidate(
             {
-              bio: candidate.bio,
-              position: candidate.position,
+              bio: candidate?.bio || '',
+              position: candidate?.position || '',
               experiences,
-              portfolio: candidate.portfolio,
-              resume_url: candidate.resume_url,
+              portfolio: candidate?.portfolio || '',
+              resume_url: candidate?.resume_url || '',
             },
             {
               title: jobData.title,
@@ -121,9 +120,9 @@ export default function AIScreeningPage() {
           return {
             id: app.id,
             score: scored.score,
-            name: user.user_name || 'Candidate',
-            email: user.email || '',
-            avatar: user.avatar_url || undefined,
+            name: user?.user_name || 'Candidate',
+            email: user?.email || '',
+            avatar: user?.avatar_url || undefined,
             strengths: scored.strengths,
             yearsLabel: scored.yearsLabel,
             prevCompanies: scored.prevCompanies,

@@ -1,5 +1,5 @@
-import { supabase } from './supabase'
-import type { Leave } from './database.types'
+import { supabase } from '@/lib/supabase'
+import type { Leave } from '@/lib/database.types'
 import { getProfile } from './profile'
 import dayjs from 'dayjs'
 
@@ -16,7 +16,7 @@ export async function requestLeave(leaveData: Omit<Leave, 'id' | 'created_at' | 
     }
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('leaves')
     .insert([leaveData])
     .select()
@@ -103,7 +103,7 @@ export async function getAllLeavesDetailed(params: {
   showArchived?: boolean;
   status?: string | string[];
   search?: string;
-  leaveType?: string;
+  leaveType?: string | string[];
   startDate?: string;
   endDate?: string;
 }) {
@@ -139,7 +139,11 @@ export async function getAllLeavesDetailed(params: {
 
   // Filter by Leave Type
   if (leaveType && leaveType !== 'All Types') {
-    query = query.eq('type', leaveType);
+    if (Array.isArray(leaveType) && leaveType.length > 0) {
+      query = query.in('type', leaveType);
+    } else if (typeof leaveType === 'string') {
+      query = query.eq('type', leaveType);
+    }
   }
 
   // Filter by Date Range (start_date)
@@ -158,7 +162,7 @@ export async function getAllLeavesDetailed(params: {
     .range(from, to);
 
   return {
-    data: (data || []).map(item => ({
+    data: (data || []).map((item: any) => ({
       ...item,
       employee: {
         id: item.employee_id,
@@ -176,7 +180,7 @@ export async function getAllLeavesDetailed(params: {
 }
 
 export async function archiveLeaves(ids: string[]) {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('leaves')
     .update({ is_archived: true })
     .in('id', ids)
@@ -185,7 +189,7 @@ export async function archiveLeaves(ids: string[]) {
 }
 
 export async function deleteLeavesPermanently(ids: string[]) {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('leaves')
     .delete()
     .in('id', ids)
@@ -193,7 +197,7 @@ export async function deleteLeavesPermanently(ids: string[]) {
 }
 
 export async function unarchiveLeaves(ids: string[]) {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('leaves')
     .update({ is_archived: false })
     .in('id', ids)
@@ -210,12 +214,14 @@ export async function updateLeaveStatus(leaveId: string, status: 'approved' | 'r
 
   // If approving any leave, deduct from balance
   if (status === 'approved') {
-    const duration = dayjs(leave.end_date).diff(dayjs(leave.start_date), 'day') + 1
-    const { data: profile } = await getProfile(leave.employee_id)
+    const l = leave as any
+    const duration = dayjs(l.end_date).diff(dayjs(l.start_date), 'day') + 1
+    const { data: profile } = await getProfile(l.employee_id)
 
     if (profile?.employee) {
-      const newBalance = (profile.employee.vacation_balance ?? 0) - duration
-      await supabase.from('employee').update({ vacation_balance: newBalance }).eq('id', leave.employee_id)
+      const emp = profile.employee as any
+      const newBalance = (Number(emp.vacation_balance) || 0) - duration
+      await (supabase as any).from('employee').update({ vacation_balance: newBalance }).eq('id', l.employee_id)
     }
   }
 
@@ -226,7 +232,7 @@ export async function updateLeaveStatus(leaveId: string, status: 'approved' | 'r
     updatePayload.rejection_reason = null
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('leaves')
     .update(updatePayload)
     .eq('id', leaveId)
@@ -234,24 +240,25 @@ export async function updateLeaveStatus(leaveId: string, status: 'approved' | 'r
 
   // Insert real-time notification
   if (!error && leave) {
+    const l = leave as any
     const title = status === 'approved' ? 'Congé approuvé' : 'Congé refusé'
     let message = status === 'approved'
-      ? `Votre demande de congé du ${leave.start_date} au ${leave.end_date} a été validée.`
-      : `Votre demande de congé du ${leave.start_date} au ${leave.end_date} a été refusée.`
+      ? `Votre demande de congé du ${l.start_date} au ${l.end_date} a été validée.`
+      : `Votre demande de congé du ${l.start_date} au ${l.end_date} a été refusée.`
 
     if (status === 'rejected' && rejectionReason) {
       message += ` Motif : ${rejectionReason}`
     }
 
-    await supabase.from('notifications').insert([{
-      user_id: leave.employee_id,
+    await supabase.from('notifications' as any).insert([{
+      user_id: l.employee_id,
       title,
       message,
       is_read: false
-    }])
+    }] as any)
   }
 
-  return { data: data?.[0] as Leave | null | undefined, error }
+  return { data: (data as any)?.[0] as Leave | null | undefined, error }
 }
 
 /** Adjust an employee's leave balance manually (Admin) */
@@ -266,8 +273,8 @@ export async function adjustEmployeeBalance(employeeId: string, adjustment: numb
   if (fetchError || !employee) return { data: null, error: fetchError }
 
   // 2. Update balance
-  const newBalance = (Number(employee.vacation_balance) || 0) + adjustment
-  const { data, error } = await supabase
+  const newBalance = (Number((employee as any).vacation_balance) || 0) + adjustment
+  const { data, error } = await (supabase as any)
     .from('employee')
     .update({ vacation_balance: newBalance })
     .eq('id', employeeId)
@@ -275,3 +282,4 @@ export async function adjustEmployeeBalance(employeeId: string, adjustment: numb
 
   return { data, error }
 }
+

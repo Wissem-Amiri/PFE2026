@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { isJobOpen } from '@/lib/job'
+import { isJobOpen } from '@/app/api/job'
 import { useInView } from 'react-intersection-observer'
 import type { Job } from '@/lib/database.types'
 import { message } from 'antd'

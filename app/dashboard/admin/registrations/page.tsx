@@ -29,10 +29,10 @@ import {
   HiOutlineDownload
 } from 'react-icons/hi'
 import { BiExport } from 'react-icons/bi'
-import { exportTableToPDF } from '@/lib/export'
-import { getAllUsers, updateUserStatus as updateGlobalUserStatus, exportToCSV, downloadCSV } from '@/lib/profile'
-import { getAllApplicationsDetailed, updateApplicationStatus, archiveApplications, restoreApplications, deleteAllOtherApplications, hardDeleteApplications } from '@/lib/applications'
-import { getAllJobs, decrementJobSeats } from '@/lib/job'
+import { exportTableToPDF } from '@/app/api/export'
+import { getAllUsers, updateUserStatus as updateGlobalUserStatus, exportToCSV, downloadCSV } from '@/app/api/profile'
+import { getAllApplicationsDetailed, updateApplicationStatus, archiveApplications, restoreApplications, deleteAllOtherApplications, hardDeleteApplications } from '@/app/api/applications'
+import { getAllJobs, decrementJobSeats } from '@/app/api/job'
 import { HiOutlineArchive, HiOutlineRefresh } from 'react-icons/hi'
 import type { FullProfile } from '@/lib/database.types'
 
@@ -190,7 +190,7 @@ export default function RegistrationsPage() {
       app.candidate?.user?.user_name || 'Unknown',
       app.candidate?.user?.email || '—',
       app.job?.title || 'Candidate',
-      dayjs(app.applied_at || app.created_at).format('MM/DD/YYYY'),
+      dayjs(app.applied_at).format('MM/DD/YYYY'),
       app.status || '-'
     ])
 
@@ -384,7 +384,7 @@ export default function RegistrationsPage() {
                     <td className="px-[24px] py-[26px] text-[14px] text-[#475569]">{app.candidate?.user?.email || '—'}</td>
                     <td className="px-[24px] py-[26px] text-[14px] text-[#475569]">{app.candidate?.user?.phone || '—'}</td>
                     <td className="px-[24px] py-[26px] text-[14px] text-[#475569]">
-                      {new Date(app.applied_at || app.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })} {new Date(app.applied_at || app.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(app.applied_at).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })} {new Date(app.applied_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
                     </td>
                     <td className="px-[24px] py-[26px]">
                       {app.status === 'pending' && (
@@ -653,3 +653,4 @@ export default function RegistrationsPage() {
     </div>
   )
 }
+

@@ -24,7 +24,7 @@ export default function JobsPage() {
   const totalPages = Math.ceil(totalItems / pageSize)
 
   const handleDelete = async (id: string) => {
-    const { deleteJob } = await import('@/lib/job')
+    const { deleteJob } = await import('@/app/api/job')
     const { error } = await deleteJob(id)
     if (error) {
       messageApi.error('Error deleting job')
@@ -48,7 +48,7 @@ export default function JobsPage() {
     ? jobs 
     : jobs.filter(j => j.category === activeTab)
 
-  const { isJobOpen } = require('@/lib/job')
+  const { isJobOpen } = require('@/app/api/job')
 
   // Reset page on tab change
   useEffect(() => {
@@ -256,3 +256,4 @@ export default function JobsPage() {
     </div>
   )
 }
+

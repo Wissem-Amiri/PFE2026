@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { SearchOutlined, TeamOutlined, MailOutlined, BankOutlined, UserOutlined } from '@ant-design/icons'
 import { HiOutlineViewGrid, HiOutlineViewList } from 'react-icons/hi'
 import { Input, Avatar, Card, Tag, Spin, Select } from 'antd'
-import { getEmployeesPaginated } from '@/lib/profile'
+import { getEmployeesPaginated } from '@/app/api/profile'
 import type { FullProfile } from '@/lib/database.types'
 
 export default function EmployeeListPage() {
@@ -195,3 +195,4 @@ export default function EmployeeListPage() {
     </div>
   )
 }
+

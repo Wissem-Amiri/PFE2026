@@ -18,7 +18,7 @@ import {
   HiOutlineFilter,
   HiOutlineTrash
 } from 'react-icons/hi'
-import { requestLeave, deleteLeavesPermanently } from '@/lib/leaves'
+import { requestLeave, deleteLeavesPermanently } from '@/app/api/leaves'
 import { useMyLeaves, queryKeys } from '@/lib/hooks'
 import { useQueryClient } from '@tanstack/react-query'
 
@@ -506,3 +506,4 @@ export default function EmployeeDashboardPage() {
     </div>
   )
 }
+

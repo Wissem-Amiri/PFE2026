@@ -5,8 +5,8 @@ import { Input, message } from 'antd'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth'
-import { getAllJobs, isJobOpen } from '@/lib/job'
-import { getUserApplications } from '@/lib/applications'
+import { getAllJobs, isJobOpen } from '@/app/api/job'
+import { getUserApplications } from '@/app/api/applications'
 import type { Job } from '@/lib/database.types'
 
 const PAGE_SIZE = 8
@@ -259,3 +259,4 @@ export default function CandidateJobsPage() {
     </div>
   )
 }
+

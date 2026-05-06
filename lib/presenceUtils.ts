@@ -1,15 +1,15 @@
-import { getProfileByEmail } from './profile';
-import type { DetectedUser } from './presence';
+import { getProfileByEmail } from '@/app/api/profile';
+import type { DetectedUser } from '@/app/api/presence';
 import type { FullProfile } from './database.types';
 
-export interface EnrichedDetection extends DetectedUser {
+export interface DetectionWithProfile extends DetectedUser {
   profile?: FullProfile | null;
 }
 
 /**
  * Enriches a list of detections with local profile data from Supabase
  */
-export async function enrichDetections(detections: DetectedUser[]): Promise<EnrichedDetection[]> {
+export async function enrichDetections(detections: DetectedUser[]): Promise<DetectionWithProfile[]> {
   const enrichmentPromises = detections.map(async (detection) => {
     try {
       const { data: profile } = await getProfileByEmail(detection.email);

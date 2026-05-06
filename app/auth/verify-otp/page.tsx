@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/lib/auth'
 import { MailOutlined, ArrowLeftOutlined } from '@ant-design/icons'
 import { Button, Alert } from 'antd'
-import CheckLayout from '@/CheckLayout'
+import CheckLayout from '@/app/CheckLayout'
 
 
 const OTP_LENGTH = 8
@@ -91,7 +91,7 @@ export default function VerifyOtpPage() {
       return
     }
 
-    const { data: profileData } = await import('@/lib/profile').then(m => m.getProfile(data.user?.id ?? ''))
+    const { data: profileData } = await import('@/app/api/profile').then(m => m.getProfile(data.user?.id ?? ''))
     const { getDashboardByRole } = await import('@/lib/auth')
     router.push(getDashboardByRole(profileData?.role))
   }
@@ -185,3 +185,4 @@ export default function VerifyOtpPage() {
     </CheckLayout>
   )
 }
+

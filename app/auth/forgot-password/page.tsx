@@ -8,7 +8,7 @@ import { KeyOutlined, ArrowLeftOutlined } from '@ant-design/icons'
 import { useForm, Controller } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
-import CheckLayout from '@/CheckLayout'
+import CheckLayout from '@/app/CheckLayout'
 
 
 /* ─── Validation Schema ────────────────────────────────────── */

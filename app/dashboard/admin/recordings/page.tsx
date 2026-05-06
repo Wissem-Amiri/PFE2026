@@ -16,15 +16,15 @@ import {
 import { useAuth } from '@/lib/auth'
 import { useRecordings } from '@/lib/hooks'
 import { queryKeys } from '@/lib/hooks'
-import { uploadRecording } from '@/lib/recordings'
+import { uploadRecording } from '@/app/api/recordings'
 import { supabase } from '@/lib/supabase'
 import { useQueryClient } from '@tanstack/react-query'
 import dayjs from 'dayjs'
-import { downloadCSV } from '@/lib/export'
+import { downloadCSV } from '@/app/api/export'
 import { Modal, Tag, Badge } from 'antd'
 import { HiOutlineSparkles, HiOutlineEye, HiOutlineUserGroup, HiOutlineShieldCheck, HiOutlineXCircle } from 'react-icons/hi'
-import { processImagePresence, processVideoPresence, getPresenceFileUrl } from '@/lib/presence'
-import { enrichDetections, type EnrichedDetection } from '@/lib/presenceUtils'
+import { processImagePresence, processVideoPresence, getPresenceFileUrl } from '@/app/api/presence'
+import { enrichDetections, type DetectionWithProfile } from '@/lib/presenceUtils'
 
 export default function RecordingsPage() {
   const { user } = useAuth()
@@ -88,7 +88,7 @@ export default function RecordingsPage() {
   const [analyzingId, setAnalyzingId] = useState<string | null>(null)
   const [isResultModalVisible, setIsResultModalVisible] = useState(false)
   const [analysisResults, setAnalysisResults] = useState<{
-    detections: EnrichedDetection[];
+    detections: DetectionWithProfile[];
     imagePath?: string;
     videoPath?: string;
   } | null>(null)
@@ -446,7 +446,7 @@ export default function RecordingsPage() {
             </h4>
             <div className="flex-1 overflow-y-auto max-h-[500px] pr-2 custom-scrollbar">
               <div className="flex flex-col gap-3">
-                {analysisResults?.detections.map((det, idx) => (
+                {analysisResults?.detections.map((det: DetectionWithProfile, idx) => (
                   <div key={idx} className="p-3 rounded-xl border border-[#EAECF0] bg-white flex items-center justify-between hover:border-[#D6BBFB] transition-all">
                     <div className="flex items-center gap-3">
                       <Avatar 
@@ -489,5 +489,6 @@ export default function RecordingsPage() {
     </div>
   )
 }
+
 
 

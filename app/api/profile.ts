@@ -1,5 +1,5 @@
-import { supabase } from './supabase'
-import type { BaseUser, FullProfile, Employee, Candidate, Admin } from './database.types'
+import { supabase } from '@/lib/supabase'
+import type { BaseUser, FullProfile, Employee, Candidate, Admin, EmployeeDirectoryItem } from '@/lib/database.types'
 
 /** Get a single user profile by email with all role-specific data using joins */
 export async function getProfileByEmail(email: string) {
@@ -53,7 +53,7 @@ export async function updateProfile(userId: string, updates: Partial<BaseUser> &
 
   // 1. Update Base user if there are base fields
   if (Object.keys(baseUpdates).length > 0) {
-    const { error: baseError } = await supabase
+    const { error: baseError } = await (supabase as any)
       .from('users')
       .update(baseUpdates)
       .eq('id', userId)
@@ -63,17 +63,17 @@ export async function updateProfile(userId: string, updates: Partial<BaseUser> &
 
   // 2. Update Role-specific tables
   if (candidate) {
-    const { error: pError } = await supabase.from('candidates').upsert({ id: userId, ...candidate })
+    const { error: pError } = await (supabase as any).from('candidates').upsert({ id: userId, ...candidate })
     if (pError) return { data: null, error: pError }
   }
   
   if (employee) {
-    const { error: eError } = await supabase.from('employee').upsert({ id: userId, ...employee })
+    const { error: eError } = await (supabase as any).from('employee').upsert({ id: userId, ...employee })
     if (eError) return { data: null, error: eError }
   }
 
   if (admin) {
-    const { error: aError } = await supabase.from('admin').upsert({ id: userId, ...admin })
+    const { error: aError } = await (supabase as any).from('admin').upsert({ id: userId, ...admin })
     if (aError) return { data: null, error: aError }
   }
 
@@ -126,11 +126,11 @@ export async function getEmployeesPaginated(params: {
     .order('created_at', { ascending: false })
     .range(from, to);
 
-  return { data: data as FullProfile[], count: count || 0, error };
+  return { data: data as EmployeeDirectoryItem[], count: count || 0, error };
 }
 
 export async function archiveUsers(ids: string[]) {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('users')
     .update({ is_archived: true })
     .in('id', ids)
@@ -139,7 +139,7 @@ export async function archiveUsers(ids: string[]) {
 }
 
 export async function unarchiveUsers(ids: string[]) {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('users')
     .update({ is_archived: false })
     .in('id', ids)
@@ -160,7 +160,7 @@ export async function updateUserStatus(
     baseUpdates.role = 'employee'
   }
 
-  const { error: baseError } = await supabase
+  const { error: baseError } = await (supabase as any)
     .from('users')
     .update(baseUpdates)
     .eq('id', userId)
@@ -179,14 +179,14 @@ export async function updateUserStatus(
       candidate_id: hiringDetails?.candidate_id || null // link back to its candidate self if exists
     }
 
-    const { error: empError } = await supabase
+    const { error: empError } = await (supabase as any)
       .from('employee')
       .upsert(employeeData)
     
     if (empError) return { data: null, error: empError }
 
     // 3. Congratulatory notification → new employee
-    await supabase.from('notifications').insert({
+    await (supabase as any).from('notifications').insert({
       user_id: userId,
       title: '🎉 Welcome to the team!',
       message: `Congratulations! Your application has been approved. You are now part of the ${employeeData.department} department as ${employeeData.position}.`,
@@ -200,17 +200,18 @@ export async function updateUserStatus(
       .eq('role', 'admin')
 
     if (admins && admins.length > 0) {
-      const { data: newUser } = await supabase
+      const { data: newUser } = await (supabase as any)
         .from('users')
         .select('user_name')
         .eq('id', userId)
         .single()
 
-      await supabase.from('notifications').insert(
+      const u = newUser as any
+      await (supabase as any).from('notifications').insert(
         admins.map((a: { id: string }) => ({
           user_id: a.id,
           title: '👤 New employee onboarded',
-          message: `${newUser?.user_name || 'A candidate'} has been approved and joined the ${employeeData.department} department.`,
+          message: `${u?.user_name || 'A candidate'} has been approved and joined the ${employeeData.department} department.`,
           is_read: false
         }))
       )
@@ -355,3 +356,4 @@ export async function createEmployeeAccount(data: {
     return { data: null, error }
   }
 }
+

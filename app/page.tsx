@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth'
-import { getAllJobs, isJobOpen } from '@/lib/job'
+import { getAllJobs, isJobOpen } from '@/app/api/job'
 import type { Job } from '@/lib/database.types'
 import { Spin, Select } from 'antd'
 import { BiArrowToTop } from "react-icons/bi";
@@ -574,3 +574,4 @@ export default function LandingPage() {
     </div>
   )
 }
+

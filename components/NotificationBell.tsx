@@ -15,7 +15,7 @@ import {
 } from 'react-icons/hi'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
-import { getUnreadNotifications, markNotificationAsRead, markAllNotificationsAsRead, deleteNotification, Notification } from '@/lib/notifications'
+import { getUnreadNotifications, markNotificationAsRead, markAllNotificationsAsRead, deleteNotification, type Notification as AppNotification } from '@/app/api/notifications'
 import { useInfiniteNotifications } from '@/lib/hooks'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -30,7 +30,7 @@ const { Text } = Typography
 
 export default function NotificationBell() {
   const { user, profile } = useAuth()
-  const [unreadNotifications, setUnreadNotifications] = useState<Notification[]>([])
+  const [unreadNotifications, setUnreadNotifications] = useState<AppNotification[]>([])
   const [open, setOpen] = useState(false)
   const router = useRouter()
 
@@ -77,7 +77,7 @@ export default function NotificationBell() {
     return () => { supabase.removeChannel(channel) }
   }, [user, fetchUnread, refetchList])
 
-  const handleNotificationClick = async (item: Notification) => {
+  const handleNotificationClick = async (item: AppNotification) => {
     if (!item.is_read) {
       await markNotificationAsRead(item.id)
     }
@@ -334,3 +334,4 @@ export default function NotificationBell() {
     </Popover>
   )
 }
+

@@ -4,7 +4,7 @@ import { useAuth } from '@/lib/auth'
 import { ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons'
 import { Tag } from 'antd'
 import { useState, useEffect } from 'react'
-import { getUserApplications } from '@/lib/applications'
+import { getUserApplications } from '@/app/api/applications'
 
 export default function CandidateApplicationsPage() {
   const { user } = useAuth()
@@ -79,3 +79,4 @@ export default function CandidateApplicationsPage() {
     </div>
   )
 }
+

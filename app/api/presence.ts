@@ -57,3 +57,4 @@ export function getPresenceFileUrl(path: string): string {
   if (path.startsWith('http')) return path;
   return `${PRESENCE_API_BASE}${path.startsWith('/') ? '' : '/'}${path}`;
 }
+
