@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Popconfirm, message, Tooltip, Skeleton } from 'antd'
-import { useJobs } from '@/api/hooks'
+import { useJobs } from '@/lib/hooks'
 import Link from 'next/link'
 import Image from 'next/image'
 import { HiOutlineChevronLeft, HiOutlineChevronRight } from 'react-icons/hi'
@@ -24,7 +24,7 @@ export default function JobsPage() {
   const totalPages = Math.ceil(totalItems / pageSize)
 
   const handleDelete = async (id: string) => {
-    const { deleteJob } = await import('@/api/job')
+    const { deleteJob } = await import('@/lib/job')
     const { error } = await deleteJob(id)
     if (error) {
       messageApi.error('Error deleting job')
@@ -48,7 +48,7 @@ export default function JobsPage() {
     ? jobs 
     : jobs.filter(j => j.category === activeTab)
 
-  const { isJobOpen } = require('@/api/job')
+  const { isJobOpen } = require('@/lib/job')
 
   // Reset page on tab change
   useEffect(() => {

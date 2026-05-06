@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useAuth } from '@/api/AuthContext'
+import { useAuth } from '@/lib/auth'
 import { MailOutlined, ArrowLeftOutlined } from '@ant-design/icons'
 import { Button, Alert } from 'antd'
 import CheckLayout from '@/CheckLayout'
@@ -91,8 +91,8 @@ export default function VerifyOtpPage() {
       return
     }
 
-    const { data: profileData } = await import('@/api/profile').then(m => m.getProfile(data.user?.id ?? ''))
-    const { getDashboardByRole } = await import('@/api/AuthContext')
+    const { data: profileData } = await import('@/lib/profile').then(m => m.getProfile(data.user?.id ?? ''))
+    const { getDashboardByRole } = await import('@/lib/auth')
     router.push(getDashboardByRole(profileData?.role))
   }
 

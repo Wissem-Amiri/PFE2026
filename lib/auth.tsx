@@ -2,11 +2,11 @@
 
 import { Session, User } from "@supabase/supabase-js";
 import { createContext, useEffect, useState, useContext } from "react";
-import { supabase } from "@/api/supabase";
+import { supabase } from "@/lib/supabase";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Spin } from "antd";
-import { getProfile } from "@/api/profile";
-import type { FullProfile } from "@/api/database.types";
+import { getProfile } from "@/lib/profile";
+import type { FullProfile } from "@/lib/database.types";
 
 
 type AuthContextType = {

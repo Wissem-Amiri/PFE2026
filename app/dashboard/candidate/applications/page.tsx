@@ -1,10 +1,10 @@
 'use client'
 
-import { useAuth } from '@/api/AuthContext'
+import { useAuth } from '@/lib/auth'
 import { ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons'
 import { Tag } from 'antd'
 import { useState, useEffect } from 'react'
-import { getUserApplications } from '@/api/applications'
+import { getUserApplications } from '@/lib/applications'
 
 export default function CandidateApplicationsPage() {
   const { user } = useAuth()

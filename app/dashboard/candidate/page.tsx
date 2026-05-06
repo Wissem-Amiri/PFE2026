@@ -4,10 +4,10 @@ import { SearchOutlined, BankOutlined, EnvironmentOutlined, ClockCircleOutlined,
 import { Input, message } from 'antd'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/api/AuthContext'
-import { getAllJobs, isJobOpen } from '@/api/job'
-import { getUserApplications } from '@/api/applications'
-import type { Job } from '@/api/database.types'
+import { useAuth } from '@/lib/auth'
+import { getAllJobs, isJobOpen } from '@/lib/job'
+import { getUserApplications } from '@/lib/applications'
+import type { Job } from '@/lib/database.types'
 
 const PAGE_SIZE = 8
 

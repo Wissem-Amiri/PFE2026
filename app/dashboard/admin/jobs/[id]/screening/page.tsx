@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { supabase } from '@/api/supabase'
-import { getJobApplications, updateApplicationStatus } from '@/api/applications'
+import { supabase } from '@/lib/supabase'
+import { getJobApplications, updateApplicationStatus } from '@/lib/applications'
 import { Avatar, Spin, message } from 'antd'
 import { UserOutlined } from '@ant-design/icons'
-import type { Job } from '@/api/database.types'
+import type { Job } from '@/lib/database.types'
 import { scoreCandidate, type Strength } from '@/lib/aiScoring'
 
 // ─── Types ────────────────────────────────────────────────────────────────────

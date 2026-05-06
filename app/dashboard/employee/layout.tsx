@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { useAuth } from '@/api/AuthContext'
+import { useAuth } from '@/lib/auth'
 import Link from 'next/link'
 import NotificationBell from '../../../components/NotificationBell'
 
@@ -15,7 +15,7 @@ import {
   HiOutlineX
 } from 'react-icons/hi'
 import { usePathname } from 'next/navigation'
-import { useMyLeaves } from '@/api/hooks'
+import { useMyLeaves } from '@/lib/hooks'
 
 export default function EmployeeLayout({ children }: { children: React.ReactNode }) {
   const { profile, user, signout } = useAuth()

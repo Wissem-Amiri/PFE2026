@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/api/AuthContext'
-import { getAllJobs, isJobOpen } from '@/api/job'
-import type { Job } from '@/api/database.types'
+import { useAuth } from '@/lib/auth'
+import { getAllJobs, isJobOpen } from '@/lib/job'
+import type { Job } from '@/lib/database.types'
 import { Spin, Select } from 'antd'
 import { BiArrowToTop } from "react-icons/bi";
 import { SearchOutlined } from '@ant-design/icons'

@@ -26,9 +26,9 @@ import {
   Divider,
   Tag
 } from 'antd'
-import { getProfile, updateProfile } from '@/api/profile'
-import { getAllJobs } from '@/api/job'
-import type { FullProfile } from '@/api/database.types'
+import { getProfile, updateProfile } from '@/lib/profile'
+import { getAllJobs } from '@/lib/job'
+import type { FullProfile } from '@/lib/database.types'
 
 export default function EmployeeDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)

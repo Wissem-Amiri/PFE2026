@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useAuth } from '@/api/AuthContext'
+import { useAuth } from '@/lib/auth'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -20,7 +20,7 @@ import {
 import { Avatar } from 'antd'
 import NotificationBell from '../../../components/NotificationBell'
 
-import { useLeaves, useApplications } from '@/api/hooks'
+import { useLeaves, useApplications } from '@/lib/hooks'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { profile, user, signout } = useAuth()

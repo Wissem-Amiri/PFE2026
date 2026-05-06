@@ -7,9 +7,9 @@ import { MailOutlined, ArrowLeftOutlined } from '@ant-design/icons'
 import { Button } from 'antd'
 import CheckLayout from '@/CheckLayout'
 import { useSearchParams } from 'next/navigation'
-import { supabase } from '@/api/supabase'
-import { getDashboardByRole } from '@/api/AuthContext'
-import { getProfile } from '@/api/profile'
+import { supabase } from '@/lib/supabase'
+import { getDashboardByRole } from '@/lib/auth'
+import { getProfile } from '@/lib/profile'
 
 export default function VerifyEmailPage() {
   const searchParams = useSearchParams()

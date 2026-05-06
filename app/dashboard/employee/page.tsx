@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { Button, Table, Tag, Avatar, Modal, Form, DatePicker, Select, Input, message } from 'antd'
-import { useAuth } from '@/api/AuthContext'
+import { useAuth } from '@/lib/auth'
 import Link from 'next/link'
 import dayjs from 'dayjs'
 import {
@@ -18,8 +18,8 @@ import {
   HiOutlineFilter,
   HiOutlineTrash
 } from 'react-icons/hi'
-import { requestLeave, deleteLeavesPermanently } from '@/api/leaves'
-import { useMyLeaves, queryKeys } from '@/api/hooks'
+import { requestLeave, deleteLeavesPermanently } from '@/lib/leaves'
+import { useMyLeaves, queryKeys } from '@/lib/hooks'
 import { useQueryClient } from '@tanstack/react-query'
 
 const { RangePicker } = DatePicker

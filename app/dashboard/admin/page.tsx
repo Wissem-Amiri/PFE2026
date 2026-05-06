@@ -1,15 +1,15 @@
 'use client'
 import { useEffect, useState, useMemo } from 'react'
-import { getAllUsers, getProfile } from '@/api/profile'
-import { getAllLeavesDetailed } from '@/api/leaves'
-import { getAllApplicationsDetailed } from '@/api/applications'
-import { useAuth } from '@/api/AuthContext'
-import { archiveLeaves } from '@/api/leaves'
-import { archiveApplications } from '@/api/applications'
+import { getAllUsers, getProfile } from '@/lib/profile'
+import { getAllLeavesDetailed } from '@/lib/leaves'
+import { getAllApplicationsDetailed } from '@/lib/applications'
+import { useAuth } from '@/lib/auth'
+import { archiveLeaves } from '@/lib/leaves'
+import { archiveApplications } from '@/lib/applications'
 import { useQueryClient } from '@tanstack/react-query'
-import { queryKeys } from '@/api/hooks'
+import { queryKeys } from '@/lib/hooks'
 import Link from 'next/link'
-import type { FullProfile } from '@/api/database.types'
+import type { FullProfile } from '@/lib/database.types'
 import {
   Avatar,
   Table,
@@ -49,7 +49,7 @@ import {
 } from 'react-icons/hi'
 import dayjs from 'dayjs'
 
-import { useLeaves, useApplications } from '@/api/hooks'
+import { useLeaves, useApplications } from '@/lib/hooks'
 
 export default function AdminDashboardPage() {
   const { user } = useAuth()

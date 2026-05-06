@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { updateLeaveStatus } from '@/api/leaves'
+import { updateLeaveStatus } from '@/lib/leaves'
 import {
   message,
   Modal,
@@ -20,7 +20,7 @@ import {
   HiOutlineX,
   HiOutlineClock
 } from 'react-icons/hi'
-import { useLeaves, queryKeys } from '@/api/hooks'
+import { useLeaves, queryKeys } from '@/lib/hooks'
 
 import { useQueryClient } from '@tanstack/react-query'
 

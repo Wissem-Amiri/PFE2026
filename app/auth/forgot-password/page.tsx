@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useAuth } from '@/api/AuthContext'
+import { useAuth } from '@/lib/auth'
 import { Form, Input, Button, Alert } from 'antd'
 import { KeyOutlined, ArrowLeftOutlined } from '@ant-design/icons'
 import { useForm, Controller } from 'react-hook-form'

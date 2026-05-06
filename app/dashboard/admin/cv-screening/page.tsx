@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { message, Modal, Spin, Tag } from 'antd'
 import { HiOutlineDocumentSearch, HiOutlineEye, HiOutlineSearch, HiOutlineCheckCircle, HiOutlineExclamationCircle } from 'react-icons/hi'
-import { useApplications, queryKeys } from '@/api/hooks'
-import { analyzeApplication } from '@/api/applications'
+import { useApplications, queryKeys } from '@/lib/hooks'
+import { analyzeApplication } from '@/lib/applications'
 import { useQueryClient } from '@tanstack/react-query'
 
 export default function CVScreeningPage() {

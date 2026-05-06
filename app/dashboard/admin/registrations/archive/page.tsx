@@ -13,8 +13,8 @@ import {
   HiOutlineRefresh,
   HiOutlineArrowLeft
 } from 'react-icons/hi'
-import { restoreApplications, hardDeleteApplications } from '@/api/applications'
-import { useApplications, queryKeys } from '@/api/hooks'
+import { restoreApplications, hardDeleteApplications } from '@/lib/applications'
+import { useApplications, queryKeys } from '@/lib/hooks'
 import { useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
 

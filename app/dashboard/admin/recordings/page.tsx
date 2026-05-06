@@ -13,17 +13,17 @@ import {
   HiOutlineChevronLeft,
   HiOutlineChevronRight
 } from 'react-icons/hi'
-import { useAuth } from '@/api/AuthContext'
-import { useRecordings } from '@/api/hooks'
-import { queryKeys } from '@/api/hooks'
-import { uploadRecording } from '@/api/recordings'
-import { supabase } from '@/api/supabase'
+import { useAuth } from '@/lib/auth'
+import { useRecordings } from '@/lib/hooks'
+import { queryKeys } from '@/lib/hooks'
+import { uploadRecording } from '@/lib/recordings'
+import { supabase } from '@/lib/supabase'
 import { useQueryClient } from '@tanstack/react-query'
 import dayjs from 'dayjs'
-import { downloadCSV } from '@/api/export'
+import { downloadCSV } from '@/lib/export'
 import { Modal, Tag, Badge } from 'antd'
 import { HiOutlineSparkles, HiOutlineEye, HiOutlineUserGroup, HiOutlineShieldCheck, HiOutlineXCircle } from 'react-icons/hi'
-import { processImagePresence, processVideoPresence, getPresenceFileUrl } from '@/api/presence'
+import { processImagePresence, processVideoPresence, getPresenceFileUrl } from '@/lib/presence'
 import { enrichDetections, type EnrichedDetection } from '@/lib/presenceUtils'
 
 export default function RecordingsPage() {

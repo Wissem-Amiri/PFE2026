@@ -1,10 +1,10 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { useAuth } from '@/api/AuthContext'
+import { useAuth } from '@/lib/auth'
 import { Table, Button, Modal, Form, Select, DatePicker, Input, Tag, message, Tooltip } from 'antd'
 import { PlusOutlined, CalendarOutlined, InfoCircleOutlined } from '@ant-design/icons'
-import { getMyLeaves, requestLeave } from '@/api/leaves'
-import type { Leave } from '@/api/database.types'
+import { getMyLeaves, requestLeave } from '@/lib/leaves'
+import type { Leave } from '@/lib/database.types'
 
 const { RangePicker } = DatePicker
 const { TextArea } = Input

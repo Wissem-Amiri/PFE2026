@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState, Suspense, useRef } from 'react'
-import { useAuth } from '@/api/AuthContext'
-import { getProfile, updateProfile, uploadAvatar } from '@/api/profile'
-import { countries } from '@/api/countries'
+import { useAuth } from '@/lib/auth'
+import { getProfile, updateProfile, uploadAvatar } from '@/lib/profile'
+import { countries } from '@/lib/countries'
 import {
   Form,
   Input,

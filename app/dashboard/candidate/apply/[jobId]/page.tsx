@@ -17,12 +17,11 @@ import {
   HiOutlinePlus,
   HiOutlinePencil
 } from 'react-icons/hi'
-import { useAuth } from '@/api/AuthContext'
-import { getProfile, updateProfile, uploadAvatar, uploadDocument } from '@/api/profile'
-import { applyToJob } from '@/api/applications'
-import { getJobById } from '@/api/job'
-import type { FullProfile, Job, Experience } from '@/api/database.types'
-import { countries } from '@/api/countries'
+import { useAuth } from '@/lib/auth'
+import { getProfile, updateProfile, uploadAvatar, uploadDocument } from '@/lib/profile'
+import { applyToJob } from '@/lib/applications'
+import { getJobById } from '@/lib/job'
+import { countries } from '@/lib/countries'
 import { useForm, Controller } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
@@ -45,6 +44,7 @@ interface FormValues {
   country: string
   timezone: string
 }
+
 
 const timezones = [
   { label: 'UTC-12:00 (International Date Line West)', value: 'UTC-12:00' },

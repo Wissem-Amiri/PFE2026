@@ -30,13 +30,13 @@ import {
 } from 'react-icons/hi'
 import { BiExport } from 'react-icons/bi'
 import { exportTableToPDF } from '@/lib/export'
-import { getAllUsers, updateUserStatus as updateGlobalUserStatus, exportToCSV, downloadCSV } from '@/api/profile'
-import { getAllApplicationsDetailed, updateApplicationStatus, archiveApplications, restoreApplications, deleteAllOtherApplications, hardDeleteApplications } from '@/api/applications'
-import { getAllJobs, decrementJobSeats } from '@/api/job'
+import { getAllUsers, updateUserStatus as updateGlobalUserStatus, exportToCSV, downloadCSV } from '@/lib/profile'
+import { getAllApplicationsDetailed, updateApplicationStatus, archiveApplications, restoreApplications, deleteAllOtherApplications, hardDeleteApplications } from '@/lib/applications'
+import { getAllJobs, decrementJobSeats } from '@/lib/job'
 import { HiOutlineArchive, HiOutlineRefresh } from 'react-icons/hi'
-import type { FullProfile } from '@/api/database.types'
+import type { FullProfile } from '@/lib/database.types'
 
-import { useApplications, queryKeys } from '@/api/hooks'
+import { useApplications, queryKeys } from '@/lib/hooks'
 import { useQueryClient } from '@tanstack/react-query'
 
 export default function RegistrationsPage() {

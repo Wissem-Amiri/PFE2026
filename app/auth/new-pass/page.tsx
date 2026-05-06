@@ -10,7 +10,7 @@ import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
 
 import CheckLayout from '@/CheckLayout'
-import { supabase } from '@/api/supabase'
+import { supabase } from '@/lib/supabase'
 
 /* ─── Validation Schema ────────────────────────────────────── */
 const newPassSchema = yup.object().shape({

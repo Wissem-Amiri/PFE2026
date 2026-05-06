@@ -1,6 +1,6 @@
 import ClientLayout from "./ClientLayout";
 import "./globals.css";
-import { AuthGuard, AuthProvider } from "@/api/AuthContext";
+import { AuthGuard, AuthProvider } from "@/lib/auth";
 
 export default function RootLayout({
   children,

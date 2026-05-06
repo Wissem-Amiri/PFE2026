@@ -1,6 +1,6 @@
-import { getProfileByEmail } from '../api/profile';
-import type { DetectedUser } from '../api/presence';
-import type { FullProfile } from '../api/database.types';
+import { getProfileByEmail } from './profile';
+import type { DetectedUser } from './presence';
+import type { FullProfile } from './database.types';
 
 export interface EnrichedDetection extends DetectedUser {
   profile?: FullProfile | null;

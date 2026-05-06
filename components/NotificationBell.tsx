@@ -13,10 +13,10 @@ import {
   HiOutlineInformationCircle,
   HiOutlineClock
 } from 'react-icons/hi'
-import { supabase } from '@/api/supabase'
-import { useAuth } from '@/api/AuthContext'
-import { getUnreadNotifications, markNotificationAsRead, markAllNotificationsAsRead, deleteNotification, Notification } from '@/api/notifications'
-import { useInfiniteNotifications } from '@/api/hooks'
+import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/lib/auth'
+import { getUnreadNotifications, markNotificationAsRead, markAllNotificationsAsRead, deleteNotification, Notification } from '@/lib/notifications'
+import { useInfiniteNotifications } from '@/lib/hooks'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/en-gb'

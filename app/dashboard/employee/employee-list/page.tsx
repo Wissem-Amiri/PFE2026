@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react'
 import { SearchOutlined, TeamOutlined, MailOutlined, BankOutlined, UserOutlined } from '@ant-design/icons'
 import { HiOutlineViewGrid, HiOutlineViewList } from 'react-icons/hi'
 import { Input, Avatar, Card, Tag, Spin, Select } from 'antd'
-import { getEmployeesPaginated } from '@/api/profile'
-import type { FullProfile } from '@/api/database.types'
+import { getEmployeesPaginated } from '@/lib/profile'
+import type { FullProfile } from '@/lib/database.types'
 
 export default function EmployeeListPage() {
   const [employees, setEmployees] = useState<FullProfile[]>([])

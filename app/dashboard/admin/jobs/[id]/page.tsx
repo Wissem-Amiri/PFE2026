@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { supabase } from '@/api/supabase'
-import { isJobOpen } from '@/api/job'
+import { supabase } from '@/lib/supabase'
+import { isJobOpen } from '@/lib/job'
 import { useInView } from 'react-intersection-observer'
-import type { Job } from '@/api/database.types'
+import type { Job } from '@/lib/database.types'
 import { message } from 'antd'
 
 export default function JobOverviewPage() {

@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/api/supabase'
+import { supabase } from '@/lib/supabase'
 import { Spin } from 'antd'
 
 export default function AuthCallbackPage() {
