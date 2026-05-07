@@ -493,7 +493,7 @@ export default function AdminDashboardPage() {
             </div>
 
             <div className="flex flex-col gap-[4px] items-center mb-[24px]">
-              <h2 className="text-[24px] font-medium text-[#101828] font-['Inter'] leading-[32px] m-0">{adminProfile?.user_name || 'Farouk Abichou'}</h2>
+              <h2 className="text-[24px] font-medium text-[#101828] font-['Inter'] leading-[32px] m-0">{adminProfile?.user_name || 'Admin'}</h2>
               <p className="text-[16px] text-[#667085] font-normal font-['Inter'] leading-[24px] m-0 capitalize">{adminProfile?.role || 'Admin'}</p>
             </div>
 

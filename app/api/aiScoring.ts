@@ -13,9 +13,9 @@ export interface Experience {
 }
 
 export interface ScoredCandidate {
-  score: number               // 0-100
-  yearsLabel: string          // e.g. "3 Years"
-  prevCompanies: string       // e.g. "Google, Meta"
+  score: number             
+  yearsLabel: string          
+  prevCompanies: string       
   strengths: Strength[]
 }
 

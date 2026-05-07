@@ -78,7 +78,7 @@ export default function LandingPage() {
       <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-white/80 border-b border-[#eaecf0]">
         <div className="flex items-center justify-between max-w-[1280px] mx-auto px-6 py-4 lg:px-8">
           <div className="flex items-center gap-2">
-            <img src="/assets/UnifyRH.png" alt="UnifyRH Logo" className="h-8 w-auto object-contain" />
+            <img src="/assets/UnifyHR.png" alt="UnifyHR Logo" className="h-[120px] w-auto object-contain -my-10 -ml-4" />
           </div>
           <div className="hidden md:flex items-center gap-8">
             <Link href="#culture" onClick={() => setActiveNav('culture')} className={`nav-link ${activeNav === 'culture' ? 'active' : ''}`}>Culture</Link>
@@ -152,7 +152,7 @@ export default function LandingPage() {
               To redefine connectivity through elegant engineering.
             </h2>
             <p className="text-[18px] text-[#494453] leading-relaxed">
-              At UnifyRH, we believe that technology should be as beautiful as it is functional. Our culture is built on the pillars of transparency, creative freedom, and radical collaboration.
+              At UnifyHR, we believe that technology should be as beautiful as it is functional. Our culture is built on the pillars of transparency, creative freedom, and radical collaboration.
             </p>
           </div>
 
@@ -194,7 +194,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* --- Why Choose UnifyRH Section --- */}
+      {/* --- Why Choose UnifyHR Section --- */}
       <section id="features" className="py-[96px] px-6 lg:px-8 max-w-[1280px] mx-auto">
         <div className="flex flex-col items-center text-center mb-16">
           <h2 className="font-['Manrope',sans-serif] font-bold text-[36px] text-[#1d1a22] mb-4">Our Core Solutions</h2>
@@ -416,7 +416,7 @@ export default function LandingPage() {
       <section className="bg-[#F2EBF7] py-[96px] px-6 lg:px-8">
         <div className="max-w-[1280px] mx-auto grid lg:grid-cols-[1fr_2fr] gap-10 items-start">
           <div className="pr-4">
-            <h2 className="font-['Manrope',sans-serif] font-bold text-[36px] text-[#1d1a22] mb-6">Voices of UnifyRH</h2>
+            <h2 className="font-['Manrope',sans-serif] font-bold text-[36px] text-[#1d1a22] mb-6">Voices of UnifyHR</h2>
             <p className="text-[16px] text-[#494453] leading-relaxed mb-8">
               Don&apos;t just take our word for it. Hear from the people who are building the future every single day.
             </p>
@@ -509,8 +509,8 @@ export default function LandingPage() {
       <footer className="bg-[#f8fafc] border-t border-[#f1f5f9] mt-auto">
         <div className="max-w-[1280px] mx-auto px-6 py-16 lg:px-8 flex flex-col md:flex-row justify-between items-center md:items-start gap-10">
           <div className="text-center md:text-left">
-            <h3 className="font-['Inter',sans-serif] font-bold text-[18px] text-[#1d1a22] mb-2">UnifyRH</h3>
-            <p className="text-[14px] text-[#64748b]">© {new Date().getFullYear()} UnifyRH. Built for the future of work.</p>
+            <h3 className="font-['Inter',sans-serif] font-bold text-[18px] text-[#1d1a22] mb-2">UnifyHR</h3>
+            <p className="text-[14px] text-[#64748b]">© {new Date().getFullYear()} UnifyHR. Built for the future of work.</p>
             <p className="text-[14px] text-[#64748b]">softylines.com</p>
           </div>
 

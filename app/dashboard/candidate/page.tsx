@@ -22,13 +22,30 @@ export default function CandidateJobsPage() {
   const [activeTab, setActiveTab] = useState('All positions')
   const [currentPage, setCurrentPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [totalCount, setTotalCount] = useState(0)
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery)
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
 
   useEffect(() => {
     async function loadJobsAndStatus() {
       setLoading(true)
-      const { data } = await getAllJobs()
-      const openJobs = (data ?? []).filter(isJobOpen)
-      setJobs(openJobs)
+      const { data, count } = await getAllJobs({
+        page: currentPage,
+        pageSize: PAGE_SIZE,
+        search: debouncedSearch,
+        category: activeTab === 'All positions' ? undefined : activeTab,
+        status: 'Open'
+      })
+      
+      setJobs(data ?? [])
+      setTotalCount(count || 0)
 
       if (user) {
         const { data: applications } = await getUserApplications(user.id)
@@ -42,35 +59,29 @@ export default function CandidateJobsPage() {
     }
 
     loadJobsAndStatus()
-  }, [user])
+  }, [user, debouncedSearch, activeTab, currentPage])
 
   const handleApplyClick = (jobId: string) => {
     if (!user) return messageApi.error("You must be logged in to apply.")
     router.push(`/dashboard/candidate/apply/${jobId}`)
   }
 
-  // Categories
-  const categories = ['All positions', ...Array.from(new Set(jobs.map(j => j.category)))]
+  // Categories (Ideally fetched from a distinct list, but for now fixed or common)
+  const categories = ['All positions', 'Marketing', 'Informatics', 'Support Client', 'Human Resources', 'Sales']
 
-  const filteredJobs = (activeTab === 'All positions' ? jobs : jobs.filter(j => j.category === activeTab))
-    .filter(job => {
-      const status = appliedJobsStatus.get(job.id)
-      return status !== 'rejected' && status !== 'accepted'
-    })
-    .filter(job => {
-      if (!searchQuery.trim()) return true
-      const q = searchQuery.toLowerCase()
-      return job.title.toLowerCase().includes(q) || job.category?.toLowerCase().includes(q)
-    })
+  // We filter out accepted/rejected status in the front-end display if needed, 
+  // but the core list comes from the server.
+  const filteredJobsDisplay = jobs.filter(job => {
+    const status = appliedJobsStatus.get(job.id)
+    return status !== 'rejected' && status !== 'accepted'
+  })
 
   // Pagination
-  const totalPages = Math.max(1, Math.ceil(filteredJobs.length / PAGE_SIZE))
-  const paginatedJobs = filteredJobs.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE))
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab)
     setCurrentPage(1)
-    setSearchQuery('')
   }
 
   return (
@@ -116,7 +127,7 @@ export default function CandidateJobsPage() {
 
       {loading ? (
         <div className="text-center py-24 text-slate-400">Searching for offers...</div>
-      ) : filteredJobs.length === 0 ? (
+      ) : filteredJobsDisplay.length === 0 ? (
         /* Empty state */
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <div className="relative mb-8">
@@ -139,7 +150,7 @@ export default function CandidateJobsPage() {
         <>
           {/* Jobs Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {paginatedJobs.map(job => {
+            {filteredJobsDisplay.map(job => {
               const applicationStatus = appliedJobsStatus.get(job.id)
               const hasApplied = !!applicationStatus
               return (
@@ -193,7 +204,7 @@ export default function CandidateJobsPage() {
               <p className="text-[13px] text-[#667085]">
                 Page <span className="font-semibold text-[#344054]">{currentPage}</span> of{' '}
                 <span className="font-semibold text-[#344054]">{totalPages}</span>
-                <span className="text-[#98A2B3]"> · {filteredJobs.length} offers</span>
+                <span className="text-[#98A2B3]"> · {totalCount} offers</span>
               </p>
 
               {/* Controls */}

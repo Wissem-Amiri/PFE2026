@@ -41,20 +41,40 @@ export default function CandidateLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB] font-['Inter',sans-serif] flex overflow-hidden">
+    <div className="flex flex-col lg:flex-row min-h-screen font-['Inter',sans-serif] bg-[#F9FAFB]">
+      {/* ── MOBILE HEADER ── */}
+      <div className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-[#EAECF0] sticky top-0 z-[110]">
+        <Link href="/dashboard/candidate" className="block no-underline">
+          <img src="/assets/UnifyHR.png" alt="UnifyHR Logo" className="h-[80px] w-auto object-contain -ml-4" />
+        </Link>
+        <button 
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="p-2 text-gray-500 rounded-lg hover:bg-gray-100 border-none bg-transparent cursor-pointer"
+        >
+          {mobileMenuOpen ? <CloseOutlined className="text-xl" /> : <MenuOutlined className="text-xl" />}
+        </button>
+      </div>
 
-      {/* ── SIDEBAR (FIXED 243PX) ── */}
-      <aside className="w-[243px] bg-white border-r border-[#EAECF0] flex flex-col sticky top-0 h-screen shrink-0 z-[100] shadow-[1px_0_0_0_#EAECF0]">
+      {/* ── MOBILE OVERLAY ── */}
+      {mobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-gray-900/50 z-[100] lg:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* ── SIDEBAR ── */}
+      <aside className={`fixed inset-y-0 left-0 z-[105] w-[243px] min-w-[243px] bg-white border-r border-[#EAECF0] flex flex-col h-screen transform transition-transform duration-300 ease-in-out lg:sticky lg:top-0 lg:translate-x-0 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         
         {/* Logo Section */}
-        <div className="pt-[10px] pb-[10px] px-[10px]">
-          <Link href="/dashboard/candidate" className="no-underline flex items-center group">
-            <img src="/assets/UnifyRH.png" alt="UnifyRH Logo" className="h-[110px] w-auto object-contain group-hover:scale-105 transition-transform" />
+        <div className="pt-[32px] pb-[10px] hidden lg:flex justify-center">
+          <Link href="/dashboard/candidate" className="no-underline flex items-center justify-center group w-full">
+            <img src="/assets/UnifyHR.png" alt="UnifyHR Logo" className="h-[130px] w-auto object-contain group-hover:scale-105 transition-transform -mt-[42px] -mb-8" />
           </Link>
         </div>
 
         {/* Navigation Section */}
-        <div className="flex-1 px-[24px] overflow-y-auto overflow-x-hidden">
+        <div className="flex-1 px-[24px] pt-[140px] lg:pt-[30px] overflow-y-auto overflow-x-hidden">
           <nav className="flex flex-col gap-[4px]">
             {navLinks.map(link => (
               <Link
@@ -98,8 +118,8 @@ export default function CandidateLayout({ children }: { children: React.ReactNod
       </aside>
 
       {/* ── MAIN CONTENT AREA ── */}
-      <main className="flex-1 min-w-0 h-screen overflow-y-auto bg-[#F9FAFB]">
-        <div className="w-full">
+      <main className="flex-1 min-w-0 h-screen overflow-y-auto bg-[#F9FAFB] px-4 md:px-8 pt-6 md:pt-8 pb-12">
+        <div className="w-full max-w-[1400px] mx-auto">
           {children}
         </div>
       </main>

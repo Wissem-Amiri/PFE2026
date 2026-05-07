@@ -15,8 +15,7 @@ import {
   HiOutlineClock,
   HiOutlineBriefcase,
   HiOutlinePlus,
-  HiOutlinePencil,
-  HiOutlinePhone
+  HiOutlinePencil
 } from 'react-icons/hi'
 import { useAuth } from '@/lib/auth'
 import { getProfile, updateProfile, uploadAvatar, uploadDocument } from '@/app/api/profile'
@@ -33,8 +32,6 @@ const { Option } = Select
 
 const schema = yup.object().shape({
   userName: yup.string().required('Full name is required'),
-  email: yup.string().email('Invalid email').required('Email is required'),
-  phoneNumber: yup.string().required('Phone number is required'),
   bio: yup.string().required('Bio is required').max(400, 'Bio cannot exceed 400 characters'),
   position: yup.string().required('Role is required'),
   country: yup.string().required('Please select your country'),
@@ -43,8 +40,6 @@ const schema = yup.object().shape({
 
 interface FormValues {
   userName: string
-  email: string
-  phoneNumber: string
   bio: string
   position: string
   country: string
@@ -80,7 +75,7 @@ const timezones = [
   { label: 'UTC+12:00 (New Zealand Standard Time)', value: 'UTC+12:00' },
 ]
 
-export default function ApplyToJobPage() {
+export default function EmployeeApplyToJobPage() {
   const router = useRouter()
   const params = useParams()
   const jobId = params.jobId as string
@@ -95,8 +90,6 @@ export default function ApplyToJobPage() {
     resolver: yupResolver(schema),
     defaultValues: {
       userName: '',
-      email: '',
-      phoneNumber: '',
       bio: '',
       position: '',
       country: '',
@@ -145,8 +138,6 @@ export default function ApplyToJobPage() {
         const p = profileRes.data
         setProfile(p)
         setValue('userName', p.user_name || '')
-        setValue('email', p.email || '')
-        setValue('phoneNumber', p.phone || '')
         setValue('bio', p.candidate?.bio || '')
         setValue('position', p.candidate?.position || '')
         setValue('country', p.candidate?.country || '')
@@ -246,7 +237,6 @@ export default function ApplyToJobPage() {
       // 1. Update Profile
       const { error: profileError } = await updateProfile(user.id, {
         user_name: values.userName,
-        phone: values.phoneNumber,
         avatar_url: avatarUrl,
         candidate: {
           bio: values.bio,
@@ -264,7 +254,6 @@ export default function ApplyToJobPage() {
       // 2. Apply to Job
       const { error: applyError } = await applyToJob(user.id, jobId)
       if (applyError) {
-        // If already applied or other error
         if (applyError.code === '23505') {
           message.warning('You have already applied for this position.')
         } else {
@@ -274,7 +263,8 @@ export default function ApplyToJobPage() {
         message.success('Application sent successfully!')
       }
       
-      router.push('/dashboard/candidate/applications')
+      // Redirect to employee applications list
+      router.push('/dashboard/employee/registrations')
     } catch (err: any) {
       message.error('Error: ' + (err.message || 'Something went wrong'))
     } finally {
@@ -291,10 +281,9 @@ export default function ApplyToJobPage() {
   }
 
   return (
-    <div className="min-h-screen">
-      <div className="p-0">
+    <div className="bg-white min-h-screen p-8 md:p-12">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6 pt-8 px-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
         <div>
           <h1 className="text-[30px] font-medium text-[#101828] mb-1 leading-tight">
             Apply to <span className="text-[#7F56D9]">{job?.title || 'Position'}</span>
@@ -319,7 +308,7 @@ export default function ApplyToJobPage() {
         </div>
       </div>
 
-      <div className="w-full space-y-10">
+      <div className="max-w-4xl space-y-10">
         
         {/* Personal Info Section */}
         <section className="space-y-6">
@@ -353,29 +342,9 @@ export default function ApplyToJobPage() {
               <Input 
                 value={profile?.email || ''} 
                 disabled
-                className="h-[44px] rounded-lg bg-gray-50 border-[#D0D5DD] text-[#667085] cursor-not-allowed"
+                className="h-[44px] rounded-lg bg-gray-50 border-[#D0D5DD] text-[#667085]"
                 prefix={<HiOutlineMail className="text-gray-400 mr-2" />}
               />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
-            <label className="text-[14px] font-medium text-[#344054]">Phone number <span className="text-red-500">*</span></label>
-            <div className="md:col-span-2 space-y-1">
-              <Controller
-                name="phoneNumber"
-                control={control}
-                render={({ field }) => (
-                  <Input 
-                    {...field}
-                    placeholder="+216 12 345 678"
-                    status={errors.phoneNumber ? 'error' : ''}
-                    className="h-[44px] rounded-lg border-[#D0D5DD] focus:border-[#7F56D9] focus:ring-4 focus:ring-[#7F56D9]/10"
-                    prefix={<HiOutlinePhone className="text-gray-400 mr-2" />}
-                  />
-                )}
-              />
-              {errors.phoneNumber && <p className="text-red-500 text-[12px]">{errors.phoneNumber.message}</p>}
             </div>
           </div>
 
@@ -717,18 +686,17 @@ export default function ApplyToJobPage() {
                     </div>
                   </div>
                   <div className="flex justify-end gap-3 pt-2">
-                    <Button 
+                    <button 
                       onClick={() => {
                         setShowExpForm(false)
                         setEditingId(null)
                         setNewExp({ title: '', company: '', startDate: '', endDate: '' })
                       }}
-                      className="rounded-lg h-[36px]"
+                      className="rounded-lg h-[36px] px-4 border border-[#D0D5DD] bg-white cursor-pointer"
                     >
                       Cancel
-                    </Button>
-                    <Button 
-                      type="primary"
+                    </button>
+                    <button 
                       onClick={() => {
                         if (newExp.title && newExp.company && newExp.startDate) {
                           if (newExp.endDate && dayjs(newExp.endDate).isBefore(dayjs(newExp.startDate))) {
@@ -754,10 +722,10 @@ export default function ApplyToJobPage() {
                           message.warning('Please fill in title, company and start date.')
                         }
                       }}
-                      className="rounded-lg h-[36px] bg-[#7F56D9]"
+                      className="rounded-lg h-[36px] px-4 bg-[#7F56D9] text-white border-none cursor-pointer"
                     >
                       {editingId ? 'Update Experience' : 'Add Experience'}
-                    </Button>
+                    </button>
                   </div>
                 </div>
               ) : (
@@ -823,7 +791,6 @@ export default function ApplyToJobPage() {
           display: block !important;
         }
       `}</style>
-    </div>
     </div>
   )
 }

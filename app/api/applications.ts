@@ -10,30 +10,30 @@ export async function applyToJob(candidateId: string, jobId: string) {
     .single()
   
   if (!error && data) {
-    // 1. Fetch Candidate Name
-    const { data: userData } = await supabase
+    // 1. Fetch User Data from Users table (reliable for both candidates and employees)
+    const { data: userProfile } = await supabase
       .from('users')
-      .select('user_name')
+      .select('user_name, role')
       .eq('id', candidateId)
       .single()
 
     // 2. Fetch Job Title
-    const { data: jobData } = await supabase
+    const { data: jobInfo } = await supabase
       .from('jobs')
       .select('title')
       .eq('id', jobId)
       .single()
 
-    // 3. Send Notification to Admins
-    if (userData && jobData) {
-      const user = userData as any
-      const job = jobData as any
-      // @ts-ignore
-      await supabase.rpc('create_admin_notification', {
-        p_title: 'New Application',
-        p_message: `${user.user_name || 'A candidate'} has applied for the "${job.title}" position.`
-      })
-    }
+    const name = userProfile?.user_name || 'An employee'
+    const role = userProfile?.role === 'employee' ? 'Internal Employee' : 'Candidate'
+    const jobTitle = jobInfo?.title || 'a position'
+
+    // 3. Send Notification to Admins via RPC (Must be RPC to bypass RLS)
+    // @ts-ignore
+    await supabase.rpc('create_admin_notification', {
+      p_title: 'New Application Received',
+      p_message: `${role} (${name}) has applied for the "${jobTitle}" position.`
+    })
   }
 
   return { data: data as Application | null, error }
@@ -158,6 +158,7 @@ export async function getAllApplicationsDetailed(params: {
           user_name: item.user_name,
           avatar_url: item.avatar_url,
           email: item.email,
+          role: item.role,
           phone: item.phone
         }
       },

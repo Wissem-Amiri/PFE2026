@@ -78,7 +78,7 @@ export default function CheckLayout({ children }: CheckLayoutProps) {
         {/* ── LEFT SIDEBAR ── */}
         <aside className="w-[320px] min-w-[320px] bg-[#fcfcfd] border-r border-[#eaecf0] flex flex-col py-10 px-8 relative">
           <div className="mb-16">
-            <img src="/assets/UnifyRH.png" alt="UnifyRH Logo" className="h-[110px] w-auto object-contain" />
+            <img src="/assets/UnifyHR.png" alt="UnifyHR Logo" className="h-[140px] w-auto object-contain -ml-7" />
           </div>
 
           <div className="flex flex-col">

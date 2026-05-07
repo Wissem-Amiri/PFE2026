@@ -55,13 +55,13 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         },
       }}
     >
-      <div className="flex min-h-screen font-['Inter',sans-serif]">
+      <div className="flex h-screen overflow-hidden font-['Inter',sans-serif]">
         {/* ── LEFT PANEL ── */}
-        <div className="flex-1 flex flex-col justify-between py-12 px-14 bg-white min-w-0">
+        <div className="flex-1 flex flex-col justify-center py-6 px-14 bg-white min-w-0 overflow-hidden">
           {/* Logo */}
-          <div>
-            <Link href="/" className="mb-10 inline-block -ml-[30px]">
-              <img src="/assets/UnifyRH.png" alt="UnifyRH Logo" className="h-[40px] w-auto object-contain object-left" />
+          <div className="mb-6 mt-10">
+            <Link href="/" className=" -ml-7 inline-block">
+              <img src="/assets/UnifyHR.png" alt="UnifyHR Logo" className="h-[140px] w-auto object-contain object-left" />
             </Link>
 
             {/* Page content (form, etc.) injected here */}
@@ -78,12 +78,12 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         </div>
 
         {/* ── RIGHT PANEL ── */}
-        <div className="w-[48%] flex items-end p-14 relative overflow-hidden bg-[length:cover] bg-center bg-no-repeat" style={{ backgroundImage: "linear-gradient(135deg, rgba(15, 10, 30, 0.80) 0%, rgba(30, 15, 60, 0.70) 100%), url('https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&q=80')" }}>
+        <div className="w-[48%] flex flex-col justify-center pt-32 p-14 relative overflow-hidden bg-[length:cover] bg-center bg-no-repeat" style={{ backgroundImage: "linear-gradient(135deg, rgba(15, 10, 30, 0.80) 0%, rgba(30, 15, 60, 0.70) 100%), url('https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&q=80')" }}>
           <div className="absolute bottom-12 left-8 w-[100px] h-[90px] border-[2.5px] border-[rgba(167,139,250,0.8)] border-t-0 border-r-0 rounded-[50%_50%_50%_50%/60%_60%_40%_40%] -rotate-10" />
           <div className="text-white max-w-[420px]">
             <div className="yu-sparkle text-[22px] tracking-[4px] mb-[18px] opacity-90">✦ ✦✦</div>
-            <h2 className="text-[32px] font-bold leading-[1.25] mb-3.5">Streamline your HR management</h2>
-            <p className="text-[15px] opacity-80 leading-[1.7] mb-7">
+            <h2 className="text-[38px] font-bold leading-[1.2] mb-4">Streamline your HR management</h2>
+            <p className="text-[18px] opacity-80 leading-[1.6] mb-8">
               A powerful platform to manage employees, leaves, recruitment and
               AI-powered attendance — all in one place.
             </p>

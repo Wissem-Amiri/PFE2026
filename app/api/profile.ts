@@ -13,7 +13,7 @@ export async function getProfileByEmail(email: string) {
     `)
     .eq('email', email)
     .maybeSingle()
-  
+
   return { data: data as FullProfile | null, error }
 }
 
@@ -24,7 +24,7 @@ export async function checkEmailExists(email: string) {
     .select('id')
     .eq('email', email)
     .maybeSingle()
-  
+
   return { exists: !!data, error }
 }
 
@@ -40,7 +40,7 @@ export async function getProfile(userId: string) {
     `)
     .eq('id', userId)
     .single()
-  
+
   return { data: data as FullProfile | null, error }
 }
 
@@ -57,7 +57,7 @@ export async function updateProfile(userId: string, updates: Partial<BaseUser> &
       .from('users')
       .update(baseUpdates)
       .eq('id', userId)
-    
+
     if (baseError) return { data: null, error: baseError }
   }
 
@@ -66,7 +66,7 @@ export async function updateProfile(userId: string, updates: Partial<BaseUser> &
     const { error: pError } = await (supabase as any).from('candidates').upsert({ id: userId, ...candidate })
     if (pError) return { data: null, error: pError }
   }
-  
+
   if (employee) {
     const { error: eError } = await (supabase as any).from('employee').upsert({ id: userId, ...employee })
     if (eError) return { data: null, error: eError }
@@ -90,7 +90,7 @@ export async function getAllUsers() {
       employee(id, department, position, hire_date, vacation_balance, monthly_rate)
     `)
     .order('created_at', { ascending: false })
-  
+
   return { data: data as FullProfile[], error }
 }
 
@@ -155,7 +155,7 @@ export async function updateUserStatus(
 ) {
   // 1. Update status in Base table
   const baseUpdates: Partial<BaseUser> = { status }
-  
+
   if (status === 'approved') {
     baseUpdates.role = 'employee'
   }
@@ -169,20 +169,27 @@ export async function updateUserStatus(
 
   // 2. If approved, create/update Employee record
   if (status === 'approved') {
+    // Check if employee already exists to preserve balance and hire date
+    const { data: existingEmployee } = await (supabase as any)
+      .from('employee')
+      .select('vacation_balance, hire_date')
+      .eq('id', userId)
+      .single()
+
     const employeeData: Partial<Employee> = {
       id: userId,
-      hire_date: hiringDetails?.hire_date || new Date().toISOString().split('T')[0],
+      hire_date: existingEmployee?.hire_date || hiringDetails?.hire_date || new Date().toISOString().split('T')[0],
       department: hiringDetails?.department || 'General',
       position: hiringDetails?.position || 'Employee',
       monthly_rate: Number(hiringDetails?.monthly_rate) || 0,
-      vacation_balance: 0, // Will be accumulated monthly by the cron job (with prorata)
-      candidate_id: hiringDetails?.candidate_id || null // link back to its candidate self if exists
+      vacation_balance: existingEmployee?.vacation_balance ?? 0,
+      candidate_id: hiringDetails?.candidate_id || null
     }
 
     const { error: empError } = await (supabase as any)
       .from('employee')
       .upsert(employeeData)
-    
+
     if (empError) return { data: null, error: empError }
 
     // 3. Congratulatory notification → new employee
@@ -227,7 +234,7 @@ export async function deleteUser(userId: string) {
     .from('users')
     .delete()
     .eq('id', userId)
-  
+
   return { error }
 }
 
@@ -237,14 +244,14 @@ export async function deleteUsers(userIds: string[]) {
     .from('users')
     .delete({ count: 'exact' })
     .in('id', userIds)
-  
+
   return { error, count: count ?? 0 }
 }
 
 /** Upload user document to 'documents' bucket */
 export async function uploadDocument(file: File) {
-  const fileExt = file.name.split('.').pop()
-  const fileName = `${Math.random().toString(36).substring(2, 15)}-${Date.now()}.${fileExt}`
+  const cleanName = file.name.replace(/[^\w\s.-]/g, '').replace(/\s+/g, '_');
+  const fileName = `${Date.now()}-${cleanName}`
   const filePath = `${fileName}`
 
   const { error: uploadError } = await supabase.storage
@@ -335,7 +342,7 @@ export async function createEmployeeAccount(data: {
   monthly_rate: number
 }) {
   console.log('🚀 Calling invitation API for:', data.email)
-  
+
   try {
     const response = await fetch('/api/invite-employee', {
       method: 'POST',

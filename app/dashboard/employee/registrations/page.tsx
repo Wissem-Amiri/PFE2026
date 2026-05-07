@@ -52,7 +52,7 @@ export default function EmployeeRegistrationsPage() {
 
   const handleApplyClick = (jobId: string) => {
     if (!user) return messageApi.error("You must be logged in to apply.")
-    router.push(`/dashboard/employee/profile?applyTo=${jobId}`)
+    router.push(`/dashboard/employee/apply/${jobId}`)
   }
 
   // Pre-fetch all categories once at start for the filter chips
@@ -78,8 +78,8 @@ export default function EmployeeRegistrationsPage() {
       {contextHolder}
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-[#101828]">Registrations</h1>
-        <p className="text-[#475467] text-sm mt-1">Discover internal job openings and apply for new registrations.</p>
+        <h1 className="text-2xl font-bold text-[#101828]">Job Offers</h1>
+        <p className="text-[#475467] text-sm mt-1">Discover internal job openings and apply for new opportunities.</p>
       </div>
 
       {/* Search bar */}
@@ -115,8 +115,8 @@ export default function EmployeeRegistrationsPage() {
         <div className="text-center py-24 text-slate-400 font-medium">Loading opportunities...</div>
       ) : filteredJobs.length === 0 ? (
         <div className="bg-white rounded-2xl border border-[#E4E7EC] p-[80px] text-center shadow-sm">
-          <h2 className="text-xl font-bold text-[#101828] mb-2">No new registrations available</h2>
-          <p className="text-[#475467] text-sm max-w-xs mx-auto">All current job openings have been processed or there are no new positions available for registration.</p>
+          <h2 className="text-xl font-bold text-[#101828] mb-2">No new job offers available</h2>
+          <p className="text-[#475467] text-sm max-w-xs mx-auto">All current job openings have been processed or there are no new positions available at the moment.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -150,7 +150,7 @@ export default function EmployeeRegistrationsPage() {
                       onClick={() => handleApplyClick(job.id)}
                       className="w-full py-2.5 rounded-xl border border-[#7C3AED] bg-[#7C3AED] text-white font-bold text-[14px] hover:bg-[#6D28D9] transition-all shadow-sm shadow-purple-100 cursor-pointer"
                     >
-                      REGISTER NOW
+                      APPLY NOW
                     </button>
                   )}
                 </div>

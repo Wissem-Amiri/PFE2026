@@ -40,7 +40,7 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
       {/* ── MOBILE HEADER ── */}
       <div className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-[#eaecf0] sticky top-0 z-40">
         <Link href="/dashboard/employee" className="block no-underline">
-          <Image src="/assets/UnifyRH.png" alt="UnifyRH Logo" width={83} height={32} className="h-[32px] w-auto" />
+          <img src="/assets/UnifyHR.png" alt="UnifyHR Logo" className="h-[80px] w-auto object-contain -ml-4" />
         </Link>
         <button 
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -65,12 +65,10 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
         <div className="pt-[32px] pb-[24px] pl-[16px]">
           <Link href="/dashboard/employee" className="block no-underline">
             <div className="flex items-center">
-              <Image
-                src="/assets/UnifyRH.png"
-                alt="UnifyRH Logo"
-                width={83}
-                height={32}
-                className="h-[32px] w-auto"
+              <img
+                src="/assets/UnifyHR.png"
+                alt="UnifyHR Logo"
+                className="h-[130px] w-auto object-contain -ml-7 -mt-[42px] -mb-12 "
               />
             </div>
           </Link>
@@ -137,8 +135,8 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
                 )}
               </div>
               <div className="overflow-hidden">
-                <h5 className="text-[14px] font-bold text-[#101828] mb-0 truncate">{profile?.user_name ?? 'Farouck'}</h5>
-                <p className="text-[12px] text-[#667085] mb-0 truncate font-medium" title={user?.email}>{user?.email || 'farouck@gmail.com'}</p>
+                <h5 className="text-[14px] font-bold text-[#101828] mb-0 truncate">{profile?.user_name ?? 'User'}</h5>
+                <p className="text-[12px] text-[#667085] mb-0 truncate font-medium" title={user?.email}>{user?.email || 'Email'}</p>
               </div>
             </div>
             <button
@@ -155,8 +153,10 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
       {/* ── MAIN CONTENT ── */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-white">
         {/* Page Content */}
-        <div className="flex-1 overflow-y-auto pt-8">
-          {children}
+        <div className="flex-1 overflow-y-auto pt-8 px-8 pb-12">
+          <div className="max-w-[1400px] mx-auto">
+            {children}
+          </div>
         </div>
       </main>
     </div>

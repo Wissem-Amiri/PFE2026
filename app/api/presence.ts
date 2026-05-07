@@ -29,6 +29,7 @@ export async function processImagePresence(file: File): Promise<PresenceResponse
     headers: {
       'Content-Type': 'multipart/form-data',
     },
+    timeout: 300000, // 300 seconds timeout
   });
 
   return response.data;
@@ -45,6 +46,7 @@ export async function processVideoPresence(file: File): Promise<PresenceResponse
     headers: {
       'Content-Type': 'multipart/form-data',
     },
+    timeout: 300000, // 300 seconds timeout
   });
 
   return response.data;

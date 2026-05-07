@@ -30,7 +30,7 @@ import {
 } from 'react-icons/hi'
 import { BiExport } from 'react-icons/bi'
 import { exportTableToPDF } from '@/app/api/export'
-import { getAllUsers, updateUserStatus as updateGlobalUserStatus, exportToCSV, downloadCSV } from '@/app/api/profile'
+import { getAllUsers, updateUserStatus as updateGlobalUserStatus, exportToCSV, downloadCSV, getProfile } from '@/app/api/profile'
 import { getAllApplicationsDetailed, updateApplicationStatus, archiveApplications, restoreApplications, deleteAllOtherApplications, hardDeleteApplications } from '@/app/api/applications'
 import { getAllJobs, decrementJobSeats } from '@/app/api/job'
 import { HiOutlineArchive, HiOutlineRefresh } from 'react-icons/hi'
@@ -64,10 +64,16 @@ export default function RegistrationsPage() {
   const [appToApprove, setAppToApprove] = useState<any | null>(null)
 
   const [isHiringModal, setIsHiringModal] = useState(false)
-  const [hiringData, setHiringData] = useState({
+  const [hiringData, setHiringData] = useState<{
+    hire_date: any;
+    department: string | undefined;
+    monthly_rate: string | number | undefined;
+    vacation_balance?: number;
+  }>({
     hire_date: null,
     department: undefined,
-    monthly_rate: undefined
+    monthly_rate: undefined,
+    vacation_balance: 0
   })
 
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false)
@@ -167,7 +173,7 @@ export default function RegistrationsPage() {
       return
     }
 
-    // @ts-expect-error dayjs formatting
+    
     const hire_date = hiringData.hire_date.format('YYYY-MM-DD')
 
     await handleAction(appToApprove, 'accepted', {
@@ -403,8 +409,25 @@ export default function RegistrationsPage() {
                           {app.status === 'pending' ? (
                             <>
                               <button
-                                onClick={() => {
+                                onClick={async () => {
                                   setAppToApprove(app)
+                                  if (app.candidate?.user?.role === 'employee') {
+                                    const { data: prof } = await getProfile(app.candidate_id)
+                                    if (prof?.employee) {
+                                      setHiringData({
+                                        hire_date: dayjs(prof.employee.hire_date) as any,
+                                        department: prof.employee.department as any,
+                                        monthly_rate: prof.employee.monthly_rate as any,
+                                        vacation_balance: prof.employee.vacation_balance || 0
+                                      })
+                                    }
+                                  } else {
+                                    setHiringData({
+                                      hire_date: null,
+                                      department: undefined,
+                                      monthly_rate: undefined
+                                    })
+                                  }
                                   setIsModalVisible(true)
                                 }}
                                 className="w-[32px] h-[32px] rounded-[6px] text-emerald-600 hover:bg-emerald-50 transition-all font-bold flex items-center justify-center"
@@ -491,45 +514,33 @@ export default function RegistrationsPage() {
         </div>
       </div>
 
-      {/* Confirmation Modals (Styled for Fidelity) */}
-      <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        
-        .hiring-modal .ant-modal-content {
-          border-radius: 20px !important;
-          padding: 0 !important;
-          overflow: hidden;
-        }
-        .hiring-modal .ant-modal-header {
-          border-bottom: 1px solid #eaecf0;
-          margin-bottom: 0;
-          padding: 32px 32px 16px 32px;
-        }
-        .hiring-modal .ant-modal-body {
-          padding: 32px;
-        }
-        .hiring-modal input, .hiring-modal .ant-select-selector, .hiring-modal .ant-picker {
-          height: 44px !important;
-          border-radius: 8px !important;
-          border-color: #d0d5dd !important;
-        }
-      `}</style>
-
-      {/* Re-use existing modal logic but keep them visually consistent with the new style */}
+      {/* Confirmation Modal */}
       {isModalVisible && appToApprove && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[1000] p-4">
-          <div className="bg-white rounded-[20px] p-[40px] w-full max-w-[600px] shadow-2xl animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[1000] p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-[24px] p-10 w-full max-w-[500px] shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="flex flex-col items-center text-center">
-              <div className="w-[64px] h-[64px] rounded-[14px] bg-[#ecfdf5] border border-[#abefc6] flex items-center justify-center mb-6">
-                <HiOutlineCheck className="text-[#10b981] text-[32px]" />
+              <div className="w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center mb-6">
+                <HiOutlineCheck className="text-emerald-500 text-3xl" />
               </div>
-              <h3 className="text-[24px] font-bold text-[#101828] mb-3">Accept {appToApprove.candidate?.user?.user_name}?</h3>
-              <p className="text-[16px] text-[#667085] leading-relaxed mb-8 max-w-[440px]">
-                Confirm accepting this registration for the role of <span className="font-bold text-[#101828]">{appToApprove.job?.title}</span>.
+              
+              <h3 className="text-2xl font-bold text-slate-900 mb-2">Accept Candidate?</h3>
+              <p className="text-slate-500 mb-8 leading-relaxed">
+                You are about to accept <span className="font-semibold text-slate-900">{appToApprove.candidate?.user?.user_name}</span> for the position of <span className="font-semibold text-slate-900">{appToApprove.job?.title}</span>.
               </p>
-              <div className="flex gap-4 w-full">
-                <button onClick={() => setIsModalVisible(false)} className="flex-1 h-[48px] border border-[#d0d5dd] rounded-[10px] font-bold text-[#344054] hover:bg-gray-50 transition-all">Cancel</button>
-                <button onClick={() => { setIsModalVisible(false); setIsHiringModal(true); }} className="flex-1 h-[48px] bg-[#7f56d9] text-white rounded-[10px] font-bold hover:bg-[#6941c6] transition-all shadow-md shadow-[#7f56d9]/20">Confirm Approve</button>
+
+              <div className="flex gap-3 w-full">
+                <button 
+                  onClick={() => setIsModalVisible(false)} 
+                  className="flex-1 h-12 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50 transition-all"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={() => { setIsModalVisible(false); setIsHiringModal(true); }} 
+                  className="flex-1 h-12 bg-[#7f56d9] text-white rounded-xl font-bold hover:bg-[#6941c6] transition-all shadow-lg shadow-[#7f56d9]/20"
+                >
+                  Confirm
+                </button>
               </div>
             </div>
           </div>
@@ -556,12 +567,16 @@ export default function RegistrationsPage() {
         </div>
       )}
 
-      {/* Hiring Details Modal (Ant Design Overridden) */}
+      {/* Hiring Details Modal */}
       <Modal
         title={
-          <div className="pt-2">
-            <h2 className="text-[22px] font-bold text-[#101828] mb-1">Contract Information</h2>
-            <p className="text-[#64748b] text-[14px] font-normal">Complete the hiring details to finalize the process.</p>
+          <div className="flex items-center gap-2">
+            <h2 className="text-[22px] font-bold text-[#101828]">Contract Information</h2>
+            {appToApprove?.candidate?.user?.role === 'employee' && (
+              <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 text-[12px] font-medium border border-blue-100">
+                Internal Employee
+              </span>
+            )}
           </div>
         }
         open={isHiringModal}
@@ -569,47 +584,95 @@ export default function RegistrationsPage() {
         footer={null}
         centered
         width={560}
-        className="hiring-modal"
+        styles={{
+          mask: { backdropFilter: 'blur(4px)' },
+          content: { borderRadius: '20px', padding: '32px' },
+          header: { borderBottom: '1px solid #eaecf0', paddingBottom: '16px', marginBottom: '24px' }
+        }}
       >
         <div className="space-y-6 pt-2">
-          <div className="space-y-2">
-            <label className="text-[14px] font-semibold text-[#344054]">Hiring Date <span className="text-red-500">*</span></label>
-            <DatePicker
-              className="w-full"
-              placeholder="Select date..."
-              value={hiringData.hire_date}
-              onChange={(date) => setHiringData({ ...hiringData, hire_date: date as any })}
-            />
-          </div>
+          {appToApprove?.candidate?.user?.role === 'employee' ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-[#f9fafb] rounded-xl border border-[#eaecf0]">
+                  <p className="text-[12px] font-medium text-[#667085] mb-1">Initial Hire Date</p>
+                  <p className="text-[16px] font-bold text-[#101828]">
+                    {hiringData.hire_date ? hiringData.hire_date.format('DD/MM/YYYY') : '—'}
+                  </p>
+                </div>
+                <div className="p-4 bg-[#f9fafb] rounded-xl border border-[#eaecf0]">
+                  <p className="text-[12px] font-medium text-[#667085] mb-1">Vacation Balance</p>
+                  <p className="text-[16px] font-bold text-[#101828]">
+                    {hiringData.vacation_balance || 0} days
+                  </p>
+                </div>
+              </div>
 
-          <div className="space-y-2">
-            <label className="text-[14px] font-semibold text-[#344054]">Department <span className="text-red-500">*</span></label>
-            <Select
-              className="w-full"
-              placeholder="Select department..."
-              value={hiringData.department}
-              onChange={(val) => setHiringData({ ...hiringData, department: val })}
-              options={[
-                { value: 'IT', label: 'IT & Development' },
-                { value: 'HR', label: 'Human Resources' },
-                { value: 'Finance', label: 'Finance' },
-                { value: 'Marketing', label: 'Marketing' },
-                { value: 'Sales', label: 'Sales' },
-                { value: 'Operations', label: 'Operations' },
-                { value: 'Business', label: 'Business Development' },
-              ]}
-            />
-          </div>
+              <div className="space-y-2">
+                <label className="text-[14px] font-semibold text-[#344054]">New Department <span className="text-red-500">*</span></label>
+                <Select
+                  size="large"
+                  className="w-full"
+                  placeholder="Select new department..."
+                  value={hiringData.department}
+                  onChange={(val) => setHiringData({ ...hiringData, department: val })}
+                  options={[
+                    { value: 'IT', label: 'IT & Development' },
+                    { value: 'HR', label: 'Human Resources' },
+                    { value: 'Finance', label: 'Finance' },
+                    { value: 'Marketing', label: 'Marketing' },
+                    { value: 'Sales', label: 'Sales' },
+                    { value: 'Operations', label: 'Operations' },
+                    { value: 'Business', label: 'Business Development' },
+                  ]}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-[14px] font-semibold text-[#344054]">Hiring Date <span className="text-red-500">*</span></label>
+                <DatePicker
+                  size="large"
+                  className="w-full"
+                  placeholder="Select date..."
+                  value={hiringData.hire_date}
+                  onChange={(date) => setHiringData({ ...hiringData, hire_date: date as any })}
+                />
+              </div>
 
-          <div className="space-y-2">
-            <label className="text-[14px] font-semibold text-[#344054]">Vacation Balance Accrual (days/month) <span className="text-red-500">*</span></label>
-            <Input
-              className="w-full"
-              placeholder="Ex: 2.1"
-              value={hiringData.monthly_rate}
-              onChange={(e) => setHiringData({ ...hiringData, monthly_rate: e.target.value.replace(',', '.') as any })}
-            />
-          </div>
+              <div className="space-y-2">
+                <label className="text-[14px] font-semibold text-[#344054]">Department <span className="text-red-500">*</span></label>
+                <Select
+                  size="large"
+                  className="w-full"
+                  placeholder="Select department..."
+                  value={hiringData.department}
+                  onChange={(val) => setHiringData({ ...hiringData, department: val })}
+                  options={[
+                    { value: 'IT', label: 'IT & Development' },
+                    { value: 'HR', label: 'Human Resources' },
+                    { value: 'Finance', label: 'Finance' },
+                    { value: 'Marketing', label: 'Marketing' },
+                    { value: 'Sales', label: 'Sales' },
+                    { value: 'Operations', label: 'Operations' },
+                    { value: 'Business', label: 'Business Development' },
+                  ]}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[14px] font-semibold text-[#344054]">Rate per month (Days/month) <span className="text-red-500">*</span></label>
+                <Input
+                  size="large"
+                  className="w-full"
+                  placeholder="Ex: 1.5"
+                  value={hiringData.monthly_rate}
+                  onChange={(e) => setHiringData({ ...hiringData, monthly_rate: e.target.value.replace(',', '.') as any })}
+                />
+              </div>
+            </div>
+          )}
 
           <div className="flex justify-end gap-3 pt-8">
             <button
@@ -620,9 +683,9 @@ export default function RegistrationsPage() {
             </button>
             <button
               onClick={handleHiringDone}
-              className="px-8 h-[44px] rounded-[10px] bg-[#7f56d9] text-white font-bold hover:bg-[#6941c6] shadow-md shadow-[#7f56d9]/20 transition-all font-bold"
+              className="px-8 h-[44px] rounded-[10px] bg-[#7f56d9] text-white font-bold hover:bg-[#6941c6] shadow-md shadow-[#7f56d9]/20 transition-all"
             >
-              Confirm & Finalize
+              Confirm
             </button>
           </div>
         </div>

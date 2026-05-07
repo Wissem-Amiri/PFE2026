@@ -64,7 +64,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       
       {/* ── MOBILE HEADER ── */}
       <div className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-[#eaecf0] sticky top-0 z-40">
-        <img src="/assets/UnifyRH.png" alt="UnifyRH Logo" className="h-[40px] w-auto object-contain" />
+        <img src="/assets/UnifyHR.png" alt="UnifyHR Logo" className="h-[40px] w-auto object-contain" />
         <button 
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           className="p-2 text-gray-500 rounded-lg hover:bg-gray-100"
@@ -85,12 +85,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <aside className={`fixed inset-y-0 left-0 z-50 w-[243px] min-w-[243px] bg-[#fcfcfd] border-r border-[#eaecf0] flex flex-col h-screen transform transition-transform duration-300 ease-in-out lg:sticky lg:top-0 lg:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
 
         {/* Logo */}
-        <div className="pt-[10px] pb-[10px] px-[10px]">
-          <img src="/assets/UnifyRH.png" alt="UnifyRH Logo" className="h-[110px] w-auto object-contain" />
+        <div className="pt-[32px] pb-[10px] px-[24px]">
+          <img src="/assets/UnifyHR.png" alt="UnifyHR Logo" className="h-[130px] w-auto object-contain -ml-7 -mt-[42px] -mb-[40px]" />
         </div>
 
         {/* Nav Items */}
-        <nav className="flex-1 px-[16px] py-[8px] flex flex-col gap-[4px] overflow-y-auto">
+        <nav className="flex-1 px-[16px] pt-[40px] flex flex-col gap-[4px] overflow-y-auto">
           {navItems.map(item => {
             const isActive = pathname === item.href
             return (

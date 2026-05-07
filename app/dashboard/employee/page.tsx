@@ -368,8 +368,8 @@ export default function EmployeeDashboardPage() {
             </div>
 
             <div className="text-center mb-8">
-              <h2 className="text-[24px] font-bold text-[#101828] mb-1">{profile?.user_name || 'Farouck Abichou'}</h2>
-              <p className="text-[14px] text-[#667085] font-semibold">{profile?.employee?.position || 'Software Developer'}</p>
+              <h2 className="text-[24px] font-bold text-[#101828] mb-1">{profile?.user_name || 'Employee'}</h2>
+              <p className="text-[14px] text-[#667085] font-semibold">{profile?.employee?.position || 'Team Member'}</p>
             </div>
 
             <div className="flex w-full gap-3">

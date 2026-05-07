@@ -221,7 +221,7 @@ function AdminSettingsContent() {
               name="user_name"
               rules={[{ required: true, message: 'Please enter your name' }]}
             >
-              <Input prefix={<UserOutlined className="text-[#98a2b3] mr-2" />} placeholder="e.g. Farouk Abichou" className="h-[44px] rounded-[8px]" />
+              <Input prefix={<UserOutlined className="text-[#98a2b3] mr-2" />} placeholder="Your full name" className="h-[44px] rounded-[8px]" />
             </Form.Item>
 
             <Form.Item

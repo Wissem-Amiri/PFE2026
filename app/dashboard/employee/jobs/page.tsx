@@ -41,7 +41,7 @@ export default function EmployeeJobsPage() {
   const handleApplyClick = (jobId: string) => {
     if (!user) return messageApi.error("You must be logged in to apply.")
     // For employees, we stay in the employee dashboard
-    router.push(`/dashboard/employee/profile?applyTo=${jobId}`)
+    router.push(`/dashboard/employee/apply/${jobId}`)
   }
 
   const categories = ['All Positions', ...Array.from(new Set(jobs.map(j => j.category)))]
