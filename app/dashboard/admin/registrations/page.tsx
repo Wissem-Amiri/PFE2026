@@ -191,22 +191,23 @@ export default function RegistrationsPage() {
       return
     }
 
-    const headers = ['Candidate', 'Email', 'Position', 'Submission Date', 'Status']
+    const headers = ['CANDIDATE NAME', 'EMAIL', 'PHONE', 'POSITION', 'SUBMISSION DATE', 'STATUS']
     const rows = applications.map(app => [
-      app.candidate?.user?.user_name || 'Unknown',
-      app.candidate?.user?.email || '—',
-      app.job?.title || 'Candidate',
-      dayjs(app.applied_at).format('MM/DD/YYYY'),
-      app.status || '-'
+      app.candidate?.user?.user_name || 'Anonymous',
+      app.candidate?.user?.email || 'N/A',
+      app.candidate?.user?.phone || 'N/A',
+      app.job?.title || 'General Candidate',
+      dayjs(app.applied_at).format('YYYY-MM-DD HH:mm'),
+      app.status?.toUpperCase() || 'PENDING'
     ])
 
-    exportTableToPDF(
-      'Registration Report',
-      headers,
-      rows,
-      'Registrations_Report'
-    )
-    message.success('PDF Export successful')
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    ].join('\n')
+
+    downloadCSV(csvContent, `registrations_report_${dayjs().format('YYYY-MM-DD')}.csv`)
+    message.success('CSV Export successful')
   }
 
   // Server-side filtered data is directly available in 'applications'

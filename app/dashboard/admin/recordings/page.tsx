@@ -212,14 +212,14 @@ export default function RecordingsPage() {
   }, [search, activeTab])
 
   const handleExport = () => {
-    const headers = ['File Name', 'Size', 'Date Uploaded', 'Last Updated', 'Uploaded By', 'Uploader Email']
+    const headers = ['FILE NAME', 'SIZE (MB)', 'DATE UPLOADED', 'LAST UPDATED', 'UPLOADED BY', 'EMAIL']
     const rows = filteredFiles.map(f => [
-      f.name || 'Unnamed',
-      f.size || '0 MB',
-      dayjs(f.created_at).format('YYYY-MM-DD'),
-      dayjs(f.updated_at).format('YYYY-MM-DD'),
-      f.uploader?.user_name || 'Admin',
-      f.uploader?.email || '-'
+      f.name || 'Unnamed Recording',
+      f.size ? f.size.replace(' MB', '') : '0',
+      dayjs(f.created_at).format('YYYY-MM-DD HH:mm'),
+      dayjs(f.updated_at).format('YYYY-MM-DD HH:mm'),
+      f.uploader?.user_name || 'System Admin',
+      f.uploader?.email || 'N/A'
     ])
 
     const csvContent = [
@@ -227,7 +227,7 @@ export default function RecordingsPage() {
       ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
     ].join('\n')
 
-    downloadCSV(csvContent, `recordings_export_${dayjs().format('YYYY-MM-DD')}.csv`)
+    downloadCSV(csvContent, `recordings_report_${dayjs().format('YYYY-MM-DD')}.csv`)
   }
 
   return (
@@ -485,15 +485,15 @@ export default function RecordingsPage() {
               {/* Export CSV Button for Modal */}
               <Button 
                 onClick={() => {
-                  const headers = ['ID', 'User', 'Email', 'Department', 'Status', 'Hours Spent', 'Extra Hours']
+                  const headers = ['DETECTION ID', 'EMPLOYEE NAME', 'EMAIL', 'DEPARTMENT', 'PRESENCE STATUS', 'HOURS SPENT', 'EXTRA HOURS']
                   const rows = (analysisResults?.detections || []).map((det, idx) => [
-                    det.profile?.id?.slice(0, 5) || (50000 + idx),
+                    det.profile?.id?.slice(0, 8).toUpperCase() || `DET-${50000 + idx}`,
                     det.profile?.user_name || det.name,
                     det.email,
-                    det.profile?.department || 'Marketing',
-                    det.attendance ? 'Present' : 'Absent',
-                    '8 hour',
-                    '0 hour'
+                    det.profile?.department || 'Human Resources',
+                    det.attendance ? 'PRESENT' : 'ABSENT',
+                    '8.0',
+                    '0.0'
                   ])
                   const csvContent = [
                     headers.join(','),

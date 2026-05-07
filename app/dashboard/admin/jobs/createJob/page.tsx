@@ -8,6 +8,7 @@ import { useForm, Controller } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
 import { createJob, uploadJobPicture } from '@/app/api/job'
+import { downloadCSV } from '@/app/api/export'
 import dayjs from 'dayjs'
 
 // --- YUP SCHEMA ---
@@ -99,6 +100,28 @@ export default function CreateJobPage() {
     }
   }
 
+  const handleExport = () => {
+    const data = watch()
+    const headers = ['FIELD', 'VALUE']
+    const rows = [
+      ['TITLE', data.title || 'N/A'],
+      ['CATEGORY', data.category || 'N/A'],
+      ['DESCRIPTION', data.description || 'N/A'],
+      ['REQUIREMENTS', data.requirements || 'N/A'],
+      ['DEADLINE', data.deadline ? dayjs(data.deadline as any).format('YYYY-MM-DD') : 'N/A'],
+      ['OPEN SEATS', data.open_seats?.toString() || '0'],
+      ['STATUS', data.is_open ? 'OPEN' : 'CLOSED']
+    ]
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    ].join('\n')
+
+    downloadCSV(csvContent, `job_draft_${dayjs().format('YYYY-MM-DD')}.csv`)
+    messageApi.success('Draft exported as CSV')
+  }
+
   return (
     <div className="flex-1 p-[32px] h-full overflow-y-auto bg-white font-['Inter',sans-serif]">
       {contextHolder}
@@ -118,6 +141,7 @@ export default function CreateJobPage() {
             </Tooltip>
             <button 
               type="button"
+              onClick={handleExport}
               className="flex items-center gap-[8px] px-[16px] py-[10px] rounded-[8px] border border-[#D0D5DD] bg-white text-[#344054] font-medium text-[14px] cursor-pointer hover:bg-gray-50 transition-colors shadow-sm"
             >
               <DownloadOutlined className="text-[20px]" />

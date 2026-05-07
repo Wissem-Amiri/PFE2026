@@ -24,7 +24,7 @@ import { useLeaves, queryKeys } from '@/lib/hooks'
 
 import { useQueryClient } from '@tanstack/react-query'
 
-import { exportTableToPDF } from '@/app/api/export'
+import { downloadCSV } from '@/app/api/export'
 
 export default function AdminLeavesPage() {
   const queryClient = useQueryClient()
@@ -107,27 +107,27 @@ export default function AdminLeavesPage() {
       return
     }
 
-    const headers = ['Employee', 'Type', 'Start', 'End', 'Days', 'Status', 'Request Date']
+    const headers = ['EMPLOYEE NAME', 'LEAVE TYPE', 'START DATE', 'END DATE', 'TOTAL DAYS', 'STATUS', 'REQUESTED ON']
     const rows = leaves.map(l => {
       const days = dayjs(l.end_date).diff(dayjs(l.start_date), 'day') + 1
       return [
-        l.user?.user_name || 'Unknown',
-        l.type || '-',
-        dayjs(l.start_date).format('MM/DD/YYYY'),
-        dayjs(l.end_date).format('MM/DD/YYYY'),
+        l.user?.user_name || 'Anonymous',
+        l.type?.toUpperCase() || '-',
+        dayjs(l.start_date).format('YYYY-MM-DD'),
+        dayjs(l.end_date).format('YYYY-MM-DD'),
         `${days}`,
-        l.status || '-',
-        dayjs(l.created_at).format('MM/DD/YYYY')
+        l.status?.toUpperCase() || '-',
+        dayjs(l.created_at).format('YYYY-MM-DD HH:mm')
       ]
     })
 
-    exportTableToPDF(
-      'Leave Requests Report',
-      headers,
-      rows,
-      'Leaves_Report'
-    )
-    messageApi.success('PDF Export successful')
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    ].join('\n')
+
+    downloadCSV(csvContent, `leaves_report_${dayjs().format('YYYY-MM-DD')}.csv`)
+    messageApi.success('CSV Export successful')
   }
 
   const showDetails = (record: any) => {
