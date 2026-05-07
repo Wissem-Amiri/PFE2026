@@ -477,9 +477,35 @@ export default function RecordingsPage() {
         <div className="bg-white flex flex-col h-[800px]">
           {/* Header Bar */}
           <div className="border-b border-[#E8ECF5] flex items-center justify-between p-[12px] shrink-0">
-            <div className="flex gap-[8px] items-center px-[10px] py-[4px] rounded-[4px] bg-[#F9F5FF] text-[#6941C6]">
-              <HiOutlineSparkles className="size-[16px]" />
-              <span className="text-[14px] font-medium tracking-[0.4px]">Featured</span>
+            <div className="flex items-center gap-4">
+              <div className="flex gap-[8px] items-center px-[10px] py-[4px] rounded-[4px] bg-[#F9F5FF] text-[#6941C6]">
+                <HiOutlineSparkles className="size-[16px]" />
+                <span className="text-[14px] font-medium tracking-[0.4px]">Featured</span>
+              </div>
+              {/* Export CSV Button for Modal */}
+              <Button 
+                onClick={() => {
+                  const headers = ['ID', 'User', 'Email', 'Department', 'Status', 'Hours Spent', 'Extra Hours']
+                  const rows = (analysisResults?.detections || []).map((det, idx) => [
+                    det.profile?.id?.slice(0, 5) || (50000 + idx),
+                    det.profile?.user_name || det.name,
+                    det.email,
+                    det.profile?.department || 'Marketing',
+                    det.attendance ? 'Present' : 'Absent',
+                    '8 hour',
+                    '0 hour'
+                  ])
+                  const csvContent = [
+                    headers.join(','),
+                    ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+                  ].join('\n')
+                  downloadCSV(csvContent, `analysis_report_${dayjs().format('YYYY-MM-DD')}.csv`)
+                }}
+                className="h-[32px] px-[12px] rounded-[6px] border-[#D0D5DD] shadow-sm flex items-center gap-[8px] font-semibold text-[#344054] text-[12px]"
+              >
+                <HiOutlineDownload className="w-[16px] h-[16px]" />
+                Download CSV
+              </Button>
             </div>
             
             <div className="flex gap-[22px] items-center">
