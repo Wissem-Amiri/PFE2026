@@ -3,18 +3,20 @@ export async function extractCVData(file: File) {
   formData.append('file', file)
   
   try {
-    // Assuming the endpoint is /extract or /upload. Adjust if necessary.
-    const res = await fetch('https://cv-ocr-2k25.onrender.com/extract', {
+    const res = await fetch('http://localhost:5000/api/resume/parse', {
       method: 'POST',
       body: formData,
     })
     
     if (!res.ok) {
-      console.error('OCR API Error:', res.statusText)
+      const errorText = await res.text()
+      console.error('OCR API Error:', res.status, errorText)
       return null
     }
     
-    return await res.json()
+    const data = await res.json()
+    console.log('Parsed CV Data:', data)
+    return data
   } catch (error) {
     console.error('Error connecting to OCR API:', error)
     return null

@@ -12,7 +12,6 @@ import {
   HiOutlineCheckCircle,
   HiOutlineDocumentText,
   HiOutlineGlobeAlt,
-  HiOutlineClock,
   HiOutlineBriefcase,
   HiOutlinePlus,
   HiOutlinePencil
@@ -22,6 +21,7 @@ import { getProfile, updateProfile, uploadAvatar, uploadDocument } from '@/app/a
 import { applyToJob } from '@/app/api/applications'
 import { getJobById } from '@/app/api/job'
 import { countries } from '@/app/api/countries'
+import { extractCVData } from '@/app/api/cvOcr'
 import { useForm, Controller } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
@@ -35,7 +35,6 @@ const schema = yup.object().shape({
   bio: yup.string().required('Bio is required').max(400, 'Bio cannot exceed 400 characters'),
   position: yup.string().required('Role is required'),
   country: yup.string().required('Please select your country'),
-  timezone: yup.string().required('Please select your timezone'),
 })
 
 interface FormValues {
@@ -43,43 +42,17 @@ interface FormValues {
   bio: string
   position: string
   country: string
-  timezone: string
 }
 
 
-const timezones = [
-  { label: 'UTC-12:00 (International Date Line West)', value: 'UTC-12:00' },
-  { label: 'UTC-11:00 (Samoa Time Zone)', value: 'UTC-11:00' },
-  { label: 'UTC-10:00 (Hawaii-Aleutian Time)', value: 'UTC-10:00' },
-  { label: 'UTC-09:00 (Alaska Time Zone)', value: 'UTC-09:00' },
-  { label: 'UTC-08:00 (Pacific Time Zone)', value: 'UTC-08:00' },
-  { label: 'UTC-07:00 (Mountain Time Zone)', value: 'UTC-07:00' },
-  { label: 'UTC-06:00 (Central Time Zone)', value: 'UTC-06:00' },
-  { label: 'UTC-05:00 (Eastern Time Zone)', value: 'UTC-05:00' },
-  { label: 'UTC-04:00 (Atlantic Time Zone)', value: 'UTC-04:00' },
-  { label: 'UTC-03:00 (Argentina/Brazil Time)', value: 'UTC-03:00' },
-  { label: 'UTC-02:00 (Mid-Atlantic Time)', value: 'UTC-02:00' },
-  { label: 'UTC-01:00 (Azores Time)', value: 'UTC-01:00' },
-  { label: 'UTC+00:00 (Greenwich Mean Time)', value: 'UTC+00:00' },
-  { label: 'UTC+01:00 (Central European Time / West Africa Time)', value: 'UTC+01:00' },
-  { label: 'UTC+02:00 (Eastern European Time / Central Africa Time)', value: 'UTC+02:00' },
-  { label: 'UTC+03:00 (Moscow Time / East Africa Time)', value: 'UTC+03:00' },
-  { label: 'UTC+04:00 (Gulf Standard Time)', value: 'UTC+04:00' },
-  { label: 'UTC+05:00 (Pakistan Standard Time)', value: 'UTC+05:00' },
-  { label: 'UTC+06:00 (Bangladesh Standard Time)', value: 'UTC+06:00' },
-  { label: 'UTC+07:00 (Indochina Time)', value: 'UTC+07:00' },
-  { label: 'UTC+08:00 (China Standard Time)', value: 'UTC+08:00' },
-  { label: 'UTC+09:00 (Japan Standard Time)', value: 'UTC+09:00' },
-  { label: 'UTC+10:00 (Australian Eastern Time)', value: 'UTC+10:00' },
-  { label: 'UTC+11:00 (Solomon Islands Time)', value: 'UTC+11:00' },
-  { label: 'UTC+12:00 (New Zealand Standard Time)', value: 'UTC+12:00' },
-]
+
+
 
 export default function EmployeeApplyToJobPage() {
   const router = useRouter()
   const params = useParams()
   const jobId = params.jobId as string
-  const { user } = useAuth()
+  const { user, refreshProfile } = useAuth()
   
   const [profile, setProfile] = useState<FullProfile | null>(null)
   const [job, setJob] = useState<Job | null>(null)
@@ -92,8 +65,7 @@ export default function EmployeeApplyToJobPage() {
       userName: '',
       bio: '',
       position: '',
-      country: '',
-      timezone: ''
+      country: ''
     }
   })
 
@@ -141,7 +113,6 @@ export default function EmployeeApplyToJobPage() {
         setValue('bio', p.candidate?.bio || '')
         setValue('position', p.candidate?.position || '')
         setValue('country', p.candidate?.country || '')
-        setValue('timezone', p.candidate?.timezone || '')
         setAvatarUrl(p.avatar_url || '')
         
         const rUrl = p.candidate?.resume_url || ''
@@ -184,6 +155,8 @@ export default function EmployeeApplyToJobPage() {
     } else if (publicUrl) {
       setAvatarUrl(publicUrl)
       message.success('Photo uploaded')
+      // Refresh sidebar profile
+      refreshProfile()
     }
     setUploadingAvatar(false)
     return false
@@ -198,7 +171,38 @@ export default function EmployeeApplyToJobPage() {
       setResumeUrl(publicUrl)
       setResumeName(file.name)
       setResumeSize(formatSize(file.size))
-      message.success('Resume uploaded')
+      message.success('Resume uploaded. Analyzing content...')
+      
+      // Call OCR API
+      try {
+        const ocrData = await extractCVData(file)
+        if (ocrData) {
+          message.success('CV analyzed! Filling fields...')
+          
+          // Pre-fill form fields
+          if (ocrData.Name) setValue('userName', ocrData.Name)
+          
+          // Generate bio from skills and experience
+          let generatedBio = watch('bio') || ''
+          if (ocrData.Worked_As && ocrData.Worked_As.length > 0) {
+            generatedBio += `Professional Background: ${ocrData.Worked_As.join(', ')}.\n`
+          }
+          if (ocrData.Skills && ocrData.Skills.length > 0) {
+            generatedBio += `Skills: ${ocrData.Skills.join(', ')}.\n`
+          }
+          if (ocrData.Years_Of_Experience && ocrData.Years_Of_Experience.length > 0) {
+            generatedBio += `Experience: ${ocrData.Years_Of_Experience.join(', ')}.\n`
+          }
+          if (ocrData.Certification && ocrData.Certification.length > 0) {
+            generatedBio += `Certifications: ${ocrData.Certification.join(', ')}.\n`
+          }
+          
+          if (generatedBio) setValue('bio', generatedBio.trim())
+        }
+      } catch (ocrErr) {
+        console.error('OCR Error during upload:', ocrErr)
+        message.info('Could not extract data from CV automatically.')
+      }
     }
     setUploadingResume(false)
     return false
@@ -242,7 +246,6 @@ export default function EmployeeApplyToJobPage() {
           bio: values.bio,
           position: values.position,
           country: values.country,
-          timezone: values.timezone,
           resume_url: resumeUrl,
           motivational_letter_url: letterUrl,
           experiences
@@ -413,11 +416,14 @@ export default function EmployeeApplyToJobPage() {
                     showSearch
                     placeholder="Select a country"
                     className="w-full h-[44px] custom-select"
-                    optionFilterProp="children"
+                    optionFilterProp="label"
                     status={errors.country ? 'error' : ''}
+                    filterOption={(input, option) =>
+                      (option?.label ?? '').toString().toLowerCase().includes(input.toLowerCase())
+                    }
                   >
                     {countries.map(c => (
-                      <Option key={c.code} value={c.name}>
+                      <Option key={c.code} value={c.name} label={c.name}>
                         <div className="flex items-center gap-3">
                           <img 
                             src={`https://flagcdn.com/w20/${c.code.toLowerCase()}.png`} 
@@ -432,36 +438,6 @@ export default function EmployeeApplyToJobPage() {
                 )}
               />
               {errors.country && <p className="text-red-500 text-[12px]">{errors.country.message}</p>}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
-            <label className="text-[14px] font-medium text-[#344054]">Timezone <span className="text-red-500">*</span></label>
-            <div className="md:col-span-2 space-y-1">
-              <Controller
-                name="timezone"
-                control={control}
-                render={({ field }) => (
-                  <Select
-                    {...field}
-                    showSearch
-                    placeholder="Select a timezone"
-                    className="w-full h-[44px] custom-select"
-                    optionFilterProp="children"
-                    status={errors.timezone ? 'error' : ''}
-                  >
-                    {timezones.map(tz => (
-                      <Option key={tz.value} value={tz.value}>
-                        <span className="flex items-center gap-2 text-gray-400">
-                          <HiOutlineClock />
-                          <span className="text-[#344054]">{tz.label}</span>
-                        </span>
-                      </Option>
-                    ))}
-                  </Select>
-                )}
-              />
-              {errors.timezone && <p className="text-red-500 text-[12px]">{errors.timezone.message}</p>}
             </div>
           </div>
 

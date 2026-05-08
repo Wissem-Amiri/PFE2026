@@ -98,9 +98,17 @@ export default function CandidateLayout({ children }: { children: React.ReactNod
         {/* User Footer Section */}
         <div className="mt-auto border-t border-[#EAECF0] pt-[24px] pb-[24px] px-[24px] flex flex-col gap-[16px]">
           <div className="flex items-center gap-[12px]">
-            <div className="w-[40px] h-[40px] rounded-full bg-[#EDE9FE] text-[#7C3AED] flex items-center justify-center text-[13px] font-bold border border-[#DDD6FE] shadow-sm">
-              {initials}
-            </div>
+            {profile?.avatar_url ? (
+              <img 
+                src={profile.avatar_url} 
+                alt="Profile" 
+                className="w-[40px] h-[40px] rounded-full object-cover border border-[#DDD6FE] shadow-sm"
+              />
+            ) : (
+              <div className="w-[40px] h-[40px] rounded-full bg-[#EDE9FE] text-[#7C3AED] flex items-center justify-center text-[13px] font-bold border border-[#DDD6FE] shadow-sm">
+                {initials}
+              </div>
+            )}
             <div className="flex flex-col overflow-hidden">
               <span className="text-[14px] font-semibold text-[#101828] truncate leading-tight">{fullName}</span>
               <span className="text-[12px] text-[#475467] truncate leading-tight mt-0.5">{user?.email}</span>

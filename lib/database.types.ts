@@ -16,7 +16,6 @@ export interface BaseUser {
   phone: string | null
   avatar_url: string | null
   is_archived: boolean
-  is_online: boolean
   created_at: string | null
 }
 
@@ -26,7 +25,6 @@ export interface Candidate {
   id: string
   bio: string | null
   country: string | null
-  timezone: string | null
   resume_url: string | null
   motivational_letter_url: string | null
   website: string | null

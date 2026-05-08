@@ -22,6 +22,7 @@ type AuthContextType = {
   resetPassword: (email: string) => Promise<{ error: any; data: any }>
   signout: () => Promise<void>
   updateUser: (attributes: any) => Promise<{ error: any; data: any }>
+  refreshProfile: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -62,48 +63,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  // ── ONLINE STATUS TRACKING ──
-  useEffect(() => {
-    if (!user?.id) return
-
-    const channel = supabase.channel('online-status', {
-      config: { presence: { key: user.id } }
-    })
-
-    const updateStatus = async (status: boolean) => {
-      try {
-        await (supabase as any).from('users').update({ is_online: status }).eq('id', user.id)
-      } catch (err) {
-        console.error('Error updating online status:', err)
-      }
-    }
-
-    channel.subscribe(async (status) => {
-      if (status === 'SUBSCRIBED') {
-        await updateStatus(true)
-      }
-    })
-
-    const handleVisibilityChange = () => {
-      updateStatus(document.visibilityState === 'visible')
-    }
-
-    const handleBeforeUnload = () => {
-      // Use navigator.sendBeacon or a synchronous call if possible, 
-      // but here we just try a fire-and-forget update
-      updateStatus(false)
-    }
-
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    window.addEventListener('beforeunload', handleBeforeUnload)
-
-    return () => {
-      updateStatus(false)
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-      window.removeEventListener('beforeunload', handleBeforeUnload)
-      supabase.removeChannel(channel)
-    }
-  }, [user?.id])
 
   const signUp = async (email: string, password: string, options?: any) => {
     const mergedOptions = {
@@ -142,9 +101,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signout = async () => {
-    if (user?.id) {
-      await (supabase as any).from('users').update({ is_online: false }).eq('id', user.id)
-    }
     await supabase.auth.signOut()
     setSession(null)
     setUser(null)
@@ -157,7 +113,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { data, error }
   }
 
-  const value = { user, session, profile, isLoading, signIn, signInWithOAuth, signUp, verifyOtp, resend, resetPassword, signout, updateUser }
+  const refreshProfile = async () => {
+    if (user?.id) {
+      const { data: profileData } = await getProfile(user.id)
+      setProfile(profileData)
+    }
+  }
+
+  const value = { user, session, profile, isLoading, signIn, signInWithOAuth, signUp, verifyOtp, resend, resetPassword, signout, updateUser, refreshProfile }
   return (
     <AuthContext.Provider value={value}> {children} </AuthContext.Provider>
   )

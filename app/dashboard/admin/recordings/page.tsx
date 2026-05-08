@@ -490,10 +490,10 @@ export default function RecordingsPage() {
                     det.profile?.id?.slice(0, 8).toUpperCase() || `DET-${50000 + idx}`,
                     det.profile?.user_name || det.name,
                     det.email,
-                    det.profile?.department || 'Human Resources',
+                    det.profile?.department || det.department || 'N/A',
                     det.attendance ? 'PRESENT' : 'ABSENT',
-                    '8.0',
-                    '0.0'
+                    det.duration || (det.attendance ? 'Full day' : '0h'),
+                    '0h'
                   ])
                   const csvContent = [
                     headers.join(','),
@@ -580,21 +580,23 @@ export default function RecordingsPage() {
                       </td>
                       <td className="px-[12px] py-[16px]">
                         <span className="text-[14px] text-[#667085]">
-                          {det.profile?.department || 'Marketing'}
+                          {det.profile?.department || det.department || 'N/A'}
                         </span>
                       </td>
                       <td className="px-[12px] py-[16px]">
-                        <div className="inline-flex items-center px-2 py-0.5 rounded-full bg-[#FEF3F2] mix-blend-multiply">
+                        <div className={`inline-flex items-center px-2 py-0.5 rounded-full mix-blend-multiply ${det.attendance ? 'bg-[#ECFDF3]' : 'bg-[#FEF3F2]'}`}>
                           <span className={`text-[12px] font-medium ${det.attendance ? 'text-[#12B76A]' : 'text-[#B42318]'}`}>
                             {det.attendance ? 'Present' : 'Absent'}
                           </span>
                         </div>
                       </td>
                       <td className="px-[12px] py-[16px]">
-                        <span className="text-[14px] text-[#667085]">8 hour</span>
+                        <span className="text-[14px] text-[#667085]">
+                          {det.duration || (det.attendance ? 'Full day' : '0h')}
+                        </span>
                       </td>
                       <td className="px-[12px] py-[16px]">
-                        <span className="text-[14px] text-[#667085]">0 hour</span>
+                        <span className="text-[14px] text-[#667085]">0h</span>
                       </td>
                       <td className="pr-[24px] py-[16px] text-right">
                         <div className="flex gap-3 justify-end">
