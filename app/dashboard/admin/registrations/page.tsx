@@ -330,9 +330,9 @@ export default function RegistrationsPage() {
         )}
 
         {/* ── DATA TABLE CARD ── */}
-        <div className="bg-white border border-[#e2e8f0] rounded-[16px] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] overflow-hidden w-full overflow-x-auto no-scrollbar">
-          <div className="min-w-[1000px]">
-            <table className="w-full text-left border-collapse">
+        <div className="bg-white border border-[#e2e8f0] rounded-[16px] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] overflow-hidden w-full">
+          <div className="w-full">
+            <table className="w-full text-left border-collapse table-auto">
               <thead>
               <tr className="bg-[rgba(248,250,252,0.5)]">
                 <th className="px-[23px] py-[15px] w-[64px] border-b border-[#f1f5f9]">
@@ -343,12 +343,12 @@ export default function RegistrationsPage() {
                     className="w-[16px] h-[16px] rounded-[4px] border-[#cbd5e1] checked:accent-[#7f56d9]"
                   />
                 </th>
-                <th className="px-[24px] py-[16px] border-b border-[#f1f5f9] text-[12px] font-semibold text-[#64748b] tracking-[0.6px] uppercase">NAME</th>
-                <th className="px-[24px] py-[16px] border-b border-[#f1f5f9] text-[12px] font-semibold text-[#64748b] tracking-[0.6px] uppercase text-nowrap">EMAIL ADDRESS</th>
-                <th className="px-[24px] py-[16px] border-b border-[#f1f5f9] text-[12px] font-semibold text-[#64748b] tracking-[0.6px] uppercase text-nowrap">PHONE NUMBER</th>
-                <th className="px-[24px] py-[16px] border-b border-[#f1f5f9] text-[12px] font-semibold text-[#64748b] tracking-[0.6px] uppercase text-nowrap">SUBMISSION DATE</th>
-                <th className="px-[24px] py-[16px] border-b border-[#f1f5f9] text-[12px] font-semibold text-[#64748b] tracking-[0.6px] uppercase">STATUS</th>
-                <th className="px-[24px] py-[16px] border-b border-[#f1f5f9] text-[12px] font-semibold text-[#64748b] tracking-[0.6px] uppercase text-left">ACTIONS</th>
+                <th className="px-[16px] py-[16px] border-b border-[#f1f5f9] text-[12px] font-semibold text-[#64748b] tracking-[0.6px] uppercase">NAME</th>
+                <th className="px-[16px] py-[16px] border-b border-[#f1f5f9] text-[12px] font-semibold text-[#64748b] tracking-[0.6px] uppercase text-nowrap">EMAIL ADDRESS</th>
+                <th className="px-[16px] py-[16px] border-b border-[#f1f5f9] text-[12px] font-semibold text-[#64748b] tracking-[0.6px] uppercase text-nowrap">PHONE NUMBER</th>
+                <th className="px-[16px] py-[16px] border-b border-[#f1f5f9] text-[12px] font-semibold text-[#64748b] tracking-[0.6px] uppercase text-nowrap">SUBMISSION DATE</th>
+                <th className="px-[16px] py-[16px] border-b border-[#f1f5f9] text-[12px] font-semibold text-[#64748b] tracking-[0.6px] uppercase">STATUS</th>
+                <th className="px-[16px] py-[16px] border-b border-[#f1f5f9] text-[12px] font-semibold text-[#64748b] tracking-[0.6px] uppercase text-left">ACTIONS</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#f1f5f9]">
@@ -388,12 +388,12 @@ export default function RegistrationsPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-[24px] py-[26px] text-[14px] text-[#475569]">{app.candidate?.user?.email || '—'}</td>
-                    <td className="px-[24px] py-[26px] text-[14px] text-[#475569]">{app.candidate?.user?.phone || '—'}</td>
-                    <td className="px-[24px] py-[26px] text-[14px] text-[#475569]">
+                    <td className="px-[16px] py-[26px] text-[14px] text-[#475569] truncate max-w-[200px]">{app.candidate?.user?.email || '—'}</td>
+                    <td className="px-[16px] py-[26px] text-[14px] text-[#475569]">{app.candidate?.user?.phone || '—'}</td>
+                    <td className="px-[16px] py-[26px] text-[14px] text-[#475569]">
                       {new Date(app.applied_at).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })} {new Date(app.applied_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
                     </td>
-                    <td className="px-[24px] py-[26px]">
+                    <td className="px-[16px] py-[26px]">
                       {app.status === 'pending' && (
                         <span className="px-[10px] py-[2px] rounded-full bg-[#fef3c7] text-[#b45309] text-[12px] font-medium">Pending</span>
                       )}
@@ -404,7 +404,7 @@ export default function RegistrationsPage() {
                         <span className="px-[10px] py-[2px] rounded-full bg-[#fee2e2] text-[#b91c1c] text-[12px] font-medium">Rejected</span>
                       )}
                     </td>
-                    <td className="px-[24px] py-[16px]">
+                    <td className="px-[16px] py-[16px]">
                       <div className="flex justify-start items-center">
                         <div className="grid grid-cols-[32px_32px_32px] gap-[4px] items-center">
                           {app.status === 'pending' ? (

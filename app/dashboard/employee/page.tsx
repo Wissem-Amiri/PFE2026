@@ -234,10 +234,10 @@ export default function EmployeeDashboardPage() {
 
           {/* Table Card */}
           <div className="bg-white rounded-[24px] border border-[#F2F4F7] shadow-sm flex flex-col overflow-hidden max-w-full">
-            <div className="px-4 md:px-8 py-6 border-b border-[#eaecf0] flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 min-h-[88px]">
-              <h3 className="text-[18px] font-medium text-[#101828] font-['Inter'] mb-0 leading-[28px]">Latest Leaves</h3>
+            <div className="px-4 md:px-8 py-6 border-b border-[#eaecf0] flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+              <h3 className="text-[18px] font-medium text-[#101828] font-['Inter'] mb-0">Latest Leaves</h3>
               
-              <div className="flex flex-wrap items-center justify-end gap-2 w-full xl:w-auto">
+              <div className="flex flex-row items-center gap-2">
                 <Select
                   mode="multiple"
                   placeholder="Filter by Status"
@@ -290,8 +290,8 @@ export default function EmployeeDashboardPage() {
                 )}
               </div>
             </div>
-            <div className="flex-1 w-full overflow-x-auto">
-              <div className="min-w-[800px]">
+            <div className="flex-1 w-full overflow-hidden">
+              <div className="w-full">
                 <Table
                 columns={columns}
                 dataSource={leaves}

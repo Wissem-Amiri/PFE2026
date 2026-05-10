@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { updateLeaveStatus } from '@/app/api/leaves'
+import { updateLeaveStatus, getDepartmentAvailability } from '@/app/api/leaves'
 import {
   message,
   Modal,
@@ -18,7 +18,10 @@ import {
   HiOutlineEye,
   HiOutlineCheck,
   HiOutlineX,
-  HiOutlineClock
+  HiOutlineClock,
+  HiOutlineUserGroup,
+  HiOutlineExclamation,
+  HiOutlineShieldCheck
 } from 'react-icons/hi'
 import { useLeaves, queryKeys } from '@/lib/hooks'
 
@@ -51,6 +54,8 @@ export default function AdminLeavesPage() {
 
   const [actionModal, setActionModal] = useState<{ open: boolean, type: 'approved' | 'rejected', leave: any }>({ open: false, type: 'approved', leave: null })
   const [rejectionReason, setRejectionReason] = useState('')
+  const [deptAvailability, setDeptAvailability] = useState<any>(null)
+  const [loadingAvailability, setLoadingAvailability] = useState(false)
 
   const [messageApi, contextHolder] = message.useMessage()
   const filteredLeaves = leaves.filter(l => {
@@ -77,9 +82,19 @@ export default function AdminLeavesPage() {
     setSelectedIds(newSelected)
   }
 
-  const handleAction = (leave: any, status: 'approved' | 'rejected') => {
+  const handleAction = async (leave: any, status: 'approved' | 'rejected') => {
     setActionModal({ open: true, type: status, leave })
     setRejectionReason('')
+    setDeptAvailability(null)
+    setLoadingAvailability(true)
+    try {
+      const availability = await getDepartmentAvailability(leave.employee_id, leave.start_date, leave.end_date)
+      setDeptAvailability(availability)
+    } catch (e) {
+      console.error('Failed to load dept availability', e)
+    } finally {
+      setLoadingAvailability(false)
+    }
   }
 
   const confirmAction = async () => {
@@ -235,8 +250,81 @@ export default function AdminLeavesPage() {
           <p className="text-[16px] text-[#667085] leading-relaxed mb-1 max-w-[440px]">
             Are you sure you want to {actionModal.type} the leave request for <span className="font-bold text-[#101828]">{actionModal.leave?.user?.user_name}</span>?
           </p>
+          {/* ── Department Availability Context Panel ── */}
+          {loadingAvailability ? (
+            <div className="w-full mt-4 p-4 bg-[#F9FAFB] rounded-xl border border-[#EAECF0] text-center">
+              <HiOutlineClock className="text-[#98A2B3] text-xl animate-spin inline-block" />
+              <span className="text-[13px] text-[#667085] ml-2">Loading department info...</span>
+            </div>
+          ) : deptAvailability && (
+            <div className="w-full mt-4 text-left space-y-3">
+
+              {/* Alert if below threshold */}
+              {deptAvailability.belowThreshold && (
+                <div className="flex items-start gap-3 p-3 bg-[#FEF3F2] border border-[#FECDCA] rounded-xl">
+                  <HiOutlineExclamation className="text-[#D92D20] text-lg flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-[13px] font-bold text-[#B42318] mb-0">Staffing Alert</p>
+                    <p className="text-[12px] text-[#D92D20] mb-0">Approving this request will bring <strong>{deptAvailability.department}</strong> below the minimum staffing level ({deptAvailability.minStaff} required).</p>
+                  </div>
+                </div>
+              )}
+
+              {!deptAvailability.belowThreshold && actionModal.type === 'approved' && (
+                <div className="flex items-start gap-3 p-3 bg-[#ECFDF3] border border-[#ABEFC6] rounded-xl">
+                  <HiOutlineShieldCheck className="text-[#12B76A] text-lg flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-[13px] font-bold text-[#027A48] mb-0">Safe to approve</p>
+                    <p className="text-[12px] text-[#067647] mb-0">Department <strong>{deptAvailability.department}</strong> will remain above minimum staffing after approval.</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Department Stats Grid */}
+              <div className="grid grid-cols-3 gap-2">
+                <div className="bg-[#F9FAFB] rounded-xl p-3 text-center border border-[#EAECF0]">
+                  <HiOutlineUserGroup className="text-[#7F56D9] text-lg mx-auto mb-1" />
+                  <p className="text-[18px] font-extrabold text-[#101828] mb-0">{deptAvailability.totalInDept}</p>
+                  <p className="text-[10px] font-bold text-[#98A2B3] uppercase tracking-wider mb-0">In Dept</p>
+                </div>
+                <div className="bg-[#FEF3F2] rounded-xl p-3 text-center border border-[#FECDCA]">
+                  <HiOutlineCalendar className="text-[#F04438] text-lg mx-auto mb-1" />
+                  <p className="text-[18px] font-extrabold text-[#B42318] mb-0">{deptAvailability.absentCount}</p>
+                  <p className="text-[10px] font-bold text-[#98A2B3] uppercase tracking-wider mb-0">On Leave</p>
+                </div>
+                <div className={`rounded-xl p-3 text-center border ${deptAvailability.belowThreshold ? 'bg-[#FEF3F2] border-[#FECDCA]' : 'bg-[#ECFDF3] border-[#ABEFC6]'}`}>
+                  <HiOutlineCheck className={`text-lg mx-auto mb-1 ${deptAvailability.belowThreshold ? 'text-[#F04438]' : 'text-[#12B76A]'}`} />
+                  <p className={`text-[18px] font-extrabold mb-0 ${deptAvailability.belowThreshold ? 'text-[#B42318]' : 'text-[#027A48]'}`}>{deptAvailability.availableAfter}</p>
+                  <p className="text-[10px] font-bold text-[#98A2B3] uppercase tracking-wider mb-0">After Approval</p>
+                </div>
+              </div>
+
+              {/* Employee balance */}
+              <div className="flex items-center justify-between bg-[#F5F3FF] rounded-xl p-3 border border-[#DDD6FE]">
+                <span className="text-[12px] font-bold text-[#5B21B6] uppercase tracking-wider">Leave Balance</span>
+                <span className="text-[16px] font-extrabold text-[#7C3AED]">{deptAvailability.balance} days remaining</span>
+              </div>
+
+              {/* Recent leaves history */}
+              {deptAvailability.recentLeaves.length > 0 && (
+                <div>
+                  <p className="text-[11px] font-bold text-[#98A2B3] uppercase tracking-widest mb-2">Recent History</p>
+                  <div className="space-y-1">
+                    {deptAvailability.recentLeaves.map((l: any, i: number) => (
+                      <div key={i} className="flex items-center justify-between bg-white rounded-lg p-2 border border-[#F2F4F7] text-[12px]">
+                        <span className="font-semibold text-[#344054]">{l.type}</span>
+                        <span className="text-[#667085]">{dayjs(l.start_date).format('DD MMM')} – {dayjs(l.end_date).format('DD MMM YY')}</span>
+                        <span className={`font-bold px-2 py-0.5 rounded-full text-[10px] ${l.status === 'approved' ? 'bg-[#ECFDF3] text-[#027A48]' : l.status === 'rejected' ? 'bg-[#FEF2F2] text-[#B42318]' : 'bg-[#FFFAEB] text-[#B54708]'}`}>{l.status}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {actionModal.type === 'approved' && (
-            <p className="text-[14px] text-[#027a48] font-medium bg-[#ecfdf5] px-3 py-1 rounded-full mt-2">
+            <p className="text-[14px] text-[#027a48] font-medium bg-[#ecfdf5] px-3 py-1 rounded-full mt-3">
               Balance will be deducted immediately
             </p>
           )}

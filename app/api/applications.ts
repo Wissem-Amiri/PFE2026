@@ -233,7 +233,7 @@ export async function deleteAllOtherApplications(candidateId: string, excludeApp
 
 /** Analyze application using external AI API (3-step protocol) */
 export async function analyzeApplication(applicationId: string) {
-  const API_BASE = 'https://cv-ocr-2k25.onrender.com/api'
+  const API_BASE = 'http://localhost:5000/api'
 
   // 1. Get application details from Supabase
   const { data: application, error: fetchError } = await supabase
@@ -260,17 +260,26 @@ export async function analyzeApplication(applicationId: string) {
   try {
     // --- STEP 1: PARSE CV ---
     const fileRes = await fetch(resumeUrl)
+    if (!fileRes.ok) {
+      throw new Error(`Failed to fetch resume from Supabase (${fileRes.status})`)
+    }
     const blob = await fileRes.blob()
-    const file = new File([blob], 'resume.pdf', { type: 'application/pdf' })
+    
+    if (blob.size === 0) {
+      throw new Error("The fetched resume file is empty")
+    }
 
     const resumeFormData = new FormData()
-    resumeFormData.append('file', file)
+    resumeFormData.append('file', blob, 'resume.pdf')
 
     const parseRes = await fetch(`${API_BASE}/resume/parse`, {
       method: 'POST',
       body: resumeFormData
     })
-    if (!parseRes.ok) throw new Error('CV Parsing failed')
+    if (!parseRes.ok) {
+      const errText = await parseRes.text()
+      throw new Error(`CV Parsing failed (${parseRes.status}): ${errText}`)
+    }
     const parseData = await parseRes.json()
     const resumeId = parseData.id
 
@@ -284,13 +293,19 @@ export async function analyzeApplication(applicationId: string) {
         required_skills: [jobReq] // External API expects an array
       })
     })
-    if (!jobRes.ok) throw new Error('Job Creation failed')
+    if (!jobRes.ok) {
+      const errText = await jobRes.text()
+      throw new Error(`Job Creation failed (${jobRes.status}): ${errText}`)
+    }
     const jobData = await jobRes.json()
     const jobId = jobData.id
 
     // --- STEP 3: MATCH ---
     const matchRes = await fetch(`${API_BASE}/job/match/${jobId}/${resumeId}`)
-    if (!matchRes.ok) throw new Error('Matching failed')
+    if (!matchRes.ok) {
+      const errText = await matchRes.text()
+      throw new Error(`Matching failed (${matchRes.status}): ${errText}`)
+    }
     
     const analysisResult = await matchRes.json()
 

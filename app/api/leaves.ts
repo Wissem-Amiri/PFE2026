@@ -44,6 +44,9 @@ export async function getMyLeaves(employeeId: string, params?: {
   endDate?: string,
   sortOrder?: 'ascend' | 'descend'
 }) {
+  // Sync balance first to ensure accuracy
+  await syncVacationBalance(employeeId)
+
   let query = supabase
     .from('leaves')
     .select('*', { count: 'exact' })
@@ -212,19 +215,6 @@ export async function updateLeaveStatus(leaveId: string, status: 'approved' | 'r
 
   if (!leave) return { data: null, error: { message: "Leave not found" } }
 
-  // If approving any leave, deduct from balance
-  if (status === 'approved') {
-    const l = leave as any
-    const duration = dayjs(l.end_date).diff(dayjs(l.start_date), 'day') + 1
-    const { data: profile } = await getProfile(l.employee_id)
-
-    if (profile?.employee) {
-      const emp = profile.employee as any
-      const newBalance = (Number(emp.vacation_balance) || 0) - duration
-      await (supabase as any).from('employee').update({ vacation_balance: newBalance }).eq('id', l.employee_id)
-    }
-  }
-
   const updatePayload: any = { status }
   if (status === 'rejected' && rejectionReason) {
     updatePayload.rejection_reason = rejectionReason
@@ -237,6 +227,11 @@ export async function updateLeaveStatus(leaveId: string, status: 'approved' | 'r
     .update(updatePayload)
     .eq('id', leaveId)
     .select()
+
+  // Sync balance if approved
+  if (!error && status === 'approved') {
+    await syncVacationBalance((leave as any).employee_id)
+  }
 
   // Insert real-time notification
   if (!error && leave) {
@@ -283,3 +278,126 @@ export async function adjustEmployeeBalance(employeeId: string, adjustment: numb
   return { data, error }
 }
 
+// ─── Minimum staffing thresholds per department ──────────
+const DEPT_MIN_STAFF: Record<string, number> = {
+  'IT': 2,
+  'Informatique': 2,
+  'HR': 1,
+  'Ressources Humaines': 1,
+  'Finance': 1,
+  'Marketing': 1,
+  'Commercial': 1,
+  'Direction': 1,
+  'default': 1,
+}
+
+/** Get department availability context for a leave request */
+export async function getDepartmentAvailability(employeeId: string, startDate: string, endDate: string) {
+  // 1. Get the employee's department
+  const { data: emp } = await supabase
+    .from('employee')
+    .select('department')
+    .eq('id', employeeId)
+    .single()
+
+  const department = emp?.department || 'Other'
+
+  // 2. Count total employees in this department
+  const { count: totalInDept } = await supabase
+    .from('employee')
+    .select('*', { count: 'exact', head: true })
+    .eq('department', department)
+
+  // 3. Count employees already on approved leave during the requested period
+  // An overlap exists when: existing.start <= requested.end AND existing.end >= requested.start
+  const { data: overlappingLeaves } = await supabase
+    .from('leaves')
+    .select('employee_id')
+    .eq('status', 'approved')
+    .lte('start_date', endDate)
+    .gte('end_date', startDate)
+
+  // Deduplicate employee IDs (one employee might have multiple approved leaves)
+  const uniqueAbsentIds = new Set((overlappingLeaves ?? []).map(l => l.employee_id))
+  const absentCount = uniqueAbsentIds.size
+
+  // 4. Get the employee's leave balance
+  const { data: profile } = await getProfile(employeeId)
+  const balance = profile?.employee?.vacation_balance ?? 0
+
+  // 5. Get the employee's last 3 leaves
+  const { data: recentLeaves } = await supabase
+    .from('leaves')
+    .select('type, start_date, end_date, status')
+    .eq('employee_id', employeeId)
+    .order('created_at', { ascending: false })
+    .limit(3)
+
+  const total = totalInDept ?? 0
+  const availableAfter = total - absentCount - 1 // -1 for the requesting employee
+  const minStaff = DEPT_MIN_STAFF[department] ?? DEPT_MIN_STAFF['default']
+  const belowThreshold = availableAfter < minStaff
+
+  return {
+    department,
+    totalInDept: total,
+    absentCount,
+    availableAfter,
+    minStaff,
+    belowThreshold,
+    balance,
+    recentLeaves: recentLeaves ?? [],
+  }
+}
+
+/** 
+ * Automatically calculate and sync the vacation balance based on hire_date and monthly_rate.
+ * Logic: (Full months since hire_date * monthly_rate) - (Sum of approved leaves days)
+ */
+export async function syncVacationBalance(employeeId: string) {
+  // 1. Get employee details
+  const { data: emp, error: empError } = await supabase
+    .from('employee')
+    .select('hire_date, monthly_rate, vacation_balance')
+    .eq('id', employeeId)
+    .single()
+
+  if (empError || !emp || !emp.hire_date) return { error: empError || new Error('Employee not found or no hire date') }
+
+  const hireDate = dayjs(emp.hire_date)
+  const now = dayjs()
+  
+  if (now.isBefore(hireDate)) {
+    // Hasn't started yet
+    await (supabase as any).from('employee').update({ vacation_balance: 0 }).eq('id', employeeId)
+    return { balance: 0 }
+  }
+
+  // 2. Calculate accrued days (Full months only)
+  const fullMonths = now.diff(hireDate, 'month')
+  const totalAccrued = fullMonths * (emp.monthly_rate || 0)
+
+  // 3. Subtract all approved leaves
+  const { data: approvedLeaves } = await supabase
+    .from('leaves')
+    .select('start_date, end_date')
+    .eq('employee_id', employeeId)
+    .eq('status', 'approved')
+
+  const usedDays = (approvedLeaves ?? []).reduce((acc, leave) => {
+    const days = dayjs(leave.end_date).diff(dayjs(leave.start_date), 'day') + 1
+    return acc + days
+  }, 0)
+
+  const finalBalance = Math.max(0, totalAccrued - usedDays)
+
+  // 4. Update DB if changed
+  if (finalBalance !== emp.vacation_balance) {
+    await (supabase as any)
+      .from('employee')
+      .update({ vacation_balance: finalBalance })
+      .eq('id', employeeId)
+  }
+
+  return { balance: finalBalance }
+}

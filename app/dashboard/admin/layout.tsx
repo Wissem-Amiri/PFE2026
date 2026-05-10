@@ -15,7 +15,8 @@ import {
   HiOutlineLogout,
   HiOutlineMenu,
   HiOutlineX,
-  HiOutlineDocumentSearch
+  HiOutlineDocumentSearch,
+  HiOutlineChartBar
 } from 'react-icons/hi'
 import { Avatar } from 'antd'
 import NotificationBell from '../../../components/NotificationBell'
@@ -57,6 +58,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: '/dashboard/admin/jobs', label: 'Jobs', icon: HiOutlineBriefcase },
     { href: '/dashboard/admin/cv-screening', label: 'CV Screening', icon: HiOutlineDocumentSearch },
     { href: '/dashboard/admin/recordings', label: 'Recordings', icon: HiOutlineVideoCamera },
+    { href: '/dashboard/admin/analytics', label: 'Analytics', icon: HiOutlineChartBar },
   ]
 
   return (

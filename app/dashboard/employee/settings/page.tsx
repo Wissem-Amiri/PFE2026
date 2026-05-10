@@ -251,12 +251,11 @@ function EmployeeSettingsContent() {
                 placeholder="Select your country"
                 className="w-full h-[44px]"
                 optionFilterProp="label"
-                filterOption={(input, option) =>
-                  (option?.label ?? '').toString().toLowerCase().includes(input.toLowerCase())
-                }
-                options={countries.map(c => ({
-                  value: c.name,
-                  label: (
+                optionLabelProp="label"
+                status={form.getFieldError('country').length > 0 ? 'error' : ''}
+              >
+                {countries.map(c => (
+                  <Select.Option key={c.code} value={c.name} label={c.name}>
                     <div className="flex items-center gap-2">
                       <img 
                         src={`https://flagcdn.com/w20/${c.code.toLowerCase()}.png`} 
@@ -265,9 +264,9 @@ function EmployeeSettingsContent() {
                       />
                       <span>{c.name}</span>
                     </div>
-                  ),
-                }))}
-              />
+                  </Select.Option>
+                ))}
+              </Select>
             </Form.Item>
 
             <Form.Item

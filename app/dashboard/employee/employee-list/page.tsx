@@ -6,6 +6,7 @@ import { HiOutlineViewGrid, HiOutlineViewList } from 'react-icons/hi'
 import { Input, Avatar, Card, Tag, Spin, Select } from 'antd'
 import { getEmployeesPaginated } from '@/app/api/profile'
 import type { FullProfile } from '@/lib/database.types'
+import { useAuth } from '@/lib/auth'
 
 export default function EmployeeListPage() {
   const [employees, setEmployees] = useState<FullProfile[]>([])
@@ -14,6 +15,7 @@ export default function EmployeeListPage() {
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [deptFilter, setDeptFilter] = useState('All Departments')
   const [viewType, setViewType] = useState<'grid' | 'table'>('grid')
+  const { user } = useAuth()
 
   // Debounce search input
   useEffect(() => {
@@ -39,7 +41,7 @@ export default function EmployeeListPage() {
     fetchEmployees()
   }, [debouncedSearch, deptFilter])
 
-  const filtered = employees // Data is already filtered by backend
+  const filtered = employees.filter(emp => emp.id !== user?.id)
 
   return (
     <div className="p-[28px]">

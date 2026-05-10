@@ -14,7 +14,7 @@ import dayjs from 'dayjs'
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Candidate {
   id: string
-  score: number
+  score: number | null
   name: string
   email: string
   avatar?: string
@@ -27,7 +27,16 @@ interface Candidate {
 }
 
 // ─── Circular Score Ring ──────────────────────────────────────────────────────
-function ScoreRing({ score }: { score: number }) {
+function ScoreRing({ score }: { score: number | null }) {
+  if (score === null) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-[6px] rounded-[16px] bg-[#f8fafc] border border-[#e2e8f0] h-[64px] min-w-[100px] px-2 shadow-sm">
+         <Spin size="small" />
+         <span className="text-[9px] font-bold text-[#64748b] uppercase tracking-wider text-center leading-tight">AI screening<br/>progressing...</span>
+      </div>
+    )
+  }
+
   const r = 26
   const circ = 2 * Math.PI * r
   const fill = circ * (1 - score / 100)
@@ -121,7 +130,7 @@ export default function AIScreeningPage() {
 
           return {
             id: app.id,
-            score: scored.score,
+            score: app.match_score,
             name: user?.user_name || 'Candidate',
             email: user?.email || '',
             avatar: user?.avatar_url || undefined,
@@ -134,8 +143,8 @@ export default function AIScreeningPage() {
           }
         })
 
-        // Sort by score descending
-        mapped.sort((a, b) => b.score - a.score)
+        // Sort by score descending, with nulls at the end
+        mapped.sort((a, b) => (b.score || -1) - (a.score || -1))
         setCandidates(mapped)
       }
 
@@ -148,9 +157,9 @@ export default function AIScreeningPage() {
   const filtered = candidates.filter(c => {
     const scoreOk =
       scoreFilter === 'All Scores' ||
-      (scoreFilter === 'Above 90%' && c.score >= 90) ||
-      (scoreFilter === 'Above 80%' && c.score >= 80) ||
-      (scoreFilter === 'Above 70%' && c.score >= 70)
+      (scoreFilter === 'Above 90%' && c.score !== null && c.score >= 90) ||
+      (scoreFilter === 'Above 80%' && c.score !== null && c.score >= 80) ||
+      (scoreFilter === 'Above 70%' && c.score !== null && c.score >= 70)
 
     const expOk =
       expFilter === 'All Levels' ||
@@ -163,8 +172,9 @@ export default function AIScreeningPage() {
   const paged = filtered.slice((page - 1) * perPage, page * perPage)
   const totalPages = Math.ceil(filtered.length / perPage)
 
-  const avgScore = candidates.length
-    ? Math.round(candidates.reduce((s, c) => s + c.score, 0) / candidates.length * 10) / 10
+  const candidatesWithScore = candidates.filter(c => c.score !== null)
+  const avgScore = candidatesWithScore.length
+    ? Math.round(candidatesWithScore.reduce((s, c) => s + (c.score as number), 0) / candidatesWithScore.length * 10) / 10
     : 0
 
   // Skill saturation based on real strengths
@@ -203,7 +213,7 @@ export default function AIScreeningPage() {
     const rows = candidates.map(c => [
       c.name,
       c.email,
-      `${c.score}%`,
+      c.score !== null ? `${c.score}%` : 'Pending',
       c.yearsLabel,
       c.strengths.map(s => s.label).join(' | '),
       c.status.toUpperCase()
