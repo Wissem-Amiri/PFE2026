@@ -4,9 +4,9 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { Button, Input, Upload, message, Avatar, Spin, Select, DatePicker } from 'antd'
 import dayjs from 'dayjs'
-import { 
-  HiOutlineMail, 
-  HiOutlineUser, 
+import {
+  HiOutlineMail,
+  HiOutlineUser,
   HiOutlineCloudUpload,
   HiOutlineTrash,
   HiOutlineCheckCircle,
@@ -53,12 +53,12 @@ export default function EmployeeApplyToJobPage() {
   const params = useParams()
   const jobId = params.jobId as string
   const { user, refreshProfile } = useAuth()
-  
+
   const [profile, setProfile] = useState<FullProfile | null>(null)
   const [job, setJob] = useState<Job | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  
+
   const { control, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormValues>({
     resolver: yupResolver(schema),
     defaultValues: {
@@ -83,7 +83,7 @@ export default function EmployeeApplyToJobPage() {
   const [showExpForm, setShowExpForm] = useState(false)
   const [newExp, setNewExp] = useState({ title: '', company: '', startDate: '', endDate: '' })
   const [editingId, setEditingId] = useState<string | null>(null)
-  
+
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [uploadingResume, setUploadingResume] = useState(false)
   const [uploadingLetter, setUploadingLetter] = useState(false)
@@ -99,13 +99,13 @@ export default function EmployeeApplyToJobPage() {
   useEffect(() => {
     async function loadData() {
       if (!user?.id || !jobId) return
-      
+
       setLoading(true)
       const [profileRes, jobRes] = await Promise.all([
         getProfile(user.id),
         getJobById(jobId)
       ])
-      
+
       if (profileRes.data) {
         const p = profileRes.data
         setProfile(p)
@@ -114,7 +114,7 @@ export default function EmployeeApplyToJobPage() {
         setValue('position', p.candidate?.position || '')
         setValue('country', p.candidate?.country || '')
         setAvatarUrl(p.avatar_url || '')
-        
+
         const rUrl = p.candidate?.resume_url || ''
         setResumeUrl(rUrl)
         if (rUrl) {
@@ -128,10 +128,10 @@ export default function EmployeeApplyToJobPage() {
           const fileName = lUrl.split('/').pop()?.split('?')[0] || 'Motivational_Letter.pdf'
           setLetterName(decodeURIComponent(fileName))
         }
-        
+
         setExperiences(p.candidate?.experiences || [])
       }
-      
+
       if (jobRes.data) {
         setJob(jobRes.data)
         // If position is empty, pre-fill it with job title
@@ -139,10 +139,10 @@ export default function EmployeeApplyToJobPage() {
           setValue('position', jobRes.data.title)
         }
       }
-      
+
       setLoading(false)
     }
-    
+
     loadData()
   }, [user?.id, jobId])
 
@@ -172,16 +172,16 @@ export default function EmployeeApplyToJobPage() {
       setResumeName(file.name)
       setResumeSize(formatSize(file.size))
       message.success('Resume uploaded. Analyzing content...')
-      
+
       // Call OCR API
       try {
         const ocrData = await extractCVData(file)
         if (ocrData) {
           message.success('CV analyzed! Filling fields...')
-          
+
           // Pre-fill form fields
           if (ocrData.Name) setValue('userName', ocrData.Name)
-          
+
           // Generate bio from skills and experience
           let generatedBio = watch('bio') || ''
           if (ocrData.Worked_As && ocrData.Worked_As.length > 0) {
@@ -196,7 +196,7 @@ export default function EmployeeApplyToJobPage() {
           if (ocrData.Certification && ocrData.Certification.length > 0) {
             generatedBio += `Certifications: ${ocrData.Certification.join(', ')}.\n`
           }
-          
+
           if (generatedBio) setValue('bio', generatedBio.trim())
         }
       } catch (ocrErr) {
@@ -225,17 +225,17 @@ export default function EmployeeApplyToJobPage() {
 
   const handleSave = async (values: FormValues) => {
     if (!user?.id || !jobId) return
-    
+
     if (!resumeUrl) {
       message.error('Please upload your resume')
       return
     }
-    
+
     if (!letterUrl) {
       message.error('Please upload your motivational letter')
       return
     }
-    
+
     setSaving(true)
     try {
       // 1. Update Profile
@@ -251,9 +251,9 @@ export default function EmployeeApplyToJobPage() {
           experiences
         }
       })
-      
+
       if (profileError) throw profileError
-      
+
       // 2. Apply to Job
       const { error: applyError } = await applyToJob(user.id, jobId)
       if (applyError) {
@@ -265,7 +265,7 @@ export default function EmployeeApplyToJobPage() {
       } else {
         message.success('Application sent successfully!')
       }
-      
+
       // Redirect to employee applications list
       router.push('/dashboard/employee/registrations')
     } catch (err: any) {
@@ -294,14 +294,14 @@ export default function EmployeeApplyToJobPage() {
           <p className="text-[#667085] text-[16px]">Update your photo and personal details to complete your application.</p>
         </div>
         <div className="flex gap-3">
-          <Button 
+          <Button
             className="h-[44px] px-6 rounded-lg border-[#D0D5DD] text-[#344054] font-medium hover:text-[#7F56D9] hover:border-[#7F56D9]"
             onClick={() => router.back()}
           >
             Cancel
           </Button>
-          <Button 
-            type="primary" 
+          <Button
+            type="primary"
             loading={saving}
             onClick={handleSubmit(handleSave)}
             className="h-[44px] px-8 rounded-lg bg-[#7F56D9] hover:bg-[#6941C6] border-none font-medium shadow-sm"
@@ -312,7 +312,7 @@ export default function EmployeeApplyToJobPage() {
       </div>
 
       <div className="max-w-4xl space-y-10">
-        
+
         {/* Personal Info Section */}
         <section className="space-y-6">
           <div className="pb-5 border-b border-[#EAECF0]">
@@ -326,7 +326,7 @@ export default function EmployeeApplyToJobPage() {
                 name="userName"
                 control={control}
                 render={({ field }) => (
-                  <Input 
+                  <Input
                     {...field}
                     placeholder="Your full name"
                     status={errors.userName ? 'error' : ''}
@@ -342,8 +342,8 @@ export default function EmployeeApplyToJobPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
             <label className="text-[14px] font-medium text-[#344054]">Email address</label>
             <div className="md:col-span-2">
-              <Input 
-                value={profile?.email || ''} 
+              <Input
+                value={profile?.email || ''}
                 disabled
                 className="h-[44px] rounded-lg bg-gray-50 border-[#D0D5DD] text-[#667085]"
                 prefix={<HiOutlineMail className="text-gray-400 mr-2" />}
@@ -358,14 +358,14 @@ export default function EmployeeApplyToJobPage() {
               <p className="text-[14px] text-[#667085]">This will be displayed on your profile.</p>
             </div>
             <div className="md:col-span-2 flex items-center gap-6">
-              <Avatar 
-                size={64} 
-                src={avatarUrl} 
+              <Avatar
+                size={64}
+                src={avatarUrl}
                 icon={<HiOutlineUser />}
                 className="shrink-0 border border-gray-100 shadow-sm"
               />
-              <Upload 
-                showUploadList={false} 
+              <Upload
+                showUploadList={false}
                 beforeUpload={handleAvatarUpload}
               >
                 <div className="border border-dashed border-[#D0D5DD] rounded-lg px-8 py-4 flex flex-col items-center gap-2 cursor-pointer hover:bg-gray-50 transition-colors w-full md:w-[320px]">
@@ -393,7 +393,7 @@ export default function EmployeeApplyToJobPage() {
                 name="position"
                 control={control}
                 render={({ field }) => (
-                  <Input 
+                  <Input
                     {...field}
                     placeholder="e.g. Product Designer"
                     className="h-[44px] rounded-lg border-[#D0D5DD]"
@@ -425,8 +425,8 @@ export default function EmployeeApplyToJobPage() {
                     {countries.map(c => (
                       <Option key={c.code} value={c.name} label={c.name}>
                         <div className="flex items-center gap-3">
-                          <img 
-                            src={`https://flagcdn.com/w20/${c.code.toLowerCase()}.png`} 
+                          <img
+                            src={`https://flagcdn.com/w20/${c.code.toLowerCase()}.png`}
                             alt={c.name}
                             className="w-5 h-auto rounded-sm object-contain"
                           />
@@ -451,7 +451,7 @@ export default function EmployeeApplyToJobPage() {
                 name="bio"
                 control={control}
                 render={({ field }) => (
-                  <TextArea 
+                  <TextArea
                     {...field}
                     rows={5}
                     placeholder="Briefly describe your professional background..."
@@ -495,7 +495,7 @@ export default function EmployeeApplyToJobPage() {
                   </div>
                   <div className="flex items-center gap-3">
                     <HiOutlineCheckCircle className="text-[#7F56D9] text-xl" />
-                    <button 
+                    <button
                       onClick={() => { setResumeUrl(''); setResumeSize(''); }}
                       className="text-gray-400 hover:text-red-500 transition-colors"
                     >
@@ -504,8 +504,8 @@ export default function EmployeeApplyToJobPage() {
                   </div>
                 </div>
               ) : (
-                <Upload 
-                  showUploadList={false} 
+                <Upload
+                  showUploadList={false}
                   beforeUpload={handleResumeUpload}
                   className="w-full block-upload"
                 >
@@ -542,7 +542,7 @@ export default function EmployeeApplyToJobPage() {
                   </div>
                   <div className="flex items-center gap-3">
                     <HiOutlineCheckCircle className="text-[#7F56D9] text-xl" />
-                    <button 
+                    <button
                       onClick={() => { setLetterUrl(''); setLetterSize(''); }}
                       className="text-gray-400 hover:text-red-500 transition-colors"
                     >
@@ -551,8 +551,8 @@ export default function EmployeeApplyToJobPage() {
                   </div>
                 </div>
               ) : (
-                <Upload 
-                  showUploadList={false} 
+                <Upload
+                  showUploadList={false}
                   beforeUpload={handleLetterUpload}
                   className="w-full block-upload"
                 >
@@ -593,7 +593,7 @@ export default function EmployeeApplyToJobPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
-                    <button 
+                    <button
                       onClick={() => {
                         setEditingId(exp.id)
                         setNewExp({ title: exp.title, company: exp.company, startDate: exp.startDate, endDate: exp.endDate || '' })
@@ -603,7 +603,7 @@ export default function EmployeeApplyToJobPage() {
                     >
                       <HiOutlinePencil size={18} />
                     </button>
-                    <button 
+                    <button
                       onClick={() => setExperiences(experiences.filter((_, i) => i !== index))}
                       className="text-gray-400 hover:text-red-500 transition-colors p-2"
                     >
@@ -618,28 +618,28 @@ export default function EmployeeApplyToJobPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <label className="text-[12px] font-medium text-[#344054]">Job Title</label>
-                      <Input 
-                        placeholder="e.g. Full Stack Developer" 
+                      <Input
+                        placeholder="e.g. Full Stack Developer"
                         value={newExp.title}
-                        onChange={e => setNewExp({...newExp, title: e.target.value})}
+                        onChange={e => setNewExp({ ...newExp, title: e.target.value })}
                         className="h-[40px] rounded-lg"
                       />
                     </div>
                     <div className="space-y-1">
                       <label className="text-[12px] font-medium text-[#344054]">Company</label>
-                      <Input 
-                        placeholder="e.g. UnifyRH" 
+                      <Input
+                        placeholder="e.g. UnifyRH"
                         value={newExp.company}
-                        onChange={e => setNewExp({...newExp, company: e.target.value})}
+                        onChange={e => setNewExp({ ...newExp, company: e.target.value })}
                         className="h-[40px] rounded-lg"
                       />
                     </div>
                     <div className="space-y-1">
                       <label className="text-[12px] font-medium text-[#344054]">Start Date</label>
-                      <DatePicker 
-                        placeholder="Select date" 
+                      <DatePicker
+                        placeholder="Select date"
                         value={newExp.startDate ? dayjs(newExp.startDate) : null}
-                        onChange={(date, dateString) => setNewExp({...newExp, startDate: Array.isArray(dateString) ? dateString[0] : dateString})}
+                        onChange={(date, dateString) => setNewExp({ ...newExp, startDate: Array.isArray(dateString) ? dateString[0] : dateString })}
                         disabledDate={(current) => {
                           return current && current > dayjs().endOf('day')
                         }}
@@ -648,10 +648,10 @@ export default function EmployeeApplyToJobPage() {
                     </div>
                     <div className="space-y-1">
                       <label className="text-[12px] font-medium text-[#344054]">End Date</label>
-                      <DatePicker 
-                        placeholder="Select date" 
+                      <DatePicker
+                        placeholder="Select date"
                         value={newExp.endDate ? dayjs(newExp.endDate) : null}
-                        onChange={(date, dateString) => setNewExp({...newExp, endDate: Array.isArray(dateString) ? dateString[0] : dateString})}
+                        onChange={(date, dateString) => setNewExp({ ...newExp, endDate: Array.isArray(dateString) ? dateString[0] : dateString })}
                         disabledDate={(current) => {
                           const isFuture = current && current > dayjs().endOf('day')
                           const isBeforeStart = current && newExp.startDate ? current.isBefore(dayjs(newExp.startDate), 'day') : false
@@ -662,7 +662,7 @@ export default function EmployeeApplyToJobPage() {
                     </div>
                   </div>
                   <div className="flex justify-end gap-3 pt-2">
-                    <button 
+                    <button
                       onClick={() => {
                         setShowExpForm(false)
                         setEditingId(null)
@@ -672,25 +672,25 @@ export default function EmployeeApplyToJobPage() {
                     >
                       Cancel
                     </button>
-                    <button 
+                    <button
                       onClick={() => {
                         if (newExp.title && newExp.company && newExp.startDate) {
                           if (newExp.endDate && dayjs(newExp.endDate).isBefore(dayjs(newExp.startDate))) {
                             message.error('End date must be after start date.')
                             return
                           }
-                          
+
                           if (editingId) {
                             setExperiences(experiences.map(exp => exp.id === editingId ? { ...exp, ...newExp } : exp))
                             message.success('Experience updated')
                           } else {
-                            setExperiences([...experiences, { 
+                            setExperiences([...experiences, {
                               id: Math.random().toString(36).substr(2, 9),
-                              ...newExp 
+                              ...newExp
                             }])
                             message.success('Experience added')
                           }
-                          
+
                           setNewExp({ title: '', company: '', startDate: '', endDate: '' })
                           setEditingId(null)
                           setShowExpForm(false)
@@ -705,8 +705,8 @@ export default function EmployeeApplyToJobPage() {
                   </div>
                 </div>
               ) : (
-                <Button 
-                  type="dashed" 
+                <Button
+                  type="dashed"
                   onClick={() => setShowExpForm(true)}
                   icon={<HiOutlinePlus className="inline mr-2" />}
                   className="w-full h-[44px] rounded-lg text-[#7F56D9] border-[#D0D5DD] hover:border-[#7F56D9] flex items-center justify-center font-medium"
@@ -720,14 +720,14 @@ export default function EmployeeApplyToJobPage() {
 
         {/* Footer Actions */}
         <div className="pt-8 border-t border-[#EAECF0] flex justify-end gap-3 pb-12">
-          <Button 
+          <Button
             className="h-[44px] px-6 rounded-lg border-[#D0D5DD] text-[#344054] font-medium hover:text-[#7F56D9] hover:border-[#7F56D9]"
             onClick={() => router.back()}
           >
             Cancel
           </Button>
-          <Button 
-            type="primary" 
+          <Button
+            type="primary"
             loading={saving}
             onClick={handleSubmit(handleSave)}
             className="h-[44px] px-8 rounded-lg bg-[#7F56D9] hover:bg-[#6941C6] border-none font-medium shadow-sm"

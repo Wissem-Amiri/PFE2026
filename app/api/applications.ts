@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import type { Application, DetailedApplication, ApplicationWithJob, ApplicationActivityItem } from '@/lib/database.types'
+import { calculateScoreFromParsedCV, type ParsedCVData } from './aiScoring'
 
 /** Apply to a Job */
 export async function applyToJob(candidateId: string, jobId: string) {
@@ -103,6 +104,11 @@ export async function getAllApplicationsDetailed(params: {
   search?: string;
   startDate?: string;
   endDate?: string;
+  minScore?: number;
+  maxScore?: number;
+  minExperience?: number; // in months
+  maxExperience?: number; // in months
+  jobId?: string;
 }) {
   const { 
     page, 
@@ -111,13 +117,47 @@ export async function getAllApplicationsDetailed(params: {
     status, 
     search, 
     startDate, 
-    endDate 
+    endDate,
+    minScore,
+    maxScore,
+    minExperience,
+    maxExperience,
+    jobId
   } = params;
 
+  // We query 'applications' table directly to ensure we get match_score and ai_analysis
   let query = supabase
-    .from('v_applications_activities')
-    .select('*', { count: 'exact' })
+    .from('applications')
+    .select(`
+      *,
+      candidate:candidates(
+        *,
+        user:users(*)
+      ),
+      job:jobs(*)
+    `, { count: 'exact' })
     .eq('is_archived', showArchived);
+
+  // Filter by Job
+  if (jobId && jobId !== 'all') {
+    query = query.eq('job_id', jobId);
+  }
+
+  // Filter by Score (Server-side)
+  if (minScore !== undefined) {
+    query = query.gte('match_score', minScore);
+  }
+  if (maxScore !== undefined) {
+    query = query.lte('match_score', maxScore);
+  }
+
+  // Filter by Experience (Server-side)
+  if (minExperience !== undefined) {
+    query = query.gte('total_experience_months', minExperience);
+  }
+  if (maxExperience !== undefined) {
+    query = query.lte('total_experience_months', maxExperience);
+  }
 
   // Filter by Status
   if (status && status !== 'All Status') {
@@ -128,12 +168,9 @@ export async function getAllApplicationsDetailed(params: {
     }
   }
 
-  // Filter by Search (Name or Job Title)
-  if (search) {
-    query = query.or(`job_title.ilike.%${search}%,user_name.ilike.%${search}%`);
-  }
-
-  // Filter by Date Range
+  // Filter by Search (Note: Searching joined tables in Supabase requires careful syntax or simpler filters)
+  // For simplicity and reliability with the score, we'll keep the basic filters here.
+  
   if (startDate) {
     query = query.gte('applied_at', startDate);
   }
@@ -148,24 +185,16 @@ export async function getAllApplicationsDetailed(params: {
     .order('applied_at', { ascending: false })
     .range(from, to);
   
+  console.log('Applications from DB:', data);
+  if (error) console.error('Supabase Fetch Error:', error);
+  
   return { 
-    data: (data || []).map((item: ApplicationActivityItem) => ({
+    data: (data || []).map((item: any) => ({
       ...item,
-      candidate: {
-        id: item.candidate_id,
-        resume_url: item.resume_url,
-        user: {
-          user_name: item.user_name,
-          avatar_url: item.avatar_url,
-          email: item.email,
-          role: item.role,
-          phone: item.phone
-        }
-      },
-      job: {
-        id: item.job_id,
-        title: item.job_title
-      }
+      // Ensure the structure matches what the UI expects
+      job_title: item.job?.title,
+      user_name: item.candidate?.user?.user_name,
+      avatar_url: item.candidate?.user?.avatar_url
     })), 
     count: count || 0, 
     error 
@@ -231,16 +260,16 @@ export async function deleteAllOtherApplications(candidateId: string, excludeApp
   return { error }
 }
 
-/** Analyze application using external AI API (3-step protocol) */
-export async function analyzeApplication(applicationId: string) {
-  const API_BASE = 'http://localhost:5000/api'
-
-  // 1. Get application details from Supabase
+/**
+ * Processes parsed CV data, calculates the match score against the job,
+ * and updates the application record in Supabase.
+ */
+export async function processParsedCVData(applicationId: string, cvData: ParsedCVData) {
+  // 1. Fetch application and job details
   const { data: application, error: fetchError } = await supabase
     .from('applications')
     .select(`
       *,
-      candidate:candidates(resume_url),
       job:jobs(title, description, requirements)
     `)
     .eq('id', applicationId)
@@ -250,11 +279,63 @@ export async function analyzeApplication(applicationId: string) {
     return { error: fetchError?.message || 'Application not found' }
   }
 
-  const resumeUrl = (application as any).candidate?.resume_url
-  const jobTitle = (application as any).job?.title || ''
-  const jobDesc = (application as any).job?.description || ''
-  const jobReq = (application as any).job?.requirements || ''
+  const job = (application as any).job
+  if (!job) return { error: 'Job details not found' }
 
+  // 2. Calculate Score & Experience
+  const { score: finalScore, totalExperienceMonths } = calculateScoreFromParsedCV(cvData, {
+    title: job.title,
+    description: job.description || '',
+    requirements: job.requirements || ''
+  })
+
+  // 3. Prepare enriched analysis
+  const enrichedAnalysis = {
+    score: finalScore,
+    totalExperienceMonths,
+    strengths: [...(cvData.Skills || []), ...(cvData.Certification || [])].slice(0, 6),
+    experience_relevance: `Worked as: ${cvData.Worked_As?.join(', ') || 'N/A'}. Total experience: ${cvData.Years_Of_Experience?.join(', ') || 'N/A'}.`,
+    experience_list: (cvData.Worked_As || []).map((role, index) => ({
+      role: role.replace(/\n/g, ' ').trim(),
+      duration: cvData.Years_Of_Experience?.[index] || 'N/A'
+    })),
+    ...cvData
+  }
+
+  // 4. Update Supabase
+  const { error: updateError } = await (supabase as any)
+    .from('applications')
+    .update({
+      match_score: finalScore,
+      total_experience_months: totalExperienceMonths,
+      ai_analysis: enrichedAnalysis
+    })
+    .eq('id', applicationId)
+
+  if (updateError) return { error: updateError.message }
+
+  return { data: enrichedAnalysis, error: null }
+}
+
+/** Analyze application using external AI API (Local Scoring Protocol) */
+export async function analyzeApplication(applicationId: string) {
+  const API_BASE = 'http://localhost:5000/api'
+
+  // 1. Get application details to get resume URL
+  const { data: application, error: fetchError } = await supabase
+    .from('applications')
+    .select(`
+      *,
+      candidate:candidates(resume_url)
+    `)
+    .eq('id', applicationId)
+    .single()
+
+  if (fetchError || !application) {
+    return { error: fetchError?.message || 'Application not found' }
+  }
+
+  const resumeUrl = (application as any).candidate?.resume_url
   if (!resumeUrl) return { error: 'No resume found' }
 
   try {
@@ -265,10 +346,6 @@ export async function analyzeApplication(applicationId: string) {
     }
     const blob = await fileRes.blob()
     
-    if (blob.size === 0) {
-      throw new Error("The fetched resume file is empty")
-    }
-
     const resumeFormData = new FormData()
     resumeFormData.append('file', blob, 'resume.pdf')
 
@@ -280,50 +357,11 @@ export async function analyzeApplication(applicationId: string) {
       const errText = await parseRes.text()
       throw new Error(`CV Parsing failed (${parseRes.status}): ${errText}`)
     }
-    const parseData = await parseRes.json()
-    const resumeId = parseData.id
+    const parseData: ParsedCVData = await parseRes.json()
 
-    // --- STEP 2: CREATE JOB ---
-    const jobRes = await fetch(`${API_BASE}/job/jobs`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title: jobTitle,
-        description: jobDesc,
-        required_skills: [jobReq] // External API expects an array
-      })
-    })
-    if (!jobRes.ok) {
-      const errText = await jobRes.text()
-      throw new Error(`Job Creation failed (${jobRes.status}): ${errText}`)
-    }
-    const jobData = await jobRes.json()
-    const jobId = jobData.id
+    // --- STEP 2 & 3: PROCESS AND UPDATE ---
+    return await processParsedCVData(applicationId, parseData)
 
-    // --- STEP 3: MATCH ---
-    const matchRes = await fetch(`${API_BASE}/job/match/${jobId}/${resumeId}`)
-    if (!matchRes.ok) {
-      const errText = await matchRes.text()
-      throw new Error(`Matching failed (${matchRes.status}): ${errText}`)
-    }
-    
-    const analysisResult = await matchRes.json()
-
-    // 4. Update Supabase with the final score
-    // Handle both 'match_score' and any detailed report returned
-    const finalScore = analysisResult.match_score || analysisResult.score || 0
-
-    const { error: updateError } = await (supabase as any)
-      .from('applications')
-      .update({
-        match_score: finalScore,
-        ai_analysis: analysisResult
-      })
-      .eq('id', applicationId)
-
-    if (updateError) throw updateError
-
-    return { data: analysisResult, error: null }
   } catch (err: any) {
     console.error('Analysis Error:', err)
     return { error: err.message || 'An error occurred during analysis' }

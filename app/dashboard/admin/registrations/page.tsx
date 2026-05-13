@@ -38,11 +38,15 @@ import type { FullProfile } from '@/lib/database.types'
 
 import { useApplications, queryKeys } from '@/lib/hooks'
 import { useQueryClient } from '@tanstack/react-query'
+import { useSearchParams } from 'next/navigation'
 
 export default function RegistrationsPage() {
+  const searchParams = useSearchParams()
+  const highlightParam = searchParams.get('highlight')
+  
   const queryClient = useQueryClient()
   const [currentPage, setCurrentPage] = useState(1)
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(highlightParam || '')
   const [statusFilter, setStatusFilter] = useState('All Status')
   const [dateRange, setDateRange] = useState<[any, any] | null>(null)
   const pageSize = 10
@@ -357,8 +361,17 @@ export default function RegistrationsPage() {
               ) : paginatedData.length === 0 ? (
                 <tr><td colSpan={7} className="text-center py-[60px] text-[#64748b]">No registrations found.</td></tr>
               ) : (
-                paginatedData.map((app) => (
-                  <tr key={app.id} className="hover:bg-[#f8fafc]/50 transition-colors h-[74px]">
+                paginatedData.map((app) => {
+                  const isHighlighted = highlightParam === app.candidate?.user?.email
+                  return (
+                    <tr 
+                      key={app.id} 
+                      className={`transition-all duration-500 h-[74px] ${
+                        isHighlighted 
+                          ? 'bg-emerald-50/70 border-l-4 border-l-emerald-500 shadow-inner animate-pulse-subtle' 
+                          : 'hover:bg-[#f8fafc]/50 hover:shadow-sm'
+                      }`}
+                    >
                     <td className="px-[24px] py-[16px]">
                       <input
                         type="checkbox"
@@ -471,7 +484,8 @@ export default function RegistrationsPage() {
                       </div>
                     </td>
                   </tr>
-                ))
+                  )
+                })
               )}
             </tbody>
           </table>
@@ -712,6 +726,15 @@ export default function RegistrationsPage() {
           height: 44px !important;
           border-radius: 8px !important;
           border-color: #d0d5dd !important;
+        }
+
+        @keyframes pulse-subtle {
+          0% { background-color: rgba(16, 185, 129, 0.05); }
+          50% { background-color: rgba(16, 185, 129, 0.15); }
+          100% { background-color: rgba(16, 185, 129, 0.05); }
+        }
+        .animate-pulse-subtle {
+          animation: pulse-subtle 2s infinite ease-in-out;
         }
       `}</style>
     </div>

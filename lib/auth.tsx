@@ -159,7 +159,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     if (user && (isAuthPage || isHomePage) && !isNewPassPage && !isVerifyEmailPage) {
       const role = profile?.role || user.user_metadata?.role
       const dashboardPath = getDashboardByRole(role)
-      
+
       if (applyTo && (role === 'candidate' || !role)) {
         router.push(`${dashboardPath}/apply/${applyTo}`)
       } else {
@@ -177,7 +177,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     // ── Role-based dashboard protection ──
     // Wait until profile is loaded before checking
     if (user && isDashboard && profile !== undefined) {
-  
+
       const correctDashboard = getDashboardByRole(profile?.role || user.user_metadata?.role)
 
       // Redirect only if the user is NOT on their allowed dashboard path

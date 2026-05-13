@@ -24,6 +24,20 @@ export interface Strength {
   color: 'purple' | 'green' | 'amber'
 }
 
+export interface ParsedCVData {
+  Name: string
+  LinkedIn_Link: string
+  Skills: string[]
+  Certification: string[]
+  Worked_As: string[]
+  Years_Of_Experience: string[]
+  Phone_Number: string
+  Birthday: string | null
+  file_name: string
+  uploaded_at: string
+  id: string
+}
+
 // ─── Keywords for strength extraction ────────────────────────────────────────
 const KEYWORD_MAP: { keywords: string[]; label: string; color: Strength['color'] }[] = [
   { keywords: ['react', 'next', 'vue', 'angular', 'frontend', 'ui', 'ux'], label: 'Frontend Expert', color: 'purple' },
@@ -116,7 +130,8 @@ export function calculateAIScore(
   const bio = candidate.bio || ''
   const position = candidate.position || ''
   const experiences = candidate.experiences || []
-  const jobText = `${job.title} ${job.description} ${job.requirements || ''}`
+  // Only use Title and Requirements, excluding Description
+  const jobText = `${job.title} ${job.requirements || ''}`.toLowerCase()
 
   // 1. Bio + position keyword match vs job (max 40 pts)
   score += keywordOverlapScore(`${bio} ${position}`, jobText)
@@ -165,6 +180,81 @@ export function scoreCandidate(
     yearsLabel: formatYearsLabel(experiences),
     prevCompanies: getPrevCompanies(experiences),
     strengths: extractStrengths(candidate.bio || '', candidate.position || '', experiences),
+  }
+}
+
+// ─── Score from Parsed CV Data ───────────────────────────────────────────────
+export function calculateScoreFromParsedCV(
+  cvData: ParsedCVData,
+  job: { title: string; description: string; requirements?: string | null }
+): number {
+  let score = 0
+  // Only use Title and Requirements, excluding Description
+  const jobText = `${job.title} ${job.requirements || ''}`.toLowerCase()
+  const jobTitleLower = job.title.toLowerCase()
+
+  // 1. Skills match (max 40 pts)
+  if (cvData.Skills && cvData.Skills.length > 0) {
+    const skillScore = cvData.Skills.reduce((acc, skill) => {
+      const cleanSkill = skill.toLowerCase().replace(/\n/g, ' ').trim()
+      return acc + (jobText.includes(cleanSkill) ? 8 : 0)
+    }, 0)
+    score += Math.min(40, skillScore)
+  }
+
+  // 2. Relevant Experience years (max 30 pts)
+  let totalRelevantMonths = 0
+  const workedAs = cvData.Worked_As || []
+  const yearsOfExp = cvData.Years_Of_Experience || []
+
+  workedAs.forEach((role, index) => {
+    if (!role) return
+    const cleanRole = role.toLowerCase().replace(/\n/g, ' ').trim()
+    // Check if this specific role is relevant to the job title or requirements
+    const isRelevant = jobText.includes(cleanRole) || jobTitleLower.includes(cleanRole) || cleanRole.includes(jobTitleLower)
+    
+    if (isRelevant) {
+      const exp = yearsOfExp[index] || ''
+      const match = exp.match(/(\d+)\s*(mois|month|an|year)/i)
+      if (match) {
+        const val = parseInt(match[1])
+        const unit = match[2].toLowerCase()
+        if (unit.startsWith('an') || unit.startsWith('year')) {
+          totalRelevantMonths += val * 12
+        } else {
+          totalRelevantMonths += val
+        }
+      }
+    }
+  })
+
+  const years = totalRelevantMonths / 12
+  if (years >= 5) score += 30
+  else if (years >= 3) score += 20
+  else if (years >= 1) score += 10
+  else if (years > 0) score += 5
+
+  // 3. Title match (max 20 pts)
+  const matchedTitles = (cvData.Worked_As || []).filter(title => {
+    if (!title) return false
+    const t = title.toLowerCase().replace(/\n/g, ' ').trim()
+    return jobTitleLower.includes(t) || t.includes(jobTitleLower)
+  })
+  score += Math.min(20, matchedTitles.length * 10)
+
+  // 4. Certifications bonus (max 10 pts)
+  if (cvData.Certification && cvData.Certification.length > 0) {
+    const certScore = cvData.Certification.reduce((acc, cert) => {
+      const cleanCert = cert.toLowerCase().replace(/\n/g, ' ').trim()
+      // Only give points if cert matches job requirements/title. No bonus for non-matches.
+      return acc + (jobText.includes(cleanCert) ? 5 : 0)
+    }, 0)
+    score += Math.min(10, certScore)
+  }
+
+  return { 
+    score: Math.min(Math.max(score, 10), 99), 
+    totalExperienceMonths: totalRelevantMonths 
   }
 }
 

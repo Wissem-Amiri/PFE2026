@@ -11,9 +11,14 @@ export function useApplications(params: {
   leaveType?: string;
   startDate?: string;
   endDate?: string;
-} = { page: 1, pageSize: 20 }) {
+  minScore?: number;
+  maxScore?: number;
+  minExperience?: number;
+  maxExperience?: number;
+  jobId?: string;
+}) {
   return useQuery({
-    queryKey: [...queryKeys.applications, params],
+    queryKey: [...queryKeys.applications, params], // Use the standard key structure
     queryFn: async () => {
       const { data, count, error } = await getAllApplicationsDetailed(params)
       if (error) throw error
