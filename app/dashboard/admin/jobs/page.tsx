@@ -6,6 +6,7 @@ import { useJobs } from '@/lib/hooks'
 import Link from 'next/link'
 import Image from 'next/image'
 import { HiOutlineChevronLeft, HiOutlineChevronRight } from 'react-icons/hi'
+import { Pagination, TabSwitcher } from '@/components'
 
 export default function JobsPage() {
   const [activeTab, setActiveTab] = useState('View all')
@@ -73,24 +74,12 @@ export default function JobsPage() {
         </div>
 
         {/* ── TABS ── */}
-        <div className="relative border-b border-[#EAECF0] w-full">
-          <div className="flex gap-8 overflow-x-auto no-scrollbar w-full">
-            {tabs.map((tab) => (
-              <button
-                key={tab.label}
-                onClick={() => setActiveTab(tab.label)}
-                className={`pb-4 px-1 text-[14px] font-semibold relative transition-colors whitespace-nowrap flex-shrink-0 ${
-                  activeTab === tab.label ? 'text-[#6941C6]' : 'text-[#667085] hover:text-[#101828]'
-                }`}
-              >
-                {tab.label}
-                {activeTab === tab.label && (
-                  <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#6941C6] rounded-full" />
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
+        <TabSwitcher
+          tabs={tabs}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          variant="underline"
+        />
       </div>
 
       {/* ── CONTENT ── */}
@@ -201,41 +190,12 @@ export default function JobsPage() {
       )}
 
       {/* ── PAGINATION ── */}
-      {totalPages > 1 && (
-        <div className="mt-8 pt-6 border-t border-[#EAECF0] flex flex-col sm:flex-row gap-4 justify-between items-center">
-          <button
-            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-            disabled={currentPage === 1}
-            className="flex items-center gap-2 px-4 py-2 border border-[#D0D5DD] rounded-lg text-[14px] font-semibold text-[#344054] hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-          >
-            <HiOutlineChevronLeft className="w-5 h-5" /> Previous
-          </button>
-
-          <div className="flex gap-2">
-            {Array.from({ length: totalPages }).map((_, i) => (
-              <button
-                key={i + 1}
-                onClick={() => setCurrentPage(i + 1)}
-                className={`w-10 h-10 rounded-lg text-[14px] font-semibold transition-all ${
-                  currentPage === i + 1
-                    ? 'bg-[#F9F5FF] text-[#7F56D9] ring-1 ring-[#7F56D9]'
-                    : 'text-[#667085] hover:bg-gray-50'
-                }`}
-              >
-                {i + 1}
-              </button>
-            ))}
-          </div>
-
-          <button
-            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-            disabled={currentPage === totalPages}
-            className="flex items-center gap-2 px-4 py-2 border border-[#D0D5DD] rounded-lg text-[14px] font-semibold text-[#344054] hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-          >
-            Next <HiOutlineChevronRight className="w-5 h-5" />
-          </button>
-        </div>
-      )}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+        className="mt-8 pt-6 border-t border-[#EAECF0]"
+      />
 
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');

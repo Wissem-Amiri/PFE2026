@@ -26,6 +26,7 @@ const { RangePicker } = DatePicker
 import { HiOutlineSparkles, HiOutlineEye, HiOutlineUserGroup, HiOutlineShieldCheck, HiOutlineXCircle } from 'react-icons/hi'
 import { processImagePresence, processVideoPresence, getPresenceFileUrl } from '@/app/api/presence'
 import { enrichDetections, type DetectionWithProfile } from '@/lib/presenceUtils'
+import { Pagination, TabSwitcher } from '@/components'
 
 export default function RecordingsPage() {
   const { user } = useAuth()
@@ -332,22 +333,13 @@ export default function RecordingsPage() {
 
         </div>
 
-        {/* Tabs and Search Section */}
         <div className="px-[24px] py-[12px] border-b border-[#EAECF0] flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
-          <div className="flex flex-wrap bg-white p-[2px] rounded-[8px] border border-[#D0D5DD] shadow-sm w-full xl:w-auto">
-            {['View all', 'Your files'].map(tab => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-[16px] py-[10px] text-[14px] font-semibold rounded-[6px] transition-all border-0 cursor-pointer
-                  ${activeTab === tab
-                    ? 'bg-[#F9FAFB] text-[#344054]'
-                    : 'bg-white text-[#344054] hover:bg-[#F9FAFB]'}`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
+          <TabSwitcher
+            tabs={[{ label: 'View all' }, { label: 'Your files' }]}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            variant="pill"
+          />
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-[12px] w-full xl:w-auto">
             <div className="relative w-full sm:w-auto">
               <HiOutlineSearch className="absolute left-[12px] top-1/2 -translate-y-1/2 w-[20px] h-[20px] text-[#667085]" />
@@ -484,41 +476,12 @@ export default function RecordingsPage() {
         </div>
 
         {/* Pagination Section */}
-        {totalItems > pageSize && (
-          <div className="px-[24px] py-[16px] border-t border-[#EAECF0] flex flex-col sm:flex-row gap-4 justify-between items-center bg-white">
-            <Button
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-              className="h-[36px] px-[14px] rounded-[8px] border-[#D0D5DD] shadow-sm font-semibold text-[#344054] flex items-center gap-[8px]"
-            >
-              <HiOutlineChevronLeft className="w-[20px] h-[20px]" />
-              Previous
-            </Button>
-            <div className="flex gap-[2px]">
-              {Array.from({ length: totalPages }).map((_, idx) => {
-                const page = idx + 1
-                return (
-                  <button
-                    key={idx}
-                    onClick={() => setCurrentPage(page)}
-                    className={`w-[40px] h-[40px] flex items-center justify-center text-[14px] font-medium rounded-[8px] transition-all border-0 cursor-pointer
-                      ${page === currentPage ? 'bg-[#F9F5FF] text-[#7F56D9]' : 'bg-transparent text-[#667085] hover:bg-[#F9FAFB]'}`}
-                  >
-                    {page}
-                  </button>
-                )
-              })}
-            </div>
-            <Button
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-              className="h-[36px] px-[14px] rounded-[8px] border-[#D0D5DD] shadow-sm font-semibold text-[#344054] flex items-center gap-[8px]"
-            >
-              Next
-              <HiOutlineChevronRight className="w-[20px] h-[20px]" />
-            </Button>
-          </div>
-        )}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          className="px-[24px] py-[16px] border-t border-[#EAECF0] bg-white"
+        />
       </div>
 
       {/* ── AI RESULTS MODAL (Figma Design Implementation) ── */}

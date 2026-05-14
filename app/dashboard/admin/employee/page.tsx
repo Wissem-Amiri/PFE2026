@@ -14,6 +14,7 @@ import dayjs from 'dayjs'
 import { useEmployees, useInfiniteEmployees, queryKeys } from '@/lib/hooks'
 import { useQueryClient } from '@tanstack/react-query'
 import { useInView } from 'react-intersection-observer'
+import { Pagination } from '@/components'
 
 
 export default function AdminEmployeeListPage() {
@@ -557,39 +558,13 @@ export default function AdminEmployeeListPage() {
       )}
 
       {/* ── PAGINATION ── */}
-      {viewType === 'table' && totalItems > tablePageSize && (
-        <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-between items-center bg-white border border-[#eaecf0] rounded-2xl p-4 shadow-sm">
-          <button
-            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-            disabled={currentPage === 1}
-            className="flex items-center gap-2 px-4 py-2 border border-[#d0d5dd] rounded-xl text-[14px] font-semibold text-[#344054] hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-          >
-            <HiOutlineChevronLeft className="text-lg" /> Previous
-          </button>
-
-          <div className="flex gap-2">
-            {Array.from({ length: totalPages }).map((_, i) => (
-              <button
-                key={i + 1}
-                onClick={() => setCurrentPage(i + 1)}
-                className={`w-10 h-10 rounded-xl text-[14px] font-semibold transition-all ${currentPage === i + 1
-                  ? 'bg-[#7c3aed] text-white shadow-lg shadow-purple-100'
-                  : 'text-[#667085] hover:bg-gray-50'
-                  }`}
-              >
-                {i + 1}
-              </button>
-            ))}
-          </div>
-
-          <button
-            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-            disabled={currentPage === totalPages}
-            className="flex items-center gap-2 px-4 py-2 border border-[#d0d5dd] rounded-xl text-[14px] font-semibold text-[#344054] hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-          >
-            Next <HiOutlineChevronRight className="text-lg" />
-          </button>
-        </div>
+      {viewType === 'table' && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          className="mt-12 bg-white border border-[#eaecf0] rounded-2xl p-4 shadow-sm"
+        />
       )}
 
 

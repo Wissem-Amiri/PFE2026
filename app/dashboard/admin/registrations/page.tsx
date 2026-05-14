@@ -39,6 +39,7 @@ import type { FullProfile } from '@/lib/database.types'
 import { useApplications, queryKeys } from '@/lib/hooks'
 import { useQueryClient } from '@tanstack/react-query'
 import { useSearchParams } from 'next/navigation'
+import { Pagination, SearchBar, FilterBar } from '@/components'
 
 export default function RegistrationsPage() {
   const searchParams = useSearchParams()
@@ -224,18 +225,8 @@ export default function RegistrationsPage() {
         </div>
 
         {/* ── SEARCH & FILTERS BAR ── */}
-        <div className="bg-[rgba(248,248,248,0.31)] border border-[rgba(203,195,213,0.1)] rounded-[16px] p-4 mb-[16px] flex flex-col xl:flex-row items-center justify-between gap-4 h-auto">
-          <div className="flex-1 w-full xl:max-w-[550px] relative">
-            <div className="absolute left-[12px] top-1/2 -translate-y-1/2 w-[15px] h-[15px]">
-              <img src="/assets/search.svg" alt="" className="w-full h-full opacity-60" />
-            </div>
-            <input
-              placeholder="Search ..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="w-full bg-white border border-[rgba(203,195,213,0.2)] rounded-[12px] pl-[41px] pr-[17px] py-[12px] text-[14px] text-[#101828] focus:outline-none focus:ring-1 focus:ring-[#7f56d9]/20 transition-all placeholder:text-[#6b7280]"
-            />
-          </div>
+        <FilterBar>
+          <SearchBar value={search} onChange={setSearch} placeholder="Search ..." />
 
           <div className="flex flex-col sm:flex-row gap-[16px] items-center w-full xl:w-auto">
             <div className="w-full sm:w-[180px]">
@@ -267,7 +258,7 @@ export default function RegistrationsPage() {
               />
             </div>
           </div>
-        </div>
+        </FilterBar>
 
         {/* ── SELECTION BAR ── */}
         {selectedIds.size > 0 && (
@@ -460,40 +451,12 @@ export default function RegistrationsPage() {
           </div>
 
           {/* ── PAGINATION ── */}
-          {totalItems > pageSize && (
-            <div className="px-6 py-4 flex flex-col sm:flex-row gap-4 items-center justify-between border-t border-[#f1f5f9] bg-white">
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                disabled={currentPage === 1}
-                className="flex items-center gap-2 px-3 py-2 border border-[#d0d5dd] rounded-[8px] text-[14px] font-semibold text-[#344054] hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-              >
-                <HiOutlineChevronLeft /> Previous
-              </button>
-
-              <div className="flex gap-[4px]">
-                {Array.from({ length: totalPages }).map((_, i) => (
-                  <button
-                    key={i + 1}
-                    onClick={() => setCurrentPage(i + 1)}
-                    className={`w-[40px] h-[40px] rounded-[8px] text-[14px] font-semibold transition-all ${currentPage === i + 1
-                      ? 'bg-[#f9f5ff] text-[#7f56d9] ring-1 ring-[#7f56d9]'
-                      : 'text-[#667085] hover:bg-gray-50'
-                      }`}
-                  >
-                    {i + 1}
-                  </button>
-                ))}
-              </div>
-
-              <button
-                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                disabled={currentPage === totalPages}
-                className="flex items-center gap-2 px-3 py-2 border border-[#d0d5dd] rounded-[8px] text-[14px] font-semibold text-[#344054] hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-              >
-                Next <HiOutlineChevronRight />
-              </button>
-            </div>
-          )}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            className="px-6 py-4 border-t border-[#f1f5f9] bg-white"
+          />
         </div>
       </div>
 
