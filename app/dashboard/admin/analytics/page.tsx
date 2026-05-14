@@ -19,7 +19,7 @@ import {
 import {
   getKpiData, getApplicationsPerMonth, getApplicationStatusDistribution,
   getLeavesPerType, getEmployeesByDepartment, getTopAppliedJobs,
-  getAiScoreDistribution, getLeavesMonthlyTrend, getActivityTimeline
+  getLeavesMonthlyTrend
 } from '@/app/api/analytics'
 
 dayjs.extend(relativeTime)
@@ -135,14 +135,12 @@ export default function AdminAnalyticsPage() {
   const [leaveTrend, setLeaveTrend] = useState<any[]>([])
   const [deptData, setDeptData] = useState<any[]>([])
   const [topJobs, setTopJobs] = useState<any[]>([])
-  const [aiScores, setAiScores] = useState<any[]>([])
-  const [timeline, setTimeline] = useState<any[]>([])
 
   const fetchAll = useCallback(async (r = range, showRefresh = false) => {
     if (showRefresh) setRefreshing(true)
     else setLoading(true)
 
-    const [kpiRes, months, statuses, leaves, leaveTrendRes, depts, jobs, scores, tl] = await Promise.all([
+    const [kpiRes, months, statuses, leaves, leaveTrendRes, depts, jobs] = await Promise.all([
       getKpiData(),
       getApplicationsPerMonth(r),
       getApplicationStatusDistribution(),
@@ -150,8 +148,6 @@ export default function AdminAnalyticsPage() {
       getLeavesMonthlyTrend(),
       getEmployeesByDepartment(),
       getTopAppliedJobs(),
-      getAiScoreDistribution(),
-      getActivityTimeline(),
     ])
 
     setKpis(kpiRes)
@@ -161,8 +157,6 @@ export default function AdminAnalyticsPage() {
     setLeaveTrend(leaveTrendRes)
     setDeptData(depts)
     setTopJobs(jobs)
-    setAiScores(scores)
-    setTimeline(tl)
     setLoading(false)
     setRefreshing(false)
   }, [range])
@@ -234,10 +228,7 @@ export default function AdminAnalyticsPage() {
     datasets: [{ label: 'Applications', data: topJobs.map(j => j.count), backgroundColor: [P.purple, P.blue, P.green, P.amber, P.red], borderRadius: 8, borderSkipped: false }]
   }
 
-  const aiScoreData = {
-    labels: aiScores.map(b => b.label),
-    datasets: [{ label: 'Candidates', data: aiScores.map(b => b.count), backgroundColor: [P.red, P.amber, P.blue, P.indigo, P.green], borderRadius: 10, borderSkipped: false }]
-  }
+
 
   if (loading) return (
     <div className="p-8 bg-[#FCFCFD] min-h-screen flex flex-col gap-8">
@@ -317,29 +308,15 @@ export default function AdminAnalyticsPage() {
         </ChartCard>
       </div>
 
-      {/* ── Row 3 : Department + Top Jobs + AI Scores ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      {/* ── Row 3 : Department + Top Jobs ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <ChartCard title="Employees by Department" subtitle="Workforce distribution">
           <Bar data={deptData2} options={baseOptsH()} />
         </ChartCard>
         <ChartCard title="Top 5 Applied Positions" subtitle="Most popular job postings">
           <Bar data={jobsData} options={baseOptsH()} />
         </ChartCard>
-        <ChartCard title="AI Score Distribution" subtitle="CV matching scores — All candidates" badge="AI Powered">
-          <Bar data={aiScoreData} options={baseOpts('%')} />
-        </ChartCard>
       </div>
-
-      {/* ── Row 4 : Activity Timeline ── */}
-      <ChartCard title="Live Activity Feed" subtitle="Latest HR events across the platform">
-        <div className="divide-y divide-[#F9FAFB]">
-          {timeline.length === 0 ? (
-            <p className="text-center text-[13px] text-[#98A2B3] py-8">No recent activity found.</p>
-          ) : (
-            timeline.map((event, i) => <TimelineEvent key={i} event={event} />)
-          )}
-        </div>
-      </ChartCard>
 
     </div>
   )

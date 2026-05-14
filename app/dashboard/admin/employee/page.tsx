@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { SearchOutlined, TeamOutlined, MailOutlined, BankOutlined, UserOutlined, ArrowLeftOutlined } from '@ant-design/icons'
 import { Input, Avatar, Card, Tag, Spin, Button, Modal, InputNumber, message, DatePicker, Select } from 'antd'
-import { deleteUser, getAllUsers, updateUserStatus, getProfile, createEmployeeAccount, archiveUsers, unarchiveUsers, exportToCSV, downloadCSV } from '@/app/api/profile'
+import { deleteUser, getAllUsers, updateUserStatus, getProfile, createEmployeeAccount, archiveUsers, unarchiveUsers } from '@/app/api/profile'
 import { getAllJobs } from '@/app/api/job'
 import { adjustEmployeeBalance } from '@/app/api/leaves'
 import type { FullProfile } from '@/lib/database.types'
@@ -14,7 +14,7 @@ import dayjs from 'dayjs'
 import { useEmployees, useInfiniteEmployees, queryKeys } from '@/lib/hooks'
 import { useQueryClient } from '@tanstack/react-query'
 import { useInView } from 'react-intersection-observer'
-import { exportEmployeesToPDF } from '@/app/api/export'
+
 
 export default function AdminEmployeeListPage() {
   const queryClient = useQueryClient()
@@ -241,14 +241,7 @@ export default function AdminEmployeeListPage() {
     }
   }
 
-  const handleExportPDF = () => {
-    if (employees.length === 0) {
-      message.info('No employees to export')
-      return
-    }
-    exportEmployeesToPDF(employees)
-    message.success('PDF Export successful')
-  }
+
 
   const departmentOptions = ['All Departments', 'IT', 'HR', 'Finance', 'Marketing', 'Operations'];
   const filtered = employees;
@@ -328,14 +321,7 @@ export default function AdminEmployeeListPage() {
             {showArchived ? 'Active Only' : 'Show Archived'}
           </button>
 
-          {/* Export */}
-          <button
-            onClick={handleExportPDF}
-            className="flex items-center justify-center gap-[8px] h-[44px] px-[17px] bg-white border border-[#e2e8f0] rounded-[12px] text-[#334155] text-[14px] font-bold hover:bg-gray-50 transition-all shadow-sm whitespace-nowrap"
-          >
-            <HiOutlineDownload className="text-[18px]" />
-            Export PDF
-          </button>
+
         </div>
       </div>
 

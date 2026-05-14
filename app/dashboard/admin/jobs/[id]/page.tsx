@@ -7,7 +7,7 @@ import { isJobOpen } from '@/app/api/job'
 import { useInView } from 'react-intersection-observer'
 import type { Job } from '@/lib/database.types'
 import { message } from 'antd'
-import { downloadCSV } from '@/app/api/export'
+
 import dayjs from 'dayjs'
 
 export default function JobOverviewPage() {
@@ -90,28 +90,7 @@ export default function JobOverviewPage() {
     setLoadingMembers(false)
   }
 
-  const handleExportMembers = () => {
-    if (members.length === 0) {
-      messageApi.info('No members to export')
-      return
-    }
 
-    const headers = ['MEMBER NAME', 'POSITION', 'HIRE DATE', 'JOINED DATE']
-    const rows = members.map(m => [
-      m.users?.user_name || 'Anonymous',
-      m.position || job?.title || 'N/A',
-      m.hire_date ? dayjs(m.hire_date).format('YYYY-MM-DD') : 'N/A',
-      m.created_at ? dayjs(m.created_at).format('YYYY-MM-DD HH:mm') : 'N/A'
-    ])
-
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
-    ].join('\n')
-
-    downloadCSV(csvContent, `members_${job?.title || 'job'}_${dayjs().format('YYYY-MM-DD')}.csv`)
-    messageApi.success('Members list exported as CSV')
-  }
 
 
 
@@ -175,27 +154,7 @@ export default function JobOverviewPage() {
             </div>
           )}
           
-          <button
-            onClick={() => router.push(`/dashboard/admin/jobs/${jobId}/screening`)}
-            className="px-[20px] py-[10px] rounded-[8px] bg-[#7C3AED] text-white font-medium text-[14px] cursor-pointer hover:bg-[#6D28D9] transition-colors border-none shadow-sm flex items-center gap-[8px]"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-            AI Screening
-          </button>
 
-          {activeTab === 'members' && (
-            <button
-              onClick={handleExportMembers}
-              className="px-[16px] py-[10px] rounded-[8px] border border-[#D0D5DD] bg-white text-[#344054] font-medium text-[14px] cursor-pointer hover:bg-gray-50 transition-colors shadow-sm flex items-center gap-[8px]"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4"></path>
-                <polyline points="7 10 12 15 17 10"></polyline>
-                <line x1="12" y1="15" x2="12" y2="3"></line>
-              </svg>
-              Export CSV
-            </button>
-          )}
         </div>
       </div>
 

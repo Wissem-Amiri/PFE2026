@@ -30,7 +30,7 @@ import {
 } from 'react-icons/hi'
 import { BiExport } from 'react-icons/bi'
 import { exportTableToPDF } from '@/app/api/export'
-import { getAllUsers, updateUserStatus as updateGlobalUserStatus, exportToCSV, downloadCSV, getProfile } from '@/app/api/profile'
+import { getAllUsers, updateUserStatus as updateGlobalUserStatus, getProfile } from '@/app/api/profile'
 import { getAllApplicationsDetailed, updateApplicationStatus, archiveApplications, restoreApplications, deleteAllOtherApplications, hardDeleteApplications } from '@/app/api/applications'
 import { getAllJobs, decrementJobSeats } from '@/app/api/job'
 import { HiOutlineArchive, HiOutlineRefresh } from 'react-icons/hi'
@@ -189,31 +189,6 @@ export default function RegistrationsPage() {
     })
   }
 
-  const handleExport = () => {
-    if (applications.length === 0) {
-      message.info('No registrations to export')
-      return
-    }
-
-    const headers = ['CANDIDATE NAME', 'EMAIL', 'PHONE', 'POSITION', 'SUBMISSION DATE', 'STATUS']
-    const rows = applications.map(app => [
-      app.candidate?.user?.user_name || 'Anonymous',
-      app.candidate?.user?.email || 'N/A',
-      app.candidate?.user?.phone || 'N/A',
-      app.job?.title || 'General Candidate',
-      dayjs(app.applied_at).format('YYYY-MM-DD HH:mm'),
-      app.status?.toUpperCase() || 'PENDING'
-    ])
-
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
-    ].join('\n')
-
-    downloadCSV(csvContent, `registrations_report_${dayjs().format('YYYY-MM-DD')}.csv`)
-    message.success('CSV Export successful')
-  }
-
   // Server-side filtered data is directly available in 'applications'
   const paginatedData = applications
 
@@ -237,13 +212,6 @@ export default function RegistrationsPage() {
             <HiOutlineArchive className="text-[18px]" />
             Archive
           </Link>
-          <button
-            onClick={handleExport}
-            className="flex items-center gap-[8px] px-[17px] py-[9px] border border-[#e2e8f0] rounded-[8px] bg-white text-[#334155] text-[14px] font-semibold hover:bg-gray-50 transition-all shadow-sm"
-          >
-            <HiOutlineDownload className="text-[18px]" />
-            Export
-          </button>
         </div>
       </div>
 
@@ -531,7 +499,7 @@ export default function RegistrationsPage() {
 
       {/* Confirmation Modal */}
       {isModalVisible && appToApprove && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[1000] p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[1000] p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-[24px] p-10 w-full max-w-[500px] shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="flex flex-col items-center text-center">
               <div className="w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center mb-6">
@@ -563,7 +531,7 @@ export default function RegistrationsPage() {
       )}
 
       {isDeleteModalVisible && appToDelete && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[1000] p-4">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[1000] p-4">
           <div className="bg-white rounded-[20px] p-[40px] w-full max-w-[600px] shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="flex flex-col items-center text-center">
               <div className="w-[64px] h-[64px] rounded-[14px] bg-[#fef2f2] border border-[#fecaca] flex items-center justify-center mb-6">
@@ -600,7 +568,7 @@ export default function RegistrationsPage() {
         centered
         width={560}
         styles={{
-          mask: { backdropFilter: 'blur(4px)' },
+          mask: { },
           content: { borderRadius: '20px', padding: '32px' },
           header: { borderBottom: '1px solid #eaecf0', paddingBottom: '16px', marginBottom: '24px' }
         }}

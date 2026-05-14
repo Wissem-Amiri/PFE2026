@@ -150,13 +150,7 @@ export default function EditJobPage() {
                 <SearchOutlined className="text-[20px]" />
               </button>
             </Tooltip>
-            <button 
-              type="button"
-              className="flex items-center gap-[8px] px-[16px] py-[10px] rounded-[8px] border border-[#D0D5DD] bg-white text-[#344054] font-medium text-[14px] cursor-pointer hover:bg-gray-50 transition-colors shadow-sm"
-            >
-              <DownloadOutlined className="text-[20px]" />
-              Export
-            </button>
+
           </div>
         </div>
 

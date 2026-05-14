@@ -16,6 +16,7 @@ import {
   HiOutlineChatAlt2,
   HiOutlineArrowNarrowRight
 } from 'react-icons/hi'
+import { SolutionOutlined } from '@ant-design/icons'
 import { useApplications, queryKeys, useJobs } from '@/lib/hooks'
 import { analyzeApplication, hardDeleteApplications } from '@/app/api/applications'
 import { useQueryClient } from '@tanstack/react-query'
@@ -32,6 +33,7 @@ export default function CVScreeningPage() {
   const [analyzingId, setAnalyzingId] = useState<string | null>(null)
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
   const [selectedAnalysis, setSelectedAnalysis] = useState<any>(null)
+  const [selectedApp, setSelectedApp] = useState<any>(null)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [isDeleting, setIsDeleting] = useState(false)
   const [analyzedApps, setAnalyzedApps] = useState<Record<string, { score: number; analysis: any }>>({})  
@@ -82,6 +84,7 @@ export default function CVScreeningPage() {
       message.success(`Analysis ready for ${application.candidate?.user?.user_name}!`)
       queryClient.invalidateQueries({ queryKey: queryKeys.applications })
       setSelectedAnalysis(data)
+      setSelectedApp(application)
       setIsReportModalOpen(true)
     } catch (error: any) {
       message.error(`Analysis failed: ${error.message}`)
@@ -180,34 +183,42 @@ export default function CVScreeningPage() {
           </div>
         </div>
 
-        {/* ── FILTERS SECTION ── */}
-        <div className="space-y-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-100 rounded-xl shadow-sm min-w-[240px]">
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Job Position:</span>
+        {/* ── SEARCH & FILTERS BAR ── */}
+        <div className="bg-[rgba(248,248,248,0.31)] border border-[rgba(203,195,213,0.1)] rounded-[16px] p-4 mb-[16px] flex flex-col xl:flex-row items-center justify-between gap-4 h-auto mt-6">
+          <div className="flex-1 w-full xl:max-w-[450px] relative">
+            <div className="absolute left-[12px] top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-400">
+              <HiOutlineSearch size={18} />
+            </div>
+            <input
+              placeholder="Search candidate name or email..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full bg-white border border-[rgba(203,195,213,0.2)] rounded-[12px] pl-[41px] pr-[17px] py-[10px] text-[14px] text-[#101828] focus:outline-none focus:ring-1 focus:ring-[#7f56d9]/20 transition-all placeholder:text-[#6b7280]"
+            />
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-[12px] items-center w-full xl:w-auto">
+            <div className="w-full sm:w-[220px]">
               <Select 
                 value={selectedJobId}
                 onChange={(val) => { setSelectedJobId(val); setCurrentPage(1); }}
-                variant="borderless" 
-                className="flex-1 text-[13px] font-semibold"
-                popupMatchSelectWidth={false}
+                className="w-full !h-[44px] !rounded-[12px]"
+                placeholder="Filter by position"
                 options={[
-                  { value: 'all', label: 'All Positions' },
+                  { value: 'all', label: 'Filter by position' },
                   ...jobs.map(j => ({ value: j.id, label: j.title }))
                 ]}
               />
             </div>
 
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-100 rounded-xl shadow-sm min-w-[200px]">
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Score:</span>
+            <div className="w-full sm:w-[180px]">
               <Select 
                 value={scoreFilter}
                 onChange={(val) => { setScoreFilter(val); setCurrentPage(1); }}
-                variant="borderless" 
-                className="flex-1 text-[13px] font-semibold"
-                popupMatchSelectWidth={false}
+                className="w-full !h-[44px] !rounded-[12px]"
+                placeholder="Filter by score"
                 options={[
-                  { value: 'All Scores', label: 'All Scores' },
+                  { value: 'All Scores', label: 'Filter by score' },
                   { value: 'High (>= 80%)', label: 'High (>= 80%)' },
                   { value: 'Medium (50% - 79%)', label: 'Medium (50% - 79%)' },
                   { value: 'Low (< 50%)', label: 'Low (< 50%)' }
@@ -215,36 +226,19 @@ export default function CVScreeningPage() {
               />
             </div>
 
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-100 rounded-xl shadow-sm min-w-[200px]">
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Exp:</span>
+            <div className="w-full sm:w-[160px]">
               <Select 
                 value={expFilter}
                 onChange={(val) => { setExpFilter(val); setCurrentPage(1); }}
-                variant="borderless" 
-                className="flex-1 text-[13px] font-semibold"
-                popupMatchSelectWidth={false}
+                className="w-full !h-[44px] !rounded-[12px]"
+                placeholder="Filter by level"
                 options={[
-                  { value: 'All Levels', label: 'All Levels' },
+                  { value: 'All Levels', label: 'Filter by level' },
                   { value: 'Expert (> 5 Years)', label: 'Expert (> 5 Years)' },
                   { value: 'Senior (2 - 5 Years)', label: 'Senior (2 - 5 Years)' },
                   { value: 'Junior (< 2 Years)', label: 'Junior (< 2 Years)' }
                 ]}
               />
-            </div>
-
-            <div className="flex-1" /> {/* Spacer */}
-
-            {/* Compact AI Status */}
-            <div className="bg-gradient-to-r from-[#7F56D9] to-[#6941C6] rounded-xl px-4 py-2 flex items-center gap-4 shadow-md shadow-purple-100">
-               <div className="flex flex-col">
-                 <span className="text-[9px] font-bold text-purple-200 uppercase tracking-widest">AI Status</span>
-                 <span className="text-white font-bold text-[13px]">Active Screening</span>
-               </div>
-               <div className="h-6 w-px bg-white/20" />
-               <div className="flex items-center gap-2 bg-white/10 px-2.5 py-1 rounded-lg">
-                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                 <span className="text-white text-[10px] font-bold tracking-wider uppercase">Live</span>
-               </div>
             </div>
           </div>
         </div>
@@ -389,7 +383,11 @@ export default function CVScreeningPage() {
                            {isAnalyzed ? (
                              <>
                                <button 
-                                 onClick={() => { setSelectedAnalysis(analysis); setIsReportModalOpen(true); }}
+                                 onClick={() => { 
+                                   setSelectedAnalysis(analysis); 
+                                   setSelectedApp(app);
+                                   setIsReportModalOpen(true); 
+                                 }}
                                  className="p-2 rounded-lg bg-gray-50 text-gray-500 hover:bg-[#F9F5FF] hover:text-[#7F56D9] transition-all border border-transparent hover:border-[#D6BBFB]"
                                  title="View Report"
                                >
@@ -552,30 +550,34 @@ export default function CVScreeningPage() {
               </section>
 
               {/* Experience */}
-              <section>
-                <h3 className="flex items-center gap-2 text-[16px] font-bold text-[#101828] mb-4">
-                  <HiOutlineTrendingUp className="text-emerald-500 text-xl" />
-                  Experience Match
-                </h3>
-                <div className="bg-emerald-50/30 rounded-xl p-5 border border-emerald-100">
-                   {Array.isArray(selectedAnalysis.experience_list) ? (
-                      <div className="space-y-3">
-                         {selectedAnalysis.experience_list.map((item: any, i: number) => (
-                            <div key={i} className="flex items-center justify-between py-2 border-b border-emerald-100 last:border-0">
-                               <span className="text-[14px] font-semibold text-gray-700">{item.role}</span>
-                               <span className="text-[12px] bg-white px-3 py-1 rounded-full border border-emerald-100 text-emerald-600 font-bold">
-                                 {item.duration}
-                               </span>
-                            </div>
-                         ))}
-                      </div>
-                   ) : (
-                      <p className="text-[14px] text-[#344054] leading-relaxed m-0">
-                        {selectedAnalysis.experience_relevance || selectedAnalysis.experience || 'No detailed experience match provided.'}
-                      </p>
-                   )}
-                </div>
-              </section>
+              {((Array.isArray(selectedAnalysis.experience_list) && selectedAnalysis.experience_list.length > 0) || 
+                selectedAnalysis.experience_relevance || 
+                selectedAnalysis.experience) && (
+                <section>
+                  <h3 className="flex items-center gap-2 text-[16px] font-bold text-[#101828] mb-4">
+                    <HiOutlineTrendingUp className="text-emerald-500 text-xl" />
+                    Experience Match
+                  </h3>
+                  <div className="bg-emerald-50/30 rounded-xl p-5 border border-emerald-100">
+                    {Array.isArray(selectedAnalysis.experience_list) && selectedAnalysis.experience_list.length > 0 ? (
+                        <div className="space-y-3">
+                            {selectedAnalysis.experience_list.map((item: any, i: number) => (
+                              <div key={i} className="flex items-center justify-between py-2 border-b border-emerald-100 last:border-0">
+                                  <span className="text-[14px] font-semibold text-gray-700">{item.role}</span>
+                                  <span className="text-[12px] bg-white px-3 py-1 rounded-full border border-emerald-100 text-emerald-600 font-bold">
+                                    {item.duration}
+                                  </span>
+                              </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-[14px] text-[#344054] leading-relaxed m-0">
+                          {selectedAnalysis.experience_relevance || selectedAnalysis.experience}
+                        </p>
+                    )}
+                  </div>
+                </section>
+              )}
 
               {/* Weaknesses */}
               {selectedAnalysis.areas_for_improvement && (
@@ -593,7 +595,18 @@ export default function CVScreeningPage() {
               )}
             </div>
 
-            <div className="mt-10 flex justify-end">
+            <div className="mt-10 flex justify-end gap-3">
+               <button 
+                 onClick={() => selectedApp?.candidate?.resume_url && window.open(selectedApp.candidate.resume_url, '_blank')}
+                 disabled={!selectedApp?.candidate?.resume_url}
+                 className={`px-6 h-11 rounded-xl font-bold transition-all flex items-center gap-2 ${
+                   selectedApp?.candidate?.resume_url 
+                     ? 'bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer' 
+                     : 'bg-gray-50 text-gray-300 cursor-not-allowed border border-gray-100'
+                 }`}
+               >
+                 <SolutionOutlined /> {selectedApp?.candidate?.resume_url ? 'View CV' : 'CV Not Available'}
+               </button>
                <button 
                  onClick={() => setIsReportModalOpen(false)}
                  className="px-8 h-11 rounded-xl bg-[#7F56D9] text-white font-bold hover:bg-[#6941C6] transition-all shadow-lg shadow-[#7F56D9]/20"

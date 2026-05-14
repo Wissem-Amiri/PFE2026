@@ -6,6 +6,8 @@ export function useRecordings(params: {
   page: number;
   pageSize: number;
   search?: string;
+  dateRange?: [string, string];
+  sizeFilter?: string;
 } = { page: 1, pageSize: 20 }) {
   return useQuery({
     queryKey: [...queryKeys.recordings, params],

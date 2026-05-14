@@ -12,7 +12,8 @@ import {
   HiOutlineClipboardList,
   HiOutlineUserGroup,
   HiOutlineMenu,
-  HiOutlineX
+  HiOutlineX,
+  HiOutlineDocumentText
 } from 'react-icons/hi'
 import { usePathname } from 'next/navigation'
 import { useMyLeaves } from '@/lib/hooks'
@@ -28,6 +29,7 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
   const navItems = [
     { href: '/dashboard/employee', label: 'Home', icon: <HiOutlineHome />, badge: totalLeaves > 0 ? totalLeaves.toString() : undefined },
     { href: '/dashboard/employee/registrations', label: 'Registrations', icon: <HiOutlineClipboardList /> },
+    { href: '/dashboard/employee/applications', label: 'My Applications', icon: <HiOutlineDocumentText /> },
     { href: '/dashboard/employee/employee-list', label: 'Employees', icon: <HiOutlineUserGroup /> },
   ]
 

@@ -153,6 +153,7 @@ export interface Recording {
   uploaded_by: string
   created_at: string
   updated_at: string
+  detection_results: any | null
   uploader?: {
     user_name: string | null
     email: string | null

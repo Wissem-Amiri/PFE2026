@@ -27,7 +27,7 @@ import { useLeaves, queryKeys } from '@/lib/hooks'
 
 import { useQueryClient } from '@tanstack/react-query'
 
-import { downloadCSV } from '@/app/api/export'
+
 
 export default function AdminLeavesPage() {
   const queryClient = useQueryClient()
@@ -116,34 +116,7 @@ export default function AdminLeavesPage() {
     setActionModal({ open: false, type: 'approved', leave: null })
   }
 
-  const handleExport = () => {
-    if (leaves.length === 0) {
-      messageApi.info('No leaves to export')
-      return
-    }
 
-    const headers = ['EMPLOYEE NAME', 'LEAVE TYPE', 'START DATE', 'END DATE', 'TOTAL DAYS', 'STATUS', 'REQUESTED ON']
-    const rows = leaves.map(l => {
-      const days = dayjs(l.end_date).diff(dayjs(l.start_date), 'day') + 1
-      return [
-        l.user?.user_name || 'Anonymous',
-        l.type?.toUpperCase() || '-',
-        dayjs(l.start_date).format('YYYY-MM-DD'),
-        dayjs(l.end_date).format('YYYY-MM-DD'),
-        `${days}`,
-        l.status?.toUpperCase() || '-',
-        dayjs(l.created_at).format('YYYY-MM-DD HH:mm')
-      ]
-    })
-
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
-    ].join('\n')
-
-    downloadCSV(csvContent, `leaves_report_${dayjs().format('YYYY-MM-DD')}.csv`)
-    messageApi.success('CSV Export successful')
-  }
 
   const showDetails = (record: any) => {
     Modal.info({
@@ -367,13 +340,6 @@ export default function AdminLeavesPage() {
             <p className="text-[16px] text-[#667085] font-normal">Keep track of yours and your team's medical and personal leaves.</p>
           </div>
           <div className="flex gap-3">
-            <button
-              onClick={handleExport}
-              className="h-[40px] px-[16px] flex items-center gap-[8px] bg-white border border-[#d0d5dd] rounded-[8px] text-[14px] font-semibold text-[#344054] hover:bg-gray-50 transition-all shadow-sm"
-            >
-              <HiOutlineDownload className="text-[18px]" />
-              Export
-            </button>
           </div>
         </div>
       </header>

@@ -8,8 +8,8 @@ import { Avatar, Spin, message } from 'antd'
 import { UserOutlined } from '@ant-design/icons'
 import type { Job, DetailedApplication } from '@/lib/database.types'
 import { scoreCandidate, type Strength } from '@/app/api/aiScoring'
-import { downloadCSV } from '@/app/api/export'
-import dayjs from 'dayjs'
+
+
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Candidate {
@@ -203,30 +203,7 @@ export default function AIScreeningPage() {
     } else messageApi.error('Action failed')
   }
 
-  const handleExport = () => {
-    if (candidates.length === 0) {
-      messageApi.info('No candidates to export')
-      return
-    }
 
-    const headers = ['CANDIDATE NAME', 'EMAIL', 'AI SCORE', 'YEARS OF EXP', 'STRENGTHS', 'STATUS']
-    const rows = candidates.map(c => [
-      c.name,
-      c.email,
-      c.score !== null ? `${c.score}%` : 'Pending',
-      c.yearsLabel,
-      c.strengths.map(s => s.label).join(' | '),
-      c.status.toUpperCase()
-    ])
-
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
-    ].join('\n')
-
-    downloadCSV(csvContent, `ai_screening_${job?.title || 'job'}_${dayjs().format('YYYY-MM-DD')}.csv`)
-    messageApi.success('CSV Export successful')
-  }
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[60vh]">
@@ -254,13 +231,7 @@ export default function AIScreeningPage() {
           </p>
         </div>
         <div className="flex gap-3">
-          <button 
-            onClick={handleExport}
-            className="flex items-center gap-2 px-[16px] py-[9px] bg-white border border-[#e2e8f0] rounded-[8px] text-[14px] font-semibold text-[#0f172a] cursor-pointer hover:bg-[#f8fafc] transition-colors shadow-sm"
-          >
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M2 5l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-            Export
-          </button>
+
           <button onClick={() => router.push(`/dashboard/admin/jobs/${jobId}`)}
             className="flex items-center gap-2 px-[16px] py-[9px] bg-[#7c3aed] rounded-[8px] text-[14px] font-semibold text-white cursor-pointer hover:bg-[#6d28d9] transition-colors shadow-md shadow-purple-200 border-none">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6" /></svg>

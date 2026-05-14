@@ -83,8 +83,7 @@ export default function LandingPage() {
           <div className="hidden md:flex items-center gap-8">
             <Link href="#culture" onClick={() => setActiveNav('culture')} className={`nav-link ${activeNav === 'culture' ? 'active' : ''}`}>Culture</Link>
             <Link href="#benefits" onClick={() => setActiveNav('benefits')} className={`nav-link ${activeNav === 'benefits' ? 'active' : ''}`}>Benefits</Link>
-            <Link href="#teams" onClick={() => setActiveNav('teams')} className={`nav-link ${activeNav === 'teams' ? 'active' : ''}`}>Teams</Link>
-            <Link href="#roles" onClick={() => setActiveNav('roles')} className={`nav-link ${activeNav === 'roles' ? 'active' : ''}`}>Open Roles</Link>
+            <Link href="#roles" onClick={() => setActiveNav('roles')} className={`nav-link ${activeNav === 'roles' ? 'active' : ''}`}>Open Positions</Link>
           </div>
           <div className="flex items-center gap-4">
             {!user ? (
