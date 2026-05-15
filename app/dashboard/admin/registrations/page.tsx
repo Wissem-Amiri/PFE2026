@@ -532,7 +532,7 @@ export default function RegistrationsPage() {
         width={560}
         styles={{
           mask: { },
-          content: { borderRadius: '20px', padding: '32px' },
+          body: { borderRadius: '20px', padding: '32px' },
           header: { borderBottom: '1px solid #eaecf0', paddingBottom: '16px', marginBottom: '24px' }
         }}
       >

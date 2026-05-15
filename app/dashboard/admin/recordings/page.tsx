@@ -496,7 +496,7 @@ export default function RecordingsPage() {
         centered
         styles={{
           mask: { backdropFilter: 'blur(4px)', backgroundColor: 'rgba(16, 24, 40, 0.7)' },
-          content: { padding: 0, borderRadius: '14px', overflow: 'hidden' }
+          body: { padding: 0, borderRadius: '14px', overflow: 'hidden' }
         }}
       >
         <div className="bg-white min-h-[500px] max-h-[90vh] flex flex-col overflow-hidden">

@@ -98,7 +98,7 @@ export async function getEmployeesByDepartment() {
   if (!data) return []
   const counts: Record<string, number> = {}
   for (const emp of data) {
-    const dept = emp.department || 'Other'
+    const dept = (emp as any).department || 'Other'
     counts[dept] = (counts[dept] ?? 0) + 1
   }
   return Object.entries(counts).map(([department, count]) => ({ department, count })).sort((a, b) => b.count - a.count)

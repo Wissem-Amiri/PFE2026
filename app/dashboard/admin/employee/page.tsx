@@ -420,9 +420,6 @@ export default function AdminEmployeeListPage() {
                     icon={<UserOutlined />}
                     className="bg-[#f5f3ff] text-[#7c3aed] border-[4px] border-white shadow-md ring-1 ring-slate-100"
                   />
-                  {emp.is_online && (
-                    <div className="absolute bottom-1 right-1 w-4 h-4 bg-green-500 border-[3px] border-white rounded-full"></div>
-                  )}
                 </div>
 
                 <h3 className="text-[17px] font-black text-[#101828] mb-1 truncate w-full px-2" title={emp.user_name ?? ''}>
@@ -501,9 +498,6 @@ export default function AdminEmployeeListPage() {
                     <div className="flex items-center gap-3">
                       <div className="relative">
                         <Avatar src={emp.avatar_url ?? undefined} icon={<UserOutlined />} className="bg-[#f5f3ff] text-[#7c3aed]" />
-                        {emp.is_online && (
-                          <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full"></div>
-                        )}
                       </div>
                       <div className="overflow-hidden">
                         <div className="text-[14px] font-bold text-[#101828] truncate">{emp.user_name}</div>

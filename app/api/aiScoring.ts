@@ -187,7 +187,7 @@ export function scoreCandidate(
 export function calculateScoreFromParsedCV(
   cvData: ParsedCVData,
   job: { title: string; description: string; requirements?: string | null }
-): number {
+): { score: number; totalExperienceMonths: number } {
   let score = 0
   // Only use Title and Requirements, excluding Description
   const jobText = `${job.title} ${job.requirements || ''}`.toLowerCase()

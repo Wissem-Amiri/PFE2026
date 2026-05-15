@@ -14,7 +14,8 @@ import {
   HiOutlineChartPie,
   HiOutlineTrendingUp,
   HiOutlineChatAlt2,
-  HiOutlineArrowNarrowRight
+  HiOutlineArrowNarrowRight,
+  HiOutlineExclamationCircle
 } from 'react-icons/hi'
 import { SolutionOutlined } from '@ant-design/icons'
 import { useApplications, queryKeys, useJobs } from '@/lib/hooks'

@@ -62,7 +62,7 @@ function KpiCard({ label, value, icon, color, bg, pct, up, suffix = '' }:
 
 // ── Chart Card ────────────────────────────────────────────
 function ChartCard({ title, subtitle, badge, children, className = '' }:
-  { title: string; subtitle?: string; badge?: string; children: React.ReactNode; className?: string }) {
+  { title: string; subtitle?: string; badge?: React.ReactNode; children: React.ReactNode; className?: string }) {
   return (
     <div className={`bg-white rounded-2xl border border-[#F2F4F7] shadow-sm p-6 flex flex-col gap-5 hover:shadow-md transition-all duration-300 ${className}`}>
       <div className="flex items-start justify-between gap-2">

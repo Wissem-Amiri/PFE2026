@@ -25,9 +25,9 @@ export async function applyToJob(candidateId: string, jobId: string) {
       .eq('id', jobId)
       .single()
 
-    const name = userProfile?.user_name || 'An employee'
-    const role = userProfile?.role === 'employee' ? 'Internal Employee' : 'Candidate'
-    const jobTitle = jobInfo?.title || 'a position'
+    const name = (userProfile as any)?.user_name || 'An employee'
+    const role = (userProfile as any)?.role === 'employee' ? 'Internal Employee' : 'Candidate'
+    const jobTitle = (jobInfo as any)?.title || 'a position'
 
     // 3. Send Notification to Admins via RPC (Must be RPC to bypass RLS)
     // @ts-ignore

@@ -16,7 +16,7 @@ export function useApplications(params: {
   minExperience?: number;
   maxExperience?: number;
   jobId?: string;
-}) {
+} = { page: 1, pageSize: 20 }) {
   return useQuery({
     queryKey: [...queryKeys.applications, params], // Use the standard key structure
     queryFn: async () => {

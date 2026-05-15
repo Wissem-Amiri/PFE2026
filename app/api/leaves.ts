@@ -300,7 +300,7 @@ export async function getDepartmentAvailability(employeeId: string, startDate: s
     .eq('id', employeeId)
     .single()
 
-  const department = emp?.department || 'Other'
+  const department = (emp as any)?.department || 'Other'
 
   // 2. Count total employees in this department
   const { count: totalInDept } = await supabase
@@ -318,7 +318,7 @@ export async function getDepartmentAvailability(employeeId: string, startDate: s
     .gte('end_date', startDate)
 
   // Deduplicate employee IDs (one employee might have multiple approved leaves)
-  const uniqueAbsentIds = new Set((overlappingLeaves ?? []).map(l => l.employee_id))
+  const uniqueAbsentIds = new Set(((overlappingLeaves as any[]) ?? []).map(l => l.employee_id))
   const absentCount = uniqueAbsentIds.size
 
   // 4. Get the employee's leave balance
@@ -362,9 +362,9 @@ export async function syncVacationBalance(employeeId: string) {
     .eq('id', employeeId)
     .single()
 
-  if (empError || !emp || !emp.hire_date) return { error: empError || new Error('Employee not found or no hire date') }
+  if (empError || !emp || !(emp as any).hire_date) return { error: empError || new Error('Employee not found or no hire date') }
 
-  const hireDate = dayjs(emp.hire_date)
+  const hireDate = dayjs((emp as any).hire_date)
   const now = dayjs()
   
   if (now.isBefore(hireDate)) {
@@ -375,7 +375,7 @@ export async function syncVacationBalance(employeeId: string) {
 
   // 2. Calculate accrued days (Full months only)
   const fullMonths = now.diff(hireDate, 'month')
-  const totalAccrued = fullMonths * (emp.monthly_rate || 0)
+  const totalAccrued = fullMonths * ((emp as any).monthly_rate || 0)
 
   // 3. Subtract all approved leaves
   const { data: approvedLeaves } = await supabase
@@ -384,7 +384,7 @@ export async function syncVacationBalance(employeeId: string) {
     .eq('employee_id', employeeId)
     .eq('status', 'approved')
 
-  const usedDays = (approvedLeaves ?? []).reduce((acc, leave) => {
+  const usedDays = ((approvedLeaves as any[]) ?? []).reduce((acc, leave) => {
     const days = dayjs(leave.end_date).diff(dayjs(leave.start_date), 'day') + 1
     return acc + days
   }, 0)
@@ -392,7 +392,7 @@ export async function syncVacationBalance(employeeId: string) {
   const finalBalance = Math.max(0, totalAccrued - usedDays)
 
   // 4. Update DB if changed
-  if (finalBalance !== emp.vacation_balance) {
+  if (finalBalance !== (emp as any).vacation_balance) {
     await (supabase as any)
       .from('employee')
       .update({ vacation_balance: finalBalance })
