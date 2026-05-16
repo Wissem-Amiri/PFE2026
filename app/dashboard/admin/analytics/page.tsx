@@ -89,7 +89,7 @@ function TimelineEvent({ event }: { event: any }) {
   const color = isApp ? P.purple : P.amber
   const icon = isApp ? <HiOutlineBriefcase /> : <HiOutlineCalendar />
   const statusColor: Record<string, string> = {
-    pending: '#F79009', accepted: '#12B76A', rejected: '#F04438', interviewing: '#0BA5EC'
+    pending: '#F79009', accepted: '#12B76A', rejected: '#F04438'
   }
   return (
     <div className="flex items-start gap-3 py-3 border-b border-[#F9FAFB] last:border-0 group">
@@ -205,7 +205,7 @@ export default function AdminAnalyticsPage() {
 
   const donutData = {
     labels: statusData.map(s => s.status.charAt(0).toUpperCase() + s.status.slice(1)),
-    datasets: [{ data: statusData.map(s => s.count), backgroundColor: [P.amber, P.green, P.red, P.blue], borderColor: '#fff', borderWidth: 3, hoverOffset: 10 }]
+    datasets: [{ data: statusData.map(s => s.count), backgroundColor: [P.amber, P.green, P.red], borderColor: '#fff', borderWidth: 3, hoverOffset: 10 }]
   }
 
   const leaveBarData = {

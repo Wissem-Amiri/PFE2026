@@ -70,7 +70,7 @@ export async function getApplicationsPerMonth(months = 6) {
 // ─────────────────────────────────────────────────────────
 
 export async function getApplicationStatusDistribution() {
-  const statuses = ['pending', 'accepted', 'rejected', 'interviewing']
+  const statuses = ['pending', 'accepted', 'rejected']
   return Promise.all(statuses.map(async status => {
     const { count } = await supabase.from('applications').select('*', { count: 'exact', head: true }).eq('status', status).eq('is_archived', false)
     return { status, count: count ?? 0 }
