@@ -81,9 +81,9 @@ export default function LandingPage() {
             <img src="/assets/UnifyHR.png" alt="UnifyHR Logo" className="h-[120px] w-auto object-contain -my-10 -ml-4" />
           </div>
           <div className="hidden md:flex items-center gap-8">
-            <Link href="#culture" onClick={() => setActiveNav('culture')} className={`nav-link ${activeNav === 'culture' ? 'active' : ''}`}>Culture</Link>
-            <Link href="#benefits" onClick={() => setActiveNav('benefits')} className={`nav-link ${activeNav === 'benefits' ? 'active' : ''}`}>Benefits</Link>
-            <Link href="#roles" onClick={() => setActiveNav('roles')} className={`nav-link ${activeNav === 'roles' ? 'active' : ''}`}>Open Positions</Link>
+            <Link href="#mission" onClick={() => setActiveNav('mission')} className={`nav-link ${activeNav === 'mission' ? 'active' : ''}`}>Our Mission</Link>
+            <Link href="#solutions" onClick={() => setActiveNav('solutions')} className={`nav-link ${activeNav === 'solutions' ? 'active' : ''}`}>Our Solutions</Link>
+            <Link href="#positions" onClick={() => setActiveNav('positions')} className={`nav-link ${activeNav === 'positions' ? 'active' : ''}`}>Open Positions</Link>
           </div>
           <div className="flex items-center gap-4">
             {!user ? (
@@ -124,7 +124,7 @@ export default function LandingPage() {
               <button onClick={() => handleApplyClick()} className="bg-[#7f56d9] text-white text-[18px] font-bold px-8 py-4 rounded-full hover:bg-[#663bbe] transition-colors shadow-lg shadow-[#1d1a22]/5">
                 Apply Now
               </button>
-              <Link href="#roles" className="bg-white border border-[#cbc3d5]/20 text-[#1d1a22] text-[18px] font-bold px-8 py-4 rounded-full hover:bg-gray-50 transition-colors text-center">
+              <Link href="#positions" className="bg-white border border-[#cbc3d5]/20 text-[#1d1a22] text-[18px] font-bold px-8 py-4 rounded-full hover:bg-gray-50 transition-colors text-center">
                 View Open Positions
               </Link>
             </div>
@@ -141,7 +141,7 @@ export default function LandingPage() {
       </section>
 
       {/* --- About Us Section --- */}
-      <section id="culture" className="bg-[#F8F1FD] py-[96px] px-6 lg:px-8">
+      <section id="mission" className="bg-[#F8F1FD] py-[96px] px-6 lg:px-8">
         <div className="max-w-[1280px] mx-auto grid lg:grid-cols-2 gap-[80px] items-center">
           <div className="flex flex-col items-start gap-8">
             <div className="bg-[#663bbe]/10 px-4 py-2 rounded-full">
@@ -166,7 +166,7 @@ export default function LandingPage() {
               <p className="text-[14px] text-[#494453] leading-relaxed">Pushing boundaries beyond the possible.</p>
             </div>
             {/* Bento Item 2 */}
-            <div className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-md transition-shadow sm:mt-12">
+            <div className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-md transition-shadow">
               <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center mb-6">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
               </div>
@@ -174,7 +174,7 @@ export default function LandingPage() {
               <p className="text-[14px] text-[#494453] leading-relaxed">Success is a collective masterpiece.</p>
             </div>
             {/* Bento Item 3 */}
-            <div className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-md transition-shadow sm:-mt-12">
+            <div className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-md transition-shadow">
               <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center mb-6">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
               </div>
@@ -194,7 +194,7 @@ export default function LandingPage() {
       </section>
 
       {/* --- Why Choose UnifyHR Section --- */}
-      <section id="features" className="py-[96px] px-6 lg:px-8 max-w-[1280px] mx-auto">
+      <section id="solutions" className="py-[96px] px-6 lg:px-8 max-w-[1280px] mx-auto">
         <div className="flex flex-col items-center text-center mb-16">
           <h2 className="font-['Manrope',sans-serif] font-bold text-[36px] text-[#1d1a22] mb-4">Our Core Solutions</h2>
           <p className="text-[16px] text-[#494453] max-w-[670px]">An all-in-one ecosystem designed to transform how you manage talent, track time, and optimize your workforce.</p>
@@ -226,7 +226,7 @@ export default function LandingPage() {
       </section>
 
       {/* --- Open Positions Section --- */}
-      <section id="roles" className="bg-white py-[96px] px-6 lg:px-8 border-t border-gray-100">
+      <section id="positions" className="bg-white py-[96px] px-6 lg:px-8 border-t border-gray-100">
         <div className="max-w-[896px] mx-auto">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-10">
             <div className="flex flex-col gap-2">
@@ -411,98 +411,7 @@ export default function LandingPage() {
         </div>
       )}
 
-      {/* --- Testimonials Section --- */}
-      <section className="bg-[#F2EBF7] py-[96px] px-6 lg:px-8">
-        <div className="max-w-[1280px] mx-auto grid lg:grid-cols-[1fr_2fr] gap-10 items-start">
-          <div className="pr-4">
-            <h2 className="font-['Manrope',sans-serif] font-bold text-[36px] text-[#1d1a22] mb-6">Voices of UnifyHR</h2>
-            <p className="text-[16px] text-[#494453] leading-relaxed mb-8">
-              Don&apos;t just take our word for it. Hear from the people who are building the future every single day.
-            </p>
-            <div className="w-16 h-1.5 bg-[#663bbe] rounded-full" />
-          </div>
 
-          <div className="grid sm:grid-cols-2 gap-8">
-            <div className="bg-white/80 backdrop-blur shadow-sm p-10 rounded-3xl relative">
-              <svg className="absolute top-8 right-8 text-gray-200 w-12 h-12" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" /></svg>
-              <p className="text-[18px] text-[#1d1a22] italic leading-relaxed mb-8 relative z-10">
-                &quot;The level of creative freedom here is unprecedented. I&apos;m encouraged to fail fast and learn even faster.&quot;
-              </p>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-purple-100 overflow-hidden">
-                  <img src="/assets/sarah-j.png" alt="Avatar" className="w-full h-full object-cover" />
-                </div>
-                <div>
-                  <h4 className="font-['Manrope',sans-serif] font-bold text-[14px] text-[#1d1a22]">Sarah Jenkins</h4>
-                  <p className="text-[12px] text-[#494453]">Senior Designer</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white/80 backdrop-blur shadow-sm p-10 rounded-3xl relative sm:mt-12">
-              <svg className="absolute top-8 right-8 text-gray-200 w-12 h-12" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" /></svg>
-              <p className="text-[18px] text-[#1d1a22] italic leading-relaxed mb-8 relative z-10">
-                &quot;I&apos;ve never worked with a team that is so technically proficient yet so deeply human and approachable.&quot;
-              </p>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-purple-100 overflow-hidden">
-                  <img src="/assets/mark-l.png" alt="Avatar" className="w-full h-full object-cover" />
-                </div>
-                <div>
-                  <h4 className="font-['Manrope',sans-serif] font-bold text-[14px] text-[#1d1a22]">Marcus Lin</h4>
-                  <p className="text-[12px] text-[#494453]">Lead Engineer</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* --- Application Form Placeholder Section --- */}
-      <section className="bg-white py-[96px] px-6 lg:px-8 flex justify-center">
-        <div className="w-full max-w-[768px] bg-white border border-[#cbc3d5]/10 rounded-[40px] shadow-2xl shadow-[#1d1a22]/5 p-8 md:p-14">
-          <div className="text-center mb-10">
-            <h2 className="font-['Manrope',sans-serif] font-bold text-[36px] text-[#1d1a22] mb-4">Start Your Journey</h2>
-            <p className="text-[16px] text-[#494453]">Take the first step towards a luminous career.</p>
-          </div>
-
-          <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); handleApplyClick(); }}>
-            <div className="grid sm:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="font-['Manrope',sans-serif] font-bold text-[14px] text-[#1d1a22]">Full Name <span className="text-red-500">*</span></label>
-                <input type="text" placeholder="John Doe" className="w-full bg-[#f8f1fd] px-5 py-4 rounded-xl text-[16px] text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#7f56d9]/50 transition-all" />
-              </div>
-              <div className="space-y-2">
-                <label className="font-['Manrope',sans-serif] font-bold text-[14px] text-[#1d1a22]">Email Address <span className="text-red-500">*</span></label>
-                <input type="email" placeholder="john@example.com" className="w-full bg-[#f8f1fd] px-5 py-4 rounded-xl text-[16px] text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#7f56d9]/50 transition-all" />
-              </div>
-            </div>
-
-            <div className="grid sm:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="font-['Manrope',sans-serif] font-bold text-[14px] text-[#1d1a22]">Phone Number <span className="text-red-500">*</span></label>
-                <input type="tel" placeholder="+1 (555) 000-0000" className="w-full bg-[#f8f1fd] px-5 py-4 rounded-xl text-[16px] text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#7f56d9]/50 transition-all" />
-              </div>
-              <div className="space-y-2 flex flex-col justify-end">
-                <label className="font-['Manrope',sans-serif] font-bold text-[14px] text-[#1d1a22]">Resume Upload <span className="text-red-500">*</span></label>
-                <div className="w-full bg-[#f8f1fd] border-2 border-dashed border-[#cbc3d5]/50 px-5 py-3.5 rounded-xl text-[14px] text-[#494453] flex items-center gap-3 cursor-pointer hover:border-[#7f56d9] transition-colors">
-                  <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                  <span>Choose PDF or Doc</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="font-['Manrope',sans-serif] font-bold text-[14px] text-[#1d1a22]">Cover Letter <span className="text-red-500">*</span></label>
-              <textarea placeholder="Tell us why you're a visionary..." rows={4} className="w-full bg-[#f8f1fd] px-5 py-4 rounded-xl text-[16px] text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#7f56d9]/50 transition-all resize-none"></textarea>
-            </div>
-
-            <button type="submit" className="w-full bg-[#7f56d9] text-white text-[18px] font-bold py-5 rounded-full hover:bg-[#663bbe] transition-colors shadow-lg shadow-[#7f56d9]/20 mt-4">
-              Submit Application
-            </button>
-          </form>
-        </div>
-      </section>
 
       {/* --- Footer --- */}
       <footer className="bg-[#f8fafc] border-t border-[#f1f5f9] mt-auto">
