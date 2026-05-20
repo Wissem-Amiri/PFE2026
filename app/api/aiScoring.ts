@@ -45,7 +45,7 @@ const KEYWORD_MAP: { keywords: string[]; label: string; color: Strength['color']
   { keywords: ['mobile', 'flutter', 'react native', 'android', 'ios'], label: 'Mobile Dev', color: 'amber' },
   { keywords: ['python', 'django', 'flask', 'machine learning', 'ai'], label: 'Python/AI', color: 'green' },
 ]
-
+ 
 // ─── Calculate total years of experience ─────────────────────────────────────
 export function getTotalYears(experiences: Experience[]): number {
   if (!experiences || experiences.length === 0) return 0
