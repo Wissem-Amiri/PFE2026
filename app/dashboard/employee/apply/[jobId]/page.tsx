@@ -21,7 +21,6 @@ import { getProfile, updateProfile, uploadAvatar, uploadDocument } from '@/app/a
 import { applyToJob } from '@/app/api/applications'
 import { getJobById } from '@/app/api/job'
 import { countries } from '@/app/api/countries'
-import { extractCVData } from '@/app/api/cvOcr'
 import { useForm, Controller } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
@@ -171,38 +170,7 @@ export default function EmployeeApplyToJobPage() {
       setResumeUrl(publicUrl)
       setResumeName(file.name)
       setResumeSize(formatSize(file.size))
-      message.success('Resume uploaded. Analyzing content...')
-
-      // Call OCR API
-      try {
-        const ocrData = await extractCVData(file)
-        if (ocrData) {
-          message.success('CV analyzed! Filling fields...')
-
-          // Pre-fill form fields
-          if (ocrData.Name) setValue('userName', ocrData.Name)
-
-          // Generate bio from skills and experience
-          let generatedBio = watch('bio') || ''
-          if (ocrData.Worked_As && ocrData.Worked_As.length > 0) {
-            generatedBio += `Professional Background: ${ocrData.Worked_As.join(', ')}.\n`
-          }
-          if (ocrData.Skills && ocrData.Skills.length > 0) {
-            generatedBio += `Skills: ${ocrData.Skills.join(', ')}.\n`
-          }
-          if (ocrData.Years_Of_Experience && ocrData.Years_Of_Experience.length > 0) {
-            generatedBio += `Experience: ${ocrData.Years_Of_Experience.join(', ')}.\n`
-          }
-          if (ocrData.Certification && ocrData.Certification.length > 0) {
-            generatedBio += `Certifications: ${ocrData.Certification.join(', ')}.\n`
-          }
-
-          if (generatedBio) setValue('bio', generatedBio.trim())
-        }
-      } catch (ocrErr) {
-        console.error('OCR Error during upload:', ocrErr)
-        message.info('Could not extract data from CV automatically.')
-      }
+      message.success('Resume uploaded successfully.')
     }
     setUploadingResume(false)
     return false
