@@ -12,12 +12,6 @@ export interface Experience {
   endDate?: string | null
 }
 
-export interface ScoredCandidate {
-  score: number             
-  yearsLabel: string          
-  prevCompanies: string       
-  strengths: Strength[]
-}
 
 export interface Strength {
   label: string
@@ -51,7 +45,7 @@ const KEYWORD_MAP: { keywords: string[]; label: string; color: Strength['color']
   { keywords: ['mobile', 'flutter', 'react native', 'android', 'ios'], label: 'Mobile Dev', color: 'amber' },
   { keywords: ['python', 'django', 'flask', 'machine learning', 'ai'], label: 'Python/AI', color: 'green' },
 ]
-
+ 
 // ─── Calculate total years of experience ─────────────────────────────────────
 export function getTotalYears(experiences: Experience[]): number {
   if (!experiences || experiences.length === 0) return 0
@@ -67,24 +61,6 @@ export function getTotalYears(experiences: Experience[]): number {
   return Math.round(totalMonths / 12)
 }
 
-// ─── Format experience label ──────────────────────────────────────────────────
-export function formatYearsLabel(experiences: Experience[]): string {
-  if (!experiences || experiences.length === 0) return 'No experience'
-  const years = getTotalYears(experiences)
-  if (years === 0) return '< 1 Year'
-  if (years === 1) return '1 Year'
-  return `${years}+ Years`
-}
-
-// ─── Extract previous companies ───────────────────────────────────────────────
-export function getPrevCompanies(experiences: Experience[]): string {
-  if (!experiences || experiences.length === 0) return '—'
-  return experiences
-    .map(e => e.company)
-    .filter(Boolean)
-    .slice(0, 2)
-    .join(', ')
-}
 
 // ─── Extract key strengths from bio + position ────────────────────────────────
 export function extractStrengths(bio: string, position: string, experiences: Experience[]): Strength[] {
@@ -159,29 +135,6 @@ export function calculateAIScore(
   return Math.min(Math.max(score, 10), 99)
 }
 
-// ─── Full scoring pipeline ────────────────────────────────────────────────────
-export function scoreCandidate(
-  candidate: {
-    bio?: string | null
-    position?: string | null
-    experiences?: Experience[]
-    portfolio?: string | null
-    resume_url?: string | null
-  },
-  job: {
-    title: string
-    description: string
-    requirements?: string | null
-  }
-): ScoredCandidate {
-  const experiences = candidate.experiences || []
-  return {
-    score: calculateAIScore(candidate, job),
-    yearsLabel: formatYearsLabel(experiences),
-    prevCompanies: getPrevCompanies(experiences),
-    strengths: extractStrengths(candidate.bio || '', candidate.position || '', experiences),
-  }
-}
 
 // ─── Score from Parsed CV Data ───────────────────────────────────────────────
 export function calculateScoreFromParsedCV(

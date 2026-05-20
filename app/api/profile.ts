@@ -63,8 +63,8 @@ export async function updateProfile(userId: string, updates: Partial<BaseUser> &
 
   // 2. Update Role-specific tables
   if (candidate) {
-    const { error: pError } = await (supabase as any).from('candidates').upsert({ id: userId, ...candidate })
-    if (pError) return { data: null, error: pError }
+    const { error: cError } = await (supabase as any).from('candidates').upsert({ id: userId, ...candidate })
+    if (cError) return { data: null, error: cError }
   }
 
   if (employee) {
@@ -118,7 +118,6 @@ export async function getEmployeesPaginated(params: {
   if (search) {
     query = query.or(`user_name.ilike.%${search}%,email.ilike.%${search}%,department.ilike.%${search}%,position.ilike.%${search}%`);
   }
-
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
@@ -290,43 +289,7 @@ export async function uploadAvatar(userId: string, file: File) {
   return { publicUrl: data.publicUrl, error: null }
 }
 
-/**
- * Export a list of users to CSV format
- */
-export function exportToCSV(users: FullProfile[]) {
-  const headers = ['Name', 'Email', 'Role', 'Status', 'Created At']
-  const rows = users.map(u => [
-    u.user_name || '',
-    u.email || '',
-    u.role || '',
-    u.status || '',
-    u.created_at ? new Date(u.created_at).toLocaleDateString() : ''
-  ])
 
-  const csvContent = [
-    headers.join(','),
-    ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
-  ].join('\n')
-
-  return csvContent
-}
-
-/**
- * Triggers a download of a CSV string in the browser
- */
-export function downloadCSV(csvContent: string, fileName: string) {
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-  const link = document.createElement('a')
-  if (link.download !== undefined) {
-    const url = URL.createObjectURL(blob)
-    link.setAttribute('href', url)
-    link.setAttribute('download', fileName)
-    link.style.visibility = 'hidden'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }
-}
 /**
  * Admin creates a brand new employee account from scratch.
  * Note: In a production environment, this should trigger an Edge Function 

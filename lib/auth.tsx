@@ -67,8 +67,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = async (email: string, password: string, options?: any) => {
     const mergedOptions = {
       ...options,
+      
       emailRedirectTo: `${window.location.origin}/auth/verify-email`,
     }
+    console.log('options', options)
     const { data, error } = await supabase.auth.signUp({ email, password, options: mergedOptions })
     return { data, error }
   }
