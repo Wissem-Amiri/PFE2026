@@ -12,12 +12,6 @@ export interface Experience {
   endDate?: string | null
 }
 
-export interface ScoredCandidate {
-  score: number             
-  yearsLabel: string          
-  prevCompanies: string       
-  strengths: Strength[]
-}
 
 export interface Strength {
   label: string
@@ -67,24 +61,6 @@ export function getTotalYears(experiences: Experience[]): number {
   return Math.round(totalMonths / 12)
 }
 
-// ─── Format experience label ──────────────────────────────────────────────────
-export function formatYearsLabel(experiences: Experience[]): string {
-  if (!experiences || experiences.length === 0) return 'No experience'
-  const years = getTotalYears(experiences)
-  if (years === 0) return '< 1 Year'
-  if (years === 1) return '1 Year'
-  return `${years}+ Years`
-}
-
-// ─── Extract previous companies ───────────────────────────────────────────────
-export function getPrevCompanies(experiences: Experience[]): string {
-  if (!experiences || experiences.length === 0) return '—'
-  return experiences
-    .map(e => e.company)
-    .filter(Boolean)
-    .slice(0, 2)
-    .join(', ')
-}
 
 // ─── Extract key strengths from bio + position ────────────────────────────────
 export function extractStrengths(bio: string, position: string, experiences: Experience[]): Strength[] {
@@ -130,22 +106,38 @@ export function calculateAIScore(
   const bio = candidate.bio || ''
   const position = candidate.position || ''
   const experiences = candidate.experiences || []
+  const jobTitleLower = job.title.toLowerCase()
   // Only use Title and Requirements, excluding Description
   const jobText = `${job.title} ${job.requirements || ''}`.toLowerCase()
 
   // 1. Bio + position keyword match vs job (max 40 pts)
   score += keywordOverlapScore(`${bio} ${position}`, jobText)
 
-  // 2. Experience years (max 30 pts)
-  const years = getTotalYears(experiences)
+  // 2. Relevant Experience years (max 30 pts)
+  let totalRelevantMonths = 0
+  experiences.forEach((exp) => {
+    if (!exp.title) return
+    const cleanRole = exp.title.toLowerCase().trim()
+    const isRelevant = jobText.includes(cleanRole) || jobTitleLower.includes(cleanRole) || cleanRole.includes(jobTitleLower)
+    
+    if (isRelevant) {
+      const start = new Date(exp.startDate)
+      const end = exp.endDate ? new Date(exp.endDate) : new Date()
+      if (!isNaN(start.getTime())) {
+        const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth())
+        totalRelevantMonths += Math.max(0, months)
+      }
+    }
+  })
+
+  const years = totalRelevantMonths / 12
   if (years >= 5) score += 30
-  else if (years >= 3) score += 22
-  else if (years >= 1) score += 14
-  else score += 5
+  else if (years >= 3) score += 20
+  else if (years >= 1) score += 10
+  else if (years > 0) score += 5
 
   // 3. Position title similarity (max 20 pts)
   const posLower = position.toLowerCase()
-  const jobTitleLower = job.title.toLowerCase()
   const posWords = posLower.split(/\s+/)
   const titleWords = jobTitleLower.split(/\s+/)
   const matchedTitle = posWords.filter(w => titleWords.some(t => t.includes(w) || w.includes(t)))
@@ -159,29 +151,6 @@ export function calculateAIScore(
   return Math.min(Math.max(score, 10), 99)
 }
 
-// ─── Full scoring pipeline ────────────────────────────────────────────────────
-export function scoreCandidate(
-  candidate: {
-    bio?: string | null
-    position?: string | null
-    experiences?: Experience[]
-    portfolio?: string | null
-    resume_url?: string | null
-  },
-  job: {
-    title: string
-    description: string
-    requirements?: string | null
-  }
-): ScoredCandidate {
-  const experiences = candidate.experiences || []
-  return {
-    score: calculateAIScore(candidate, job),
-    yearsLabel: formatYearsLabel(experiences),
-    prevCompanies: getPrevCompanies(experiences),
-    strengths: extractStrengths(candidate.bio || '', candidate.position || '', experiences),
-  }
-}
 
 // ─── Score from Parsed CV Data ───────────────────────────────────────────────
 export function calculateScoreFromParsedCV(

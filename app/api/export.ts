@@ -9,11 +9,11 @@ export const exportEmployeesToPDF = (employees: any[]) => {
   doc.setFontSize(22)
   doc.setTextColor(127, 86, 217) // #7F56D9 (UnifyRH Color)
   doc.text('UnifyRH', 14, 20)
-  
+
   doc.setFontSize(16)
   doc.setTextColor(16, 24, 40) // #101828
   doc.text('Employee List Report', 14, 30)
-  
+
   // Generation Date
   doc.setFontSize(10)
   doc.setTextColor(102, 112, 133) // #667085
@@ -21,7 +21,7 @@ export const exportEmployeesToPDF = (employees: any[]) => {
 
   // Column Definitions
   const tableColumn = ["Employee", "Email", "Department", "Position", "Hire Date"];
-  
+
   // Data Preparation
   const tableRows = employees.map(emp => [
     emp.user_name || '---',
@@ -77,11 +77,11 @@ export const exportTableToPDF = (title: string, headers: string[], rows: any[][]
   doc.setFontSize(22)
   doc.setTextColor(127, 86, 217) // #7F56D9
   doc.text('UnifyRH', 14, 20)
-  
+
   doc.setFontSize(16)
   doc.setTextColor(16, 24, 40) // #101828
   doc.text(title, 14, 30)
-  
+
   // Generation Date
   doc.setFontSize(10)
   doc.setTextColor(102, 112, 133) // #667085

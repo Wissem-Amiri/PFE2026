@@ -1,4 +1,4 @@
-'use client'
+'use client'  
 
 import { ConfigProvider } from 'antd'
 import Link from 'next/link'

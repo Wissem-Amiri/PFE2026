@@ -34,9 +34,9 @@ export async function requestLeave(leaveData: Omit<Leave, 'id' | 'created_at' | 
 }
 
 /** Get leaves for a specific user (Employee) */
-export async function getMyLeaves(employeeId: string, params?: { 
-  page: number, 
-  pageSize: number, 
+export async function getMyLeaves(employeeId: string, params?: {
+  page: number,
+  pageSize: number,
   search?: string,
   status?: string | string[],
   leaveType?: string | string[],
@@ -366,7 +366,7 @@ export async function syncVacationBalance(employeeId: string) {
 
   const hireDate = dayjs((emp as any).hire_date)
   const now = dayjs()
-  
+
   if (now.isBefore(hireDate)) {
     // Hasn't started yet
     await (supabase as any).from('employee').update({ vacation_balance: 0 }).eq('id', employeeId)
