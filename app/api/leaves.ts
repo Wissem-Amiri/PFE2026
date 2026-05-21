@@ -309,7 +309,7 @@ export async function getDepartmentAvailability(employeeId: string, startDate: s
     .eq('department', department)
 
   // 3. Count employees already on approved leave during the requested period
-  // An overlap exists when: existing.start <= requested.end AND existing.end >= requested.start
+
   const { data: overlappingLeaves } = await supabase
     .from('leaves')
     .select('employee_id')

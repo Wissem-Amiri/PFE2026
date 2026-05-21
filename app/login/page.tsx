@@ -18,7 +18,11 @@ const loginSchema = yup.object().shape({
     remember: yup.boolean().default(false),
 })
 
-type LoginFormInputs = yup.InferType<typeof loginSchema>
+type LoginFormInputs = {
+    email: string
+    password: string
+    remember: boolean
+}
 
 
 export default function LoginPage() {
@@ -30,7 +34,7 @@ export default function LoginPage() {
     const { signIn, signInWithOAuth } = useAuth()
 
     const { control, handleSubmit, formState: { errors } } = useForm<LoginFormInputs>({
-        resolver: yupResolver(loginSchema),
+        resolver: yupResolver(loginSchema) as any,
         defaultValues: { email: '', password: '', remember: false },
     })
 
@@ -41,7 +45,7 @@ export default function LoginPage() {
         if (error) { setErrorMsg(error.message); setLoading(false); return }
 
         // Read role from utilisateur table (source of truth)
-        const { data: profile } = await getProfile(data.user?.id)
+        const { data: profile } = await getProfile(data.user?.id || '')
         const fallbackRole = data.user?.user_metadata?.role
         const role = profile?.role || fallbackRole
         

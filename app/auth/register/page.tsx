@@ -18,7 +18,11 @@ const registerSchema = yup.object().shape({
   password: yup.string().min(8, 'Must be at least 8 characters').required('Password is required'),
 })
 
-type RegisterFormInputs = yup.InferType<typeof registerSchema>
+type RegisterFormInputs = {
+  name: string
+  email: string
+  password: string
+}
 
 
 
@@ -31,7 +35,7 @@ export default function RegisterPage() {
   const { signUp, signInWithOAuth } = useAuth()
 
   const { control, handleSubmit, formState: { errors } } = useForm<RegisterFormInputs>({
-    resolver: yupResolver(registerSchema),
+    resolver: yupResolver(registerSchema) as any,
     defaultValues: { name: '', email: '', password: '' },
   })
 

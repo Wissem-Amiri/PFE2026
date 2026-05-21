@@ -604,7 +604,7 @@ export default function RecordingsPage() {
                           </div>
                         </td>
                         <td className="px-6 py-5 text-gray-500 text-sm italic">{det.profile?.email || det.email || 'N/A'}</td>
-                        <td className="px-6 py-5 text-gray-500 text-sm">{det.profile?.department || det.department || 'N/A'}</td>
+                        <td className="px-6 py-5 text-gray-500 text-sm">{det.profile?.employee?.department || det.profile?.admin?.department || det.profile?.department || det.department || 'N/A'}</td>
                         <td className="px-6 py-5">
                           <span className={`px-3 py-1 rounded-full text-xs font-bold ${det.attendance ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
                             {det.attendance ? 'Present' : 'Absent'}
